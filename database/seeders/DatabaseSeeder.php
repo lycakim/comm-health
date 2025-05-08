@@ -16,8 +16,8 @@ class DatabaseSeeder extends Seeder
         User::factory(10)->create();
 
         User::factory()->create([
-            'name' => 'Lyca Ubay',
-            'email' => 'lycaubay28@gmail.com',
+            'name' => 'Jenny Doe',
+            'email' => 'jennydoe@gmail.com',
             'password' => bcrypt('system2025!'),
             'role' => 'admin',
         ]);
@@ -27,6 +27,13 @@ class DatabaseSeeder extends Seeder
             'email' => 'johndoe@gmail.com',
             'password' => bcrypt('system2025!'),
             'role' => 'bhw',
+        ]);
+
+        User::factory()->create([
+            'name' => 'Jennifer Doe',
+            'email' => 'jenniferdoe@gmail.com',
+            'password' => bcrypt('system2025!'),
+            'role' => 'mho',
         ]);
     }
 }

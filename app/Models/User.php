@@ -45,4 +45,36 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function barangays()
+    {
+        return $this->belongsToMany(Barangay::class, 'barangay_users')
+            ->using(BarangayUser::class)
+            ->withTimestamps();
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isMHO(): bool
+    {
+        return $this->role === 'mho';
+    }
+
+    public function isBHW(): bool
+    {
+        return $this->role === 'bhw';
+    }
+
+    public function isResident(): bool
+    {
+        return $this->role === 'resident';
+    }
+
+    public function isMidwife(): bool
+    {
+        return $this->role === 'midwife';
+    }
 }
