@@ -30,4 +30,9 @@ class Patient extends Model
             get: fn () => Carbon::parse($this->birth_date)->age,
         );
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

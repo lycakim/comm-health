@@ -28,6 +28,11 @@ class BarangayResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW() || auth()->user()->isMidwife();
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -31,7 +31,12 @@ class ProgramResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
     
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW() || auth()->user()->isMidwife();
+    }
 
     public static function form(Form $form): Form
     {
@@ -57,7 +62,8 @@ class ProgramResource extends Resource
                         // Select::make('coordinator')
                         //     ->label('Coordinator')
                         //     ->options(User::query()->get()->pluck('name', 'id')->toArray()),
-                    ]),
+                    ])
+                    ->columns(3),
             ]);
     }
 

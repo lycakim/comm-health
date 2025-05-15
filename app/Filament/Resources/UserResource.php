@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use Filament\Forms;
 use App\Models\User;
 use Filament\Tables;
+use App\Enums\RoleEnum;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
@@ -37,7 +38,7 @@ class UserResource extends Resource
     public static function canEdit(Model $request): bool
     {
         $user = auth()->user();
-        if ($user->isAdmin() || $user->isMHO() || $user->isBHW() || $user->isMidwife()) return true;
+        return $user->isAdmin() || $user->isMHO() || $user->isBHW() || $user->isMidwife();
     }
 
     public static function form(Form $form): Form
@@ -93,7 +94,12 @@ class UserResource extends Resource
                 TextColumn::make('barangays.name')
                     ->label('Assigned Barangay')
                     ->searchable()
-                    ->sortable()
+                    ->sortable(),
+                TextColumn::make('role')
+                    ->formatStateUsing(fn ($state) => RoleEnum::tryFrom($state)?->getLabel() ?? ucfirst($state))
+                    ->badge()
+                    ->color(fn (string $state): string => RoleEnum::tryFrom($state)?->getColor() ?? 'gray'),
+                
             ])
             ->filters([
                 //

@@ -27,6 +27,11 @@ class CategoryResource extends Resource
     protected static ?string $navigationGroup = 'Utility';
 
     protected static ?int $navigationSort = 1;
+    
+    public static function canAccess(): bool
+    {
+        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW() || auth()->user()->isMidwife();
+    }
 
     public static function form(Form $form): Form
     {

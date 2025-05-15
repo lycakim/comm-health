@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Filament\Pages\Auth\Register;
 use Illuminate\Support\ServiceProvider;
+use Filament\Pages\Auth\Register as FilamentRegister;
+use App\Http\Responses\Auth\CustomRegistrationResponse;
+use Filament\Http\Responses\Auth\Contracts\RegistrationResponse;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -11,7 +15,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(FilamentRegister::class, Register::class);
+        $this->app->bind(RegistrationResponse::class, CustomRegistrationResponse::class);
     }
 
     /**

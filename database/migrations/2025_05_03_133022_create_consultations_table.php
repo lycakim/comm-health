@@ -14,8 +14,15 @@ return new class extends Migration
         Schema::create('consultations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('patient_id')->constrained('patients')->onDelete('cascade');
-            $table->string('type');
-            $table->text('description')->nullable();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('type')->nullable();
+            $table->dateTime('date');
+            $table->text('chief_complaint');
+            $table->text('diagnosis')->nullable();
+            $table->text('treatment')->nullable();
+            $table->text('notes')->nullable();
+            $table->dateTime('follow_up_date')->nullable();
+            $table->string('status')->default('completed');
             $table->timestamps();
         });
     }

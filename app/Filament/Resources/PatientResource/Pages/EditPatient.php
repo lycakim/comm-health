@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\PatientResource\Pages;
 
-use App\Filament\Resources\PatientResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Contracts\Support\Htmlable;
+use App\Filament\Resources\PatientResource;
 
 class EditPatient extends EditRecord
 {
@@ -15,5 +16,14 @@ class EditPatient extends EditRecord
         return [
             Actions\DeleteAction::make(),
         ];
+    }
+
+    public function getSubheading(): string|Htmlable|null
+    {
+        if ($this->record->user_id) {
+            return 'This patient already has an account: ' . $this->record->user->email . '.';
+        }
+
+        return null;
     }
 }
