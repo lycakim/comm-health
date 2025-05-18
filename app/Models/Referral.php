@@ -29,7 +29,7 @@ class Referral extends Model
 
     public function patient()
     {
-        return $this->hasOneThrough(Patient::class, Consultation::class, 'id', 'id', 'consultation_id', 'patient_id');
+        return $this->belongsTo(Patient::class);
     }
 
     public function barangay(): BelongsTo

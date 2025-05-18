@@ -21,4 +21,9 @@ class Barangay extends Model
             ->using(BarangayUser::class)
             ->withTimestamps();
     }
+
+    public function patients()
+    {
+        return $this->hasMany(Patient::class);
+    }
 }

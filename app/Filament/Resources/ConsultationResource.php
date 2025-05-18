@@ -177,6 +177,7 @@ class ConsultationResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('chief_complaint')
                     ->limit(50)
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()

@@ -35,5 +35,7 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('system2025!'),
             'role' => 'mho',
         ]);
+
+        $this->call(BarangaySeeder::class);
     }
 }

@@ -74,7 +74,7 @@ class UserResource extends Resource
                             ->default('admin')
                             ->in(['mho', 'bhw', 'resident', 'midwife', 'admin'])
                             ->required(),
-                        Select::make('barangays')
+                        Select::make('barangay_id')
                             ->label('Assigned Barangay')
                             ->relationship('barangays', 'name')
                             ->preload()

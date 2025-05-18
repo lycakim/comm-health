@@ -24,15 +24,26 @@ class Patient extends Model
         return $this->belongsTo(Category::class);
     }
 
-    protected function age(): Attribute
+    public function getAgeAttribute(): int
     {
-        return Attribute::make(
-            get: fn () => Carbon::parse($this->birth_date)->age,
-        );
+        return $this->birth_date ? Carbon::parse($this->birth_date)->age : 0;
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+    public function getInitialsAttribute(): string
+    {
+        $firstInitial = $this->first_name ? substr($this->first_name, 0, 1) : '';
+        $lastInitial = $this->last_name ? substr($this->last_name, 0, 1) : '';
+        
+        return strtoupper($firstInitial . $lastInitial);
     }
 }

@@ -63,8 +63,13 @@ class BarangayResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')->searchable(),
+                TextColumn::make('patients_count')
+                    ->label('Patients')
+                    ->sortable()
+                    ->counts('patients'),
                 TextColumn::make('users_count')
-                    ->label('Residents')
+                    ->label('Users')
+                    ->sortable()
                     ->counts('users')
             ])
             ->filters([

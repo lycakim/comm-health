@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\Consultation;
 use Filament\Resources\Resource;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ReferralResource\Pages;
@@ -32,28 +33,26 @@ class ReferralResource extends Resource
             ->schema([
                 Section::make('Referral Information')
                     ->schema([
-                        Forms\Components\Select::make('consultation_id')
+                        Select::make('consultation_id')
                             ->label('Select Consultation')
-                            ->relationship('consultation', 'id', function (Builder $query) {
-                                return $query->whereIn('status', ['needs_referral', 'referred'])
-                                    ->whereDoesntHave('referral');
-                            })
-                            ->getOptionLabelFromRecordUsing(fn (Consultation $record) => "Consultation #{$record->id} - {$record->patient->name} - {$record->date->format('M d, Y')}")
+                            ->options(
+                                Consultation::with('patient')
+                                    ->get()
+                                    ->mapWithKeys(function ($consultation) {
+                                        
+                                        $patientName = $consultation->patient 
+                                            ? "Consultation #{$consultation->id} - {$consultation->patient->first_name} {$consultation->patient->last_name} - {$consultation->created_at->format('M d, Y')}"
+                                            : 'Unknown';
+                                        return [$consultation->id => $patientName];
+                                    })
+                                    ->toArray()
+                            )
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->reactive()
-                            ->afterStateUpdated(function (Forms\Set $set, ?string $state) {
-                                if (!$state) return;
-                                
-                                $consultation = Consultation::find($state);
-                                if ($consultation) {
-                                    $set('barangay_id', $consultation->patient->barangay_id ?? null);
-                                }
-                            })
-                            ->disabled(fn ($get) => $get('consultation_id') !== null),
+                            ->live(),
                         
-                        Forms\Components\Select::make('barangay_id')
+                        Select::make('barangay_id')
                             ->relationship('barangay', 'name')
                             ->required()
                             ->searchable()
@@ -69,7 +68,7 @@ class ReferralResource extends Resource
                                 if (!$consultationId) return '-';
                                 
                                 $consultation = Consultation::find($consultationId);
-                                return $consultation ? $consultation->patient->name : '-';
+                                return $consultation ? $consultation->patient->first_name . ' ' . $consultation->patient->last_name : '-';
                             }),
                         Forms\Components\Placeholder::make('chief_complaint')
                             ->label('Chief Complaint')
@@ -150,12 +149,15 @@ class ReferralResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('Referral ID')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('consultation.patient.name')
+                Tables\Columns\TextColumn::make('consultation.patient')
                     ->label('Patient')
-                    ->searchable()
+                    ->formatStateUsing(fn ($state) => $state ? "{$state->first_name} {$state->last_name}" : '-')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('patient', function (Builder $query) use ($search) {
+                            $query->where('first_name', 'like', "%{$search}%")
+                                  ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('facility_name')
                     ->searchable(),
@@ -219,11 +221,11 @@ class ReferralResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('download_pdf')
-                    ->label('Download PDF')
-                    ->url(fn (Referral $record) => route('referrals.pdf', $record))
-                    ->icon('heroicon-o-document-download')
-                    ->openUrlInNewTab(),
+                // Tables\Actions\Action::make('download_pdf')
+                //     ->label('Download PDF')
+                //     ->url(fn (Referral $record) => route('referrals.pdf', $record))
+                //     ->icon('heroicon-o-document-download')
+                //     ->openUrlInNewTab(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -245,6 +247,7 @@ class ReferralResource extends Resource
             'index' => Pages\ListReferrals::route('/'),
             'create' => Pages\CreateReferral::route('/create'),
             'edit' => Pages\EditReferral::route('/{record}/edit'),
+            'view' => Pages\ViewReferral::route('/{record}/view'),
         ];
     }
 }

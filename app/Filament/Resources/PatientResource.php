@@ -47,9 +47,10 @@ class PatientResource extends Resource
     {
         return $form
             ->schema([
-                Section::make()
+                Grid::make(1)
                     ->schema([
-                        Grid::make(2)
+                        Section::make('Patient Information')
+                            ->collapsible()
                             ->schema([
                                 TextInput::make('first_name')->required(),
                                 TextInput::make('last_name')->required(),
@@ -75,12 +76,14 @@ class PatientResource extends Resource
                                     ->label('Category')
                                     ->options(Category::query()->get()->pluck('name', 'id')->toArray())
                                     ->columnSpanFull()
+                                    ->required()
                                     ->preload()
                                     ->searchable(),
                                 Select::make('barangay_id')
                                     ->label('Barangay')
                                     ->options(Barangay::query()->get()->pluck('name', 'id')->toArray())
                                     ->preload()
+                                    ->required()
                                     ->searchable(),
                                 DatePicker::make('last_visit'),
                                 ToggleButtons::make('surgical_operation')
@@ -95,9 +98,45 @@ class PatientResource extends Resource
                                     ->inline()
                                     ->default(false)  
                                     ->live(),
-                            ]),
+                            ])
+                            ->columns(2),
+                            
+                        Section::make('Medical History')
+                            ->collapsible()
+                            ->schema([
+                                TextInput::make('blood_pressure')
+                                    ->label('Blood Pressure')
+                                    ->hint('mmHg'),
+                                TextInput::make('sugar_level')
+                                    ->label('Sugar Level')
+                                    ->numeric()
+                                    ->hint('mg/dl'),
+                                TextInput::make('height')
+                                    ->numeric()
+                                    ->label('Height'),
+                                TextInput::make('weight')
+                                    ->label('Weight'),
+                                ToggleButtons::make('pregnant')
+                                    ->label('Pregnant?')
+                                    ->grouped()
+                                    ->boolean()
+                                    ->inline(),
+                                ToggleButtons::make('dissabilities')
+                                    ->label('Dissabilities')
+                                    ->grouped()
+                                    ->boolean()
+                                    ->inline(),
+                                TextInput::make('weeks_pregnant')
+                                    ->label('Weeks Pregnant')
+                                    ->numeric(),
+                                TextInput::make('months_pregnant')
+                                    ->label('Days Pregnant')
+                                    ->numeric(),
+                            ])
+                            ->columns(2),
                     ])
                     ->columnSpan(2),
+                    
                 Section::make()
                     ->schema([
                         ViewField::make('rating')
@@ -112,6 +151,7 @@ class PatientResource extends Resource
                                 'recentActivities' => 0,
                             ])
                     ])
+                    ->heading('Patient Statistics')
                     ->columnSpan(1),
             ])
             ->columns(3);
