@@ -1,5 +1,5 @@
 <div class="rounded-lg shadow-sm space-y-3">
-    <h2 class="text-2xl font-bold text-gray-900">Patient Statistics</h2>
+    {{-- <h2 class="text-2xl font-bold text-gray-900">Patient Statistics</h2> --}}
     
     <div class="rounded-md p-4 flex items-center justify-between border border-solid dark:border-gray-700">
         <span class="text-gray-500 text-sm">Total Patients</span>

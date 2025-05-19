@@ -14,10 +14,22 @@ class BarangaySeeder extends Seeder
     public function run(): void
     {
         $barangays = [
-            'Poblacion', 'New Carmen', 'La Paz', 'Mangalcal', 
-            'Tubod', 'Mabuhay', 'Santo Niño', 'Salvacion',
-            'Tuganay', 'Magsaysay', 'Alejal', 'Guadalupe',
-            'Ising', 'Minda', 'Tidman', 'Taba'
+            'Alejal',
+            'Guadalupe', 
+            'Ising',
+            'La Paz',
+            'Mabuhay',
+            'Magsaysay',
+            'Mangalcal',
+            'Minda',
+            'New Carmen',
+            'Poblacion',
+            'Salvacion',
+            'Santo Niño',
+            'Taba',
+            'Tidman',
+            'Tubod',
+            'Tuganay'
         ];
 
         foreach ($barangays as $name) {

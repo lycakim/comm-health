@@ -14,7 +14,8 @@ class EditPatient extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\ViewAction::make(),
+            // Actions\DeleteAction::make(),
         ];
     }
 
