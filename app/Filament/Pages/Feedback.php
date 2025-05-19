@@ -19,7 +19,10 @@ class Feedback extends Page implements HasInfolists
     protected static string $view = 'filament.pages.feedback';
 
     protected static ?string $navigationLabel = 'Feedback';
+
     protected static ?string $title = 'System Feedback & Comments';
+
+    protected static ?int $navigationSort = 6;
 
     public ?SystemFeedback $record = null;
 
