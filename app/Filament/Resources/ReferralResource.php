@@ -221,6 +221,7 @@ class ReferralResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make(),
                 // Tables\Actions\Action::make('download_pdf')
                 //     ->label('Download PDF')
                 //     ->url(fn (Referral $record) => route('referrals.pdf', $record))
