@@ -361,12 +361,14 @@ class PatientResource extends Resource
                         return Carbon::parse($record->birth_date)->age;
                     })
                     ->label('Age'),
+                TextColumn::make('chief_complaint')
+                    ->limit(50)
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->searchable(),
                 TextColumn::make('category.name')
-                    ->label('Category')
-                    ->searchable(['category.id', 'category.name']),
+                    ->label('Category'),
                 TextColumn::make('barangay.name')
-                    ->label('Barangay')
-                    ->searchable(['barangay.id', 'barangay.name']),
+                    ->label('Barangay'),
             ])
             ->filters([
                 SelectFilter::make('category_id')

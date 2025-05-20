@@ -9,4 +9,12 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewReferral extends ViewRecord
 {
     protected static string $resource = ReferralResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\EditAction::make()
+                ->color('gray'),
+        ];
+    }
 }

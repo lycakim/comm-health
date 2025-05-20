@@ -39,7 +39,9 @@ class CategoryResource extends Resource
             ->schema([
                 Section::make()
                     ->schema([
-                        TextInput::make('name')->required(),
+                        TextInput::make('name')
+                            ->required()
+                            ->unique(),
                         Textarea::make('description'),
                     ])
             ]);
@@ -56,6 +58,7 @@ class CategoryResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

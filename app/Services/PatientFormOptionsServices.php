@@ -60,7 +60,6 @@ class PatientFormOptionsServices
     public static function getPatientLivestock()
     {
         return [
-            'None' => 'None',
             'Dog' => 'Dog',
             'Cat' => 'Cat',
             'Chicken' => 'Chicken',
@@ -81,17 +80,17 @@ class PatientFormOptionsServices
     public static function getMedicationMaintenance()
     {
         return [
-            'Losartan 50 mg' => 'losartan_50_mg',
-            'Losartan 100 mg' => 'losartan_100_mg',
-            'Amlodipine 50 mg' => 'amlodipine_50_mg',
-            'Amlodipine 10 mg' => 'amlodipine_10_mg',
-            'Metoprolol 50 mg' => 'metoprolol_50_mg',
-            'Metoprolol 100 mg' => 'metoprolol_100_mg',
-            'Gliclazide 30 mg' => 'gliclazide_30_mg',
-            'Gliclazide 80 mg' => 'gliclazide_80_mg',
-            'Metformin 500 mg' => 'metformin_500_mg',
-            'Simvastation 20 mg' => 'simvastation_20_mg',
-            'Insulin' => 'insulin', 
+            'Losartan 50 mg' => 'Losartan 50 mg',
+            'Losartan 100 mg' => 'Losartan 100 mg',
+            'Amlodipine 50 mg' => 'Amlodipine 50 mg',
+            'Amlodipine 10 mg' => 'Amlodipine 10 mg',
+            'Metoprolol 50 mg' => 'Metoprolol 50 mg',
+            'Metoprolol 100 mg' => 'Metoprolol 100 mg',
+            'Gliclazide 30 mg' => 'Gliclazide 30 mg',
+            'Gliclazide 80 mg' => 'Gliclazide 80 mg',
+            'Metformin 500 mg' => 'Metformin 500 mg',
+            'Simvastation 20 mg' => 'Simvastation 20 mg',
+            'Insulin' => 'Insulin',
         ];
     }
 

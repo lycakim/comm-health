@@ -13,7 +13,10 @@ class ViewPatient extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            Actions\EditAction::make()
+                ->color('gray'),
+            Actions\Action::make('create_referral')
+                ->label('Create Referral')
         ];
     }
 }
