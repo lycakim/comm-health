@@ -40,45 +40,44 @@ class Register extends BaseRegister
                             ->required()
                             ->maxLength(255),
                     ]),
-                TextInput::make('email')
-                    ->hidden(fn (Get $get): bool => $get('role') === 'resident')
-                    ->email()
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(table: 'users'),
+                // TextInput::make('email')
+                //     ->hidden(fn (Get $get): bool => $get('role') === 'resident')
+                //     ->email()
+                //     ->required()
+                //     ->maxLength(255)
+                //     ->unique(table: 'users'),
 
                 DatePicker::make('birth_date')
                     ->label('Date of Birth')
-                    ->required()
-                    ->hidden(fn (Get $get): bool => $get('role') != 'resident'),
+                    ->required(),
 
                 Select::make('gender')
                     ->required()
-                    ->hidden(fn (Get $get): bool => $get('role') != 'resident')
                     ->options([
                         'male' => 'Male', 
                         'female' => 'Female',
                     ]),
                 Select::make('category_id')
                     ->label('Category')
-                    ->hidden(fn (Get $get): bool => $get('role') != 'resident')
+                    ->preload()
+                    ->searchable()
                     ->options(Category::query()->get()->pluck('name', 'id')->toArray()),
                 
                 // Password fields
-                TextInput::make('password')
-                    ->hidden(fn (Get $get): bool => $get('role') === 'resident')
-                    ->password()
-                    ->required()
-                    ->minLength(8)
-                    ->revealable()
-                    ->same('passwordConfirmation'),
-                TextInput::make('passwordConfirmation')
-                    ->hidden(fn (Get $get): bool => $get('role') === 'resident')
-                    ->password()
-                    ->required()
-                    ->revealable()
-                    ->minLength(8)
-                    ->label('Confirm Password'),
+                // TextInput::make('password')
+                //     ->hidden(fn (Get $get): bool => $get('role') === 'resident')
+                //     ->password()
+                //     ->required()
+                //     ->minLength(8)
+                //     ->revealable()
+                //     ->same('passwordConfirmation'),
+                // TextInput::make('passwordConfirmation')
+                //     ->hidden(fn (Get $get): bool => $get('role') === 'resident')
+                //     ->password()
+                //     ->required()
+                //     ->revealable()
+                //     ->minLength(8)
+                //     ->label('Confirm Password'),
                 
                 Select::make('role')
                     ->label('Account Type')
@@ -88,8 +87,6 @@ class Register extends BaseRegister
                         'mho' => 'Municipal Health Officer',
                         'bhw' => 'Barangay Health Worker',
                     ])
-                    ->live()
-                    ->disabled()
                     ->default('resident')
                     ->required(),
                 Hidden::make('role')->default('resident'), 
@@ -123,28 +120,57 @@ class Register extends BaseRegister
 
         $data = $this->form->getState();
 
-        if ($data['role'] == 'resident') {
-            Patient::create([
-                'first_name' => $data['first_name'],
-                'last_name' => $data['last_name'],
-                'birth_date' => $data['birth_date'],
-                'sex' => $data['gender'],
-                'barangay_id' => $data['barangay_id'],
-            ]);
+        Patient::create([
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'birth_date' => $data['birth_date'],
+            'sex' => $data['gender'],
+            'barangay_id' => $data['barangay_id'],
+        ]);
+        
+        $admins = User::where('role', 'mho')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\DatabaseNotification(
+                'New Patient Registration',
+                'A new patient named ' . $data['first_name'] . ' ' . $data['last_name'] . ' has registered.',
+                'heroicon-o-user-plus',
+                'success'
+            ));
         }
-        else {
-            User::create([
-                'name' => $data['first_name'] . ' ' . $data['last_name'],
-                'email' => $data['email'],
-                'password' => Hash::make($data['password']),
-                'role' => $data['role'],
-            ]);
+
+        // Optional: Send broadcast notification to admins if live updates are needed
+        // This will require setting up Laravel Echo and Pusher/Laravel WebSockets
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\BroadcastNotification(
+                'New Patient Registration',
+                'A new patient named ' . $data['first_name'] . ' ' . $data['last_name'] . ' has registered.',
+                'heroicon-o-user-plus',
+                'success'
+            ));
         }
+
+        // if ($data['role'] == 'resident') {
+        //     Patient::create([
+        //         'first_name' => $data['first_name'],
+        //         'last_name' => $data['last_name'],
+        //         'birth_date' => $data['birth_date'],
+        //         'sex' => $data['gender'],
+        //         'barangay_id' => $data['barangay_id'],
+        //     ]);
+        // }
+        // else {
+        //     User::create([
+        //         'name' => $data['first_name'] . ' ' . $data['last_name'],
+        //         'email' => $data['email'],
+        //         'password' => Hash::make($data['password']),
+        //         'role' => $data['role'],
+        //     ]);
+        // }
 
 
         Notification::make()
             ->title('Registration successful')
-            ->description('You are now registered and can proceed to consulation')
+            ->body('You are now registered and your account is under verification')
             ->success()
             ->send();
 

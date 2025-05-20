@@ -15,8 +15,8 @@ class ViewPatient extends ViewRecord
         return [
             Actions\EditAction::make()
                 ->color('gray'),
-            Actions\Action::make('create_referral')
-                ->label('Create Referral')
+            // Actions\Action::make('create_referral')
+            //     ->label('Create Referral')
         ];
     }
 }

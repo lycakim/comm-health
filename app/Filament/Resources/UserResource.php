@@ -74,12 +74,12 @@ class UserResource extends Resource
                             ->default('admin')
                             ->in(['mho', 'bhw', 'resident', 'midwife', 'admin'])
                             ->required(),
-                        Select::make('barangay_id')
-                            ->label('Assigned Barangay')
-                            ->relationship('barangays', 'name')
-                            ->preload()
-                            ->searchable()
-                            ->required(fn (string $context): bool => $context === 'create' || $context === 'edit'),
+                        // Select::make('barangay_id')
+                        //     ->label('Assigned Barangay')
+                        //     ->relationship('barangays', 'name')
+                        //     ->preload()
+                        //     ->searchable()
+                        //     ->required(fn (string $context): bool => $context === 'create' || $context === 'edit'),
                     ]),
             ]);
     }

@@ -15,8 +15,8 @@ class EditPatient extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            Actions\Action::make('create_referral')
-                ->label('Create Referral')
+            // Actions\Action::make('create_referral')
+            //     ->label('Create Referral')
             // Actions\DeleteAction::make(),
         ];
     }

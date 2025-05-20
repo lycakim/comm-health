@@ -16,15 +16,15 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->string('middle_name')->nullable();
-            $table->string('relationship_to_head_of_family');
+            $table->string('relationship_to_head_of_family')->nullable();
             $table->string('relationship_to_head_of_family_other')->nullable();
-            $table->text('place_of_birth');
+            $table->text('place_of_birth')->nullable();
             $table->date('birth_date');
             $table->string('age')->nullable();
             $table->string('sex');
-            $table->string('civil_status');
-            $table->string('educational_attainment');
-            $table->string('occupation');
+            $table->string('civil_status')->default('single');
+            $table->string('educational_attainment')->nullable();
+            $table->string('occupation')->nullable();
 
             // Women of Reproductive Age
             $table->boolean('pregnant')->default(false);
