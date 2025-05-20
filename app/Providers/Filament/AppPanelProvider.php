@@ -66,6 +66,6 @@ class AppPanelProvider extends PanelProvider
             ->brandName('CommHealth')
             ->brandLogo(asset('comm-health-logo.png'))
             ->databaseNotifications()
-            ->databasePolling('30s');
+            ->databaseNotificationsPolling('30s');
     }
 }
