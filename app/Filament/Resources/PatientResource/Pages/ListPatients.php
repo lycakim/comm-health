@@ -33,6 +33,9 @@ class ListPatients extends ListRecords
 
     public function getSubheading(): string|Htmlable|null
     {
+        if (auth()->user()->barangays->count() > 0) {
+            return 'View and manage patient records across barangay ' . auth()->user()->barangays->first()->name;
+        }
         return 'View and manage patient records across all barangays';
     }
 }
