@@ -197,18 +197,30 @@ class ConsultationResource extends Resource
                                     ->content(function (Forms\Get $get) {
                                         $patientId = $get('patient_id');
                                         if (!$patientId) return '-';
-                                        
+
                                         $patient = Patient::find($patientId);
-                                        return $patient ? implode(', ', $patient->health_statuses) : '-';
+                                        if (!$patient) return '-';
+
+                                        $statuses = $patient->health_statuses;
+                                        $statusesArray = is_string($statuses) ? explode(',', $statuses) : (array) $statuses;
+                                        $statusesArray = array_filter(array_map('trim', $statusesArray));
+
+                                        return implode(', ', $statusesArray);
                                     }),
                                 Forms\Components\Placeholder::make('medication_maintenance')
                                     ->label('Medication/Maintenance')
                                     ->content(function (Forms\Get $get) {
                                         $patientId = $get('patient_id');
                                         if (!$patientId) return '-';
-                                        
+
                                         $patient = Patient::find($patientId);
-                                        return $patient ? implode(', ', $patient->medication_maintenance) : '-';
+                                        if (!$patient) return '-';
+
+                                        $meds = $patient->medication_maintenance;
+                                        $medsArray = is_string($meds) ? explode(',', $meds) : (array) $meds;
+                                        $medsArray = array_filter(array_map('trim', $medsArray));
+
+                                        return implode(', ', $medsArray);
                                     }),
                                 Forms\Components\Placeholder::make('category')
                                     ->label('Category')
