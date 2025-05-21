@@ -48,7 +48,7 @@ class UserResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW() || auth()->user()->isMidwife();
+        return auth()->user()->isAdmin() || auth()->user()->isMHO();
     }
 
     public static function canEdit(Model $request): bool

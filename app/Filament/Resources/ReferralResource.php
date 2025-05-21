@@ -41,70 +41,33 @@ class ReferralResource extends Resource
             ->schema([
                 Section::make('Referral Information')
                     ->schema([
-                        Select::make('consultation_id')
-                            ->label('Select Consultation')
-                            ->options(function () {
-                                $consultations = Consultation::query()
-                                    ->with('patient')
-                                    ->get();
-
-                                if ($consultations->isEmpty()) {
-                                    return [];
-                                }
-
-                                return $consultations->mapWithKeys(function ($consultation) {
-                                    $patient = $consultation->patient;
-                                    $patientName = $patient
-                                        ? "{$patient->first_name} {$patient->last_name}"
-                                        : 'No patient';
-                                    $label = "Consultation #{$consultation->id} - {$patientName} - {$consultation->created_at->format('M d, Y')}";
-                                    return [$consultation->id => $label];
-                                });
-                            })
-                            ->placeholder(fn (Get $get) => filled($get('patient_id')) || Consultation::count() === 0 ? 'No consultation available' : 'Select Consultation')
-                            ->searchable()
-                            ->preload()
-                            ->live()
-                            ->required(fn (Get $get) => ! $get('patient_id'))
-                            ->disabled(fn (Get $get) => filled($get('patient_id')) || Consultation::count() === 0)
-                            ->hintAction(function () {
-                                if (Consultation::count() === 0) {
-                                    return Action::make('addConsultation')
-                                        ->label('Create Consultation')
-                                        ->url(ConsultationResource::getUrl('create'))
-                                        ->color('primary')
-                                        ->icon('heroicon-m-plus');
-                                }
-                                return null;
-                            }),
-
                         Select::make('patient_id')
-                            ->label('Select Patient')
-                            ->options(function () {
-                                $patients = Patient::all();
+                            ->label('Patient')
+                            ->options(
+                                Patient::query()
+                                    ->get()
+                                    ->mapWithKeys(function ($patient) {
+                                        return [$patient->id => "Patient #{$patient->id} {$patient->first_name} {$patient->last_name}"];
+                                    })
+                                    ->toArray()
+                            )
+                            ->reactive()
+                            ->disabled(fn ($get) => !empty($get('consultation_id'))),
 
-                                if ($patients->isEmpty()) {
-                                    return [];
-                                }
-
-                                return $patients->mapWithKeys(fn ($patient) => [$patient->id => $patient->full_name]);
-                            })
-                            ->placeholder(fn (Get $get) => filled($get('consultation_id')) || Patient::count() === 0 ? 'No Patient Available' : 'Select Patient')
-                            ->searchable()
-                            ->preload()
-                            ->live()
-                            ->required(fn (Get $get) => ! $get('consultation_id'))
-                            ->disabled(fn (Get $get) => filled($get('consultation_id')) || Patient::count() === 0)
-                            ->hintAction(function () {
-                                if (Patient::count() === 0) {
-                                    return Action::make('addPatient')
-                                        ->label('Create Patient')
-                                        ->url(PatientResource::getUrl('create'))
-                                        ->color('primary')
-                                        ->icon('heroicon-m-plus');
-                                }
-                                return null;
-                            }),
+                        Select::make('consultation_id')
+                            ->label('Consultation')
+                            ->options(
+                                Consultation::query()
+                                    ->with('patient') // eager load patient relation
+                                    ->get()
+                                    ->mapWithKeys(function ($consultation) {
+                                        $patientName = $consultation->patient ? "{$consultation->patient->first_name} {$consultation->patient->last_name}" : 'No Patient';
+                                        return [$consultation->id => "Consultation #{$consultation->id} {$patientName}"];
+                                    })
+                                    ->toArray()
+                            )
+                            ->reactive()
+                            ->disabled(fn ($get) => !empty($get('patient_id'))),
                     ])->columns(2),
                 
                 Section::make('Patient Information')
@@ -123,18 +86,24 @@ class ReferralResource extends Resource
                             ->content(function (Forms\Get $get) {
                                 $patientId = $get('patient_id');
                                 if (!$patientId) return '-';
-                                
+
                                 $patient = Patient::find($patientId);
-                                return $patient ? SexEnum::tryFrom($patient->sex)->getLabel() : '-';
+                                if (!$patient) return '-';
+
+                                $enum = SexEnum::tryFrom($patient->sex);
+                                return $enum ? $enum->getLabel() : '-';
                             }),
                         Forms\Components\Placeholder::make('civil_status')
                             ->label('Civil Status')
                             ->content(function (Forms\Get $get) {
                                 $patientId = $get('patient_id');
                                 if (!$patientId) return '-';
-                                
+
                                 $patient = Patient::find($patientId);
-                                return $patient ? CivilStatusEnum::tryFrom($patient->civil_status)->getLabel() : '-';
+                                if (!$patient) return '-';
+
+                                $enum = CivilStatusEnum::tryFrom($patient->civil_status);
+                                return $enum ? $enum->getLabel() : '-';
                             }),
                         Forms\Components\Placeholder::make('age')
                             ->label('Age')
@@ -150,9 +119,12 @@ class ReferralResource extends Resource
                             ->content(function (Forms\Get $get) {
                                 $patientId = $get('patient_id');
                                 if (!$patientId) return '-';
-                                
+
                                 $patient = Patient::find($patientId);
-                                return $patient ? EducationalAttainmentEnum::tryFrom($patient->educational_attainment)->getLabel() : '-';
+                                if (!$patient) return '-';
+
+                                $enum = EducationalAttainmentEnum::tryFrom($patient->educational_attainment);
+                                return $enum ? $enum->getLabel() : '-';
                             }),
                         Forms\Components\Placeholder::make('birth_date')
                             ->label('Date of Birth')
@@ -224,27 +196,41 @@ class ReferralResource extends Resource
                                     ->content(function (Forms\Get $get) {
                                         $patientId = $get('patient_id');
                                         if (!$patientId) return '-';
-                                        
+
                                         $patient = Patient::find($patientId);
-                                        return $patient ? implode(', ', $patient->health_statuses) : '-';
+                                        if (!$patient) return '-';
+
+                                        $statuses = $patient->health_statuses;
+                                        $statusesArray = is_string($statuses) ? explode(',', $statuses) : (array) $statuses;
+                                        $statusesArray = array_filter(array_map('trim', $statusesArray));
+
+                                        return implode(', ', $statusesArray);
                                     }),
                                 Forms\Components\Placeholder::make('medication_maintenance')
                                     ->label('Medication/Maintenance')
                                     ->content(function (Forms\Get $get) {
                                         $patientId = $get('patient_id');
                                         if (!$patientId) return '-';
-                                        
+
                                         $patient = Patient::find($patientId);
-                                        return $patient ? implode(', ', $patient->medication_maintenance) : '-';
+                                        if (!$patient) return '-';
+
+                                        $meds = $patient->medication_maintenance;
+                                        $medsArray = is_string($meds) ? explode(',', $meds) : (array) $meds;
+                                        $medsArray = array_filter(array_map('trim', $medsArray));
+
+                                        return implode(', ', $medsArray);
                                     }),
                                 Forms\Components\Placeholder::make('category')
                                     ->label('Category')
                                     ->content(function (Forms\Get $get) {
                                         $patientId = $get('patient_id');
                                         if (!$patientId) return '-';
-                                        
+
                                         $patient = Patient::find($patientId);
-                                        return $patient ? $patient->category->name : '-';
+                                        if (!$patient) return '-';
+
+                                        return $patient->category ? $patient->category->name : '-';
                                     }),
                             ])
                             ->columns(3)
@@ -271,7 +257,10 @@ class ReferralResource extends Resource
                                         if (!$consultationId) return '-';
                                         
                                         $consultation = Consultation::find($consultationId);
-                                        return $consultation ? SexEnum::tryFrom($consultation->patient->sex)->getLabel() : '-';
+                                        if (!$consultation) return '-';
+
+                                        $enum = SexEnum::tryFrom($consultation->educational_attainment);
+                                        return $enum ? $enum->getLabel() : '-';
                                     }),
                                 Forms\Components\Placeholder::make('civil_status')
                                     ->label('Civil Status')
@@ -280,7 +269,10 @@ class ReferralResource extends Resource
                                         if (!$consultationId) return '-';
                                         
                                         $consultation = Consultation::find($consultationId);
-                                        return $consultation ? CivilStatusEnum::tryFrom($consultation->patient->civil_status)->getLabel() : '-';
+                                        if (!$consultation) return '-';
+
+                                        $enum = CivilStatusEnum::tryFrom($consultation->educational_attainment);
+                                        return $enum ? $enum->getLabel() : '-';
                                     }),
                                 Forms\Components\Placeholder::make('age')
                                     ->label('Age')
@@ -298,7 +290,10 @@ class ReferralResource extends Resource
                                         if (!$consultationId) return '-';
                                         
                                         $consultation = Consultation::find($consultationId);
-                                        return $consultation ? EducationalAttainmentEnum::tryFrom($consultation->patient->educational_attainment)->getLabel() : '-';
+                                        if (!$consultation) return '-';
+
+                                        $enum = EducationalAttainmentEnum::tryFrom($consultation->educational_attainment);
+                                        return $enum ? $enum->getLabel() : '-';
                                     }),
                                 Forms\Components\Placeholder::make('birth_date')
                                     ->label('Date of Birth')
@@ -382,18 +377,32 @@ class ReferralResource extends Resource
                                     ->content(function (Forms\Get $get) {
                                         $consultationId = $get('consultation_id');
                                         if (!$consultationId) return '-';
-                                        
+
                                         $consultation = Consultation::find($consultationId);
-                                        return $consultation ? implode(', ', $consultation->patient->health_statuses) : '-';
+                                        if (!$consultation) return '-';
+
+                                        $statuses = $consultation->patient->health_statuses;
+
+                                        $statusesArray = is_string($statuses) ? explode(',', $statuses) : (array) $statuses;
+
+                                        $statusesArray = array_filter(array_map('trim', $statusesArray));
+
+                                        return implode(', ', $statusesArray);
                                     }),
                                 Forms\Components\Placeholder::make('medication_maintenance')
                                     ->label('Medication/Maintenance')
                                     ->content(function (Forms\Get $get) {
                                         $consultationId = $get('consultation_id');
                                         if (!$consultationId) return '-';
-                                        
+
                                         $consultation = Consultation::find($consultationId);
-                                        return $consultation ? implode(', ', $consultation->patient->medication_maintenance) : '-';
+                                        if (!$consultation) return '-';
+
+                                        $meds = $consultation->patient->medication_maintenance;
+                                        $medsArray = is_string($meds) ? explode(',', $meds) : (array) $meds;
+                                        $medsArray = array_filter(array_map('trim', $medsArray));
+
+                                        return implode(', ', $medsArray);
                                     }),
                                 Forms\Components\Placeholder::make('category')
                                     ->label('Category')
