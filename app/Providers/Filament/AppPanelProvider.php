@@ -63,8 +63,8 @@ class AppPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->spa()
-            // ->brandName('CommHealth')
-            // ->brandLogo(asset('comm-health-logo.png'))
+            ->brandName('CommHealth')
+            ->brandLogo(asset('comm-health-logo.png'))
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s');
     }
