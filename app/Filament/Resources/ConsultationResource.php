@@ -85,18 +85,24 @@ class ConsultationResource extends Resource
                                     ->content(function (Forms\Get $get) {
                                         $patientId = $get('patient_id');
                                         if (!$patientId) return '-';
-                                        
+
                                         $patient = Patient::find($patientId);
-                                        return $patient ? SexEnum::tryFrom($patient->sex)->getLabel() : '-';
+                                        if (!$patient) return '-';
+
+                                        $enum = SexEnum::tryFrom($patient->sex);
+                                        return $enum ? $enum->getLabel() : '-';
                                     }),
                                 Forms\Components\Placeholder::make('civil_status')
                                     ->label('Civil Status')
                                     ->content(function (Forms\Get $get) {
                                         $patientId = $get('patient_id');
                                         if (!$patientId) return '-';
-                                        
+
                                         $patient = Patient::find($patientId);
-                                        return $patient ? CivilStatusEnum::tryFrom($patient->civil_status)->getLabel() : '-';
+                                        if (!$patient) return '-';
+
+                                        $enum = CivilStatusEnum::tryFrom($patient->civil_status);
+                                        return $enum ? $enum->getLabel() : '-';
                                     }),
                                 Forms\Components\Placeholder::make('age')
                                     ->label('Age')
@@ -112,9 +118,12 @@ class ConsultationResource extends Resource
                                     ->content(function (Forms\Get $get) {
                                         $patientId = $get('patient_id');
                                         if (!$patientId) return '-';
-                                        
+
                                         $patient = Patient::find($patientId);
-                                        return $patient ? EducationalAttainmentEnum::tryFrom($patient->educational_attainment)->getLabel() : '-';
+                                        if (!$patient) return '-';
+
+                                        $enum = EducationalAttainmentEnum::tryFrom($patient->educational_attainment);
+                                        return $enum ? $enum->getLabel() : '-';
                                     }),
                                 Forms\Components\Placeholder::make('birth_date')
                                     ->label('Date of Birth')

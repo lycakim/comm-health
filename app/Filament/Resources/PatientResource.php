@@ -18,6 +18,7 @@ use Filament\Forms\Components\Radio;
 use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
+use Illuminate\Support\Facades\Schema;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
@@ -476,17 +477,26 @@ class PatientResource extends Resource
                 ]),
             ])
             ->modifyQueryUsing(function (Builder $query) {
-                // Check if the authenticated user is an admin
                 if (auth()->user()->isAdmin()) {
-                    // Admin sees all patients
                     return $query->latest();
                 } else {
-                    // Non-admin users only see patients from their barangay
+                    $userBarangayIds = auth()->user()->barangays->pluck('id')->toArray();
+                    
+                    if (Schema::hasColumn('patients', 'barangay_id')) {
+                        return $query->whereIn('barangay_id', $userBarangayIds)->latest();
+                    }
+
                     return $query
-                        ->whereIn('user_id', function ($subquery) {
-                            $subquery->select('user_id')
-                                ->from('barangay_users')
-                                ->where('barangay_id', auth()->user()->barangay_id);
+                        ->where(function($query) use ($userBarangayIds) {
+                            $query->whereHas('user', function ($subquery) use ($userBarangayIds) {
+                                $subquery->whereHas('barangays', function ($barangayQuery) use ($userBarangayIds) {
+                                    $barangayQuery->whereIn('barangays.id', $userBarangayIds);
+                                });
+                            });
+
+                            if (Schema::hasColumn('patients', 'barangay_id')) {
+                                $query->orWhereIn('barangay_id', $userBarangayIds);
+                            }
                         })
                         ->latest();
                 }
