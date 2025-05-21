@@ -12,6 +12,9 @@ class ListReferrals extends ListRecords
 
     protected function getHeaderActions(): array
     {
+        if (auth()->user()->isMHO()) {
+            return [];
+        }
         return [
             Actions\CreateAction::make(),
         ];

@@ -14,6 +14,9 @@ class ListPrograms extends ListRecords
 
     protected function getHeaderActions(): array
     {
+        if (auth()->user()->isBHW() || auth()->user()->isMidwife()) {
+            return [];
+        }
         return [
             Actions\CreateAction::make(),
         ];
