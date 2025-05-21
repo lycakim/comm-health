@@ -12,6 +12,14 @@ class ViewReferral extends ViewRecord
 
     protected function getHeaderActions(): array
     {
+        if (auth()->user()->isBHW() || auth()->user()->isMidwife()) {
+            return [
+                Actions\Action::make('print')
+                    ->label('Print')
+                    ->icon('heroicon-o-printer')
+                    ->color('gray'),
+            ];
+        }
         return [
             Actions\EditAction::make()
                 ->color('gray'),
