@@ -16,7 +16,7 @@
         <header class="bg-white shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
                 <div class="flex items-center">
-                    <img src="{{ asset('comm-health-logo.png') }}" alt="Comm Health Logo" class="h-8 w-auto">
+                    <img src="{{ asset('comm-health-logo-3.png') }}" alt="Comm Health Logo" class="h-8 w-auto">
                 </div>
                 <div class="flex space-x-2">
                     <a href="{{ route('login') }}" class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-md hover:text-gray-900">Login</a>

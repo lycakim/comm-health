@@ -12,6 +12,7 @@ use App\Filament\Pages\Auth\Login;
 use Filament\Support\Colors\Color;
 use App\Filament\Pages\Auth\Register;
 use Filament\Navigation\NavigationItem;
+use Illuminate\Support\Facades\Route;
 use Filament\Navigation\NavigationGroup;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Navigation\NavigationBuilder;
@@ -64,7 +65,10 @@ class AppPanelProvider extends PanelProvider
             ])
             ->spa()
             ->brandName('CommHealth')
-            ->brandLogo(asset('comm-health-logo.png'))
+            ->brandLogo(fn() => Route::is('filament.app.auth.*') 
+                ? asset('comm-health-logo-auth.png')
+                : asset('comm-health-logo.png')
+            )
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s');
     }

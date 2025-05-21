@@ -37,7 +37,7 @@
         }
 
         .fi-simple-header .fi-logo {
-            height: 35px !important;
+            height: 75px !important;
             width: auto !important;
         }
     </style>
