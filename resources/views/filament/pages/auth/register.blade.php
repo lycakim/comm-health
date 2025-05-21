@@ -1,4 +1,9 @@
 <x-filament-panels::page.simple>
+    <div class="flex flex-col items-center justify-center space-y-2 text-center" style="margin-top: -35px; color: #087757;">
+         <h2 class="text-2xl font-bold">
+            CommHealth
+        </h2>
+    </div>
     <div class="flex flex-col items-center justify-center space-y-2 text-center" style="margin-top: -25px;">
         <h2 class="text-2xl font-bold">
             Create Account

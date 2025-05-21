@@ -66,7 +66,7 @@ class AppPanelProvider extends PanelProvider
             ->spa()
             ->brandName('CommHealth')
             ->brandLogo(fn() => Route::is('filament.app.auth.*') 
-                ? asset('comm-health-logo-auth.png')
+                ? asset('comm-health-icon.png')
                 : asset('comm-health-logo.png')
             )
             ->databaseNotifications()
