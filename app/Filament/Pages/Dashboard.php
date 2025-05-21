@@ -24,6 +24,8 @@ class Dashboard extends Page
 
     protected static ?string $navigationLabel = 'Dashboard';
 
+    protected static ?int $navigationSort = 1;
+
     public $selectedBarangay = null;
 
     public $selectedYear = null;
