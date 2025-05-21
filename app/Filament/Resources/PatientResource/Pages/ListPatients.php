@@ -16,7 +16,8 @@ class ListPatients extends ListRecords
     {
         if (!auth()->user()->isMHO()) {
             return [
-                Actions\CreateAction::make(),
+                Actions\CreateAction::make()
+                    ->icon('heroicon-o-plus'),
             ];
         }
         return [];

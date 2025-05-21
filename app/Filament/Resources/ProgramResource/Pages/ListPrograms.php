@@ -18,7 +18,8 @@ class ListPrograms extends ListRecords
             return [];
         }
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->icon('heroicon-o-plus'),
         ];
     }
 

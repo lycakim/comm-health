@@ -17,6 +17,7 @@ class ListConsultations extends ListRecords
         }
         return [
             Actions\CreateAction::make()
+                ->icon('heroicon-o-plus')
                 ->hidden(fn () => auth()->user()->isResident()),
         ];
     }
