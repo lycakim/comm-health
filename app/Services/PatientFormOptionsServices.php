@@ -136,19 +136,19 @@ class PatientFormOptionsServices
     public static function getPatientOccupation()
     {
         return [
-            'Government Employee' => 'government_employee',
-            'Private Employee' => 'private_employed',
-            'Self-employed' => 'self_employed',
-            'Retired' => 'retired',
-            'Unemployed' => 'unemployed',
-            'Farmer' => 'farmer',
-            'Fisherman' => 'fisherman',
-            'Laborer (Construction)' => 'laborer_construction',
-            'Carpenter' => 'carpenter',
-            'Banana Peeler' => 'banana_peeler',
-            'Vendor' => 'vendor',
-            'Driver' => 'driver',
-            'Housekeeper' => 'housekeeper',
+            'Government Employee' => 'Government Employee',
+            'Private Employee' => 'Private Employee',
+            'Self-employed' => 'Self-employed',
+            'Retired' => 'Retired',
+            'Unemployed' => 'Unemployed',
+            'Farmer' => 'Farmer',
+            'Fisherman' => 'Fisherman',
+            'Laborer (Construction)' => 'Laborer (Construction)',
+            'Carpenter' => 'Carpenter',
+            'Banana Peeler' => 'Banana Peeler',
+            'Vendor' => 'Vendor',
+            'Driver' => 'Driver',
+            'Housekeeper' => 'Housekeeper',
             'None' => 'None',
         ];
     }

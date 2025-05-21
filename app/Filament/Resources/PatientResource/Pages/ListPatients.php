@@ -5,6 +5,7 @@ namespace App\Filament\Resources\PatientResource\Pages;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\PatientResource;
 
 class ListPatients extends ListRecords
@@ -13,9 +14,12 @@ class ListPatients extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\CreateAction::make(),
-        ];
+        if (!auth()->user()->isMHO()) {
+            return [
+                Actions\CreateAction::make(),
+            ];
+        }
+        return [];
     }
 
     // public function getTabs(): array
@@ -26,4 +30,9 @@ class ListPatients extends ListRecords
     //         }),
     //     ];
     // }
+
+    public function getSubheading(): string|Htmlable|null
+    {
+        return 'View and manage patient records across all barangays';
+    }
 }

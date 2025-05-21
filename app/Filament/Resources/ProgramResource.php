@@ -31,7 +31,31 @@ class ProgramResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
     
-    protected static ?int $navigationSort = 4;
+    // protected static ?int $navigationSort = 4;
+
+    public static function getNavigationGroup(): ?string
+    {
+        if (auth()->user()->isBHW() || auth()->user()->isMidwife()) {
+            return 'Programs';
+        }
+        return 'Utility';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        if (auth()->user()->isMHO()) {
+            return 2;
+        }
+        return 4;
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        if (auth()->user()->isMHO()) {
+            return 'Health Programs';
+        }
+        return 'Programs';
+    }
 
     public static function canAccess(): bool
     {

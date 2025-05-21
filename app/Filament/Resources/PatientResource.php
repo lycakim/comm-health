@@ -28,6 +28,7 @@ use Filament\Tables\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Support\Htmlable;
 use Filament\Forms\Components\CheckboxList;
 use App\Services\PatientFormOptionsServices;
 use Filament\Forms\Components\ToggleButtons;
@@ -41,7 +42,25 @@ class PatientResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
-    protected static ?int $navigationSort = 1;
+    // protected static ?int $navigationSort = 1;
+
+    protected static ?string $description = 'View and manage patient records';
+
+    public static function getNavigationSort(): ?int
+    {
+        if (auth()->user()->isMHO()) {
+            return 1;
+        }
+        return 1;
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        if (auth()->user()->isMHO() || auth()->user()->isBHW() || auth()->user()->isMidwife()) {
+            return 'Patient Records';
+        }
+        return 'Patients';
+    }
 
     public static function canAccess(): bool
     {
@@ -156,12 +175,10 @@ class PatientResource extends Resource
                                     ->label('Barangay')
                                     ->options(Barangay::query()->get()->pluck('name', 'id')->toArray())
                                     ->preload()
-                                    ->required()
                                     ->columnSpan(2),
                                 Select::make('category_id')
                                     ->label('Category')
                                     ->options(Category::query()->get()->pluck('name', 'id')->toArray())
-                                    ->required()
                                     ->preload(),
                             ])
                             ->columns(3),
@@ -361,6 +378,9 @@ class PatientResource extends Resource
                         return Carbon::parse($record->birth_date)->age;
                     })
                     ->label('Age'),
+                TextColumn::make('barangay.name')
+                    ->label('Assigned Barangay')
+                    ->searchable()
             ])
             ->filters([
                 SelectFilter::make('category_id')
@@ -456,7 +476,20 @@ class PatientResource extends Resource
                 ]),
             ])
             ->modifyQueryUsing(function (Builder $query) {
-                return $query->latest();
+                // Check if the authenticated user is an admin
+                if (auth()->user()->isAdmin()) {
+                    // Admin sees all patients
+                    return $query->latest();
+                } else {
+                    // Non-admin users only see patients from their barangay
+                    return $query
+                        ->whereIn('user_id', function ($subquery) {
+                            $subquery->select('user_id')
+                                ->from('barangay_users')
+                                ->where('barangay_id', auth()->user()->barangay_id);
+                        })
+                        ->latest();
+                }
             });
     }
 

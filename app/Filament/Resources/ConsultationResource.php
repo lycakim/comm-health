@@ -32,7 +32,15 @@ class ConsultationResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-heart';
 
-    protected static ?int $navigationSort = 2;
+    // protected static ?int $navigationSort = 2;
+
+    public static function getNavigationSort(): ?int
+    {
+        if (auth()->user()->isMHO()) {
+            return 3;
+        }
+        return 2;
+    }
 
     public static function form(Form $form): Form
     {

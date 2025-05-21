@@ -30,7 +30,7 @@ class CategoryResource extends Resource
     
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW() || auth()->user()->isMidwife();
+        return auth()->user()->isAdmin();
     }
 
     public static function form(Form $form): Form

@@ -18,6 +18,7 @@ use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Actions\Action;
 use App\Enums\EducationalAttainmentEnum;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ReferralResource\Pages;
@@ -42,30 +43,68 @@ class ReferralResource extends Resource
                     ->schema([
                         Select::make('consultation_id')
                             ->label('Select Consultation')
-                            ->relationship('consultation', 'id', function (Builder $query) {
-                                return $query->with('patient');
+                            ->options(function () {
+                                $consultations = Consultation::query()
+                                    ->with('patient')
+                                    ->get();
+
+                                if ($consultations->isEmpty()) {
+                                    return [];
+                                }
+
+                                return $consultations->mapWithKeys(function ($consultation) {
+                                    $patient = $consultation->patient;
+                                    $patientName = $patient
+                                        ? "{$patient->first_name} {$patient->last_name}"
+                                        : 'No patient';
+                                    $label = "Consultation #{$consultation->id} - {$patientName} - {$consultation->created_at->format('M d, Y')}";
+                                    return [$consultation->id => $label];
+                                });
                             })
-                            ->getOptionLabelFromRecordUsing(fn (Consultation $record) => 
-                                "Consultation #{$record->id} - {$record->patient->first_name} {$record->patient->last_name} - {$record->created_at->format('M d, Y')}"
-                            )
+                            ->placeholder(fn (Get $get) => filled($get('patient_id')) || Consultation::count() === 0 ? 'No consultation available' : 'Select Consultation')
                             ->searchable()
-                            ->disabled(fn (Get $get) => $get('patient_id')) 
                             ->preload()
+                            ->live()
                             ->required(fn (Get $get) => ! $get('patient_id'))
-                            ->live(),
+                            ->disabled(fn (Get $get) => filled($get('patient_id')) || Consultation::count() === 0)
+                            ->hintAction(function () {
+                                if (Consultation::count() === 0) {
+                                    return Action::make('addConsultation')
+                                        ->label('Create Consultation')
+                                        ->url(ConsultationResource::getUrl('create'))
+                                        ->color('primary')
+                                        ->icon('heroicon-m-plus');
+                                }
+                                return null;
+                            }),
+
                         Select::make('patient_id')
                             ->label('Select Patient')
-                            ->relationship('patient', 'first_name', function (Builder $query) {
-                                return $query;
+                            ->options(function () {
+                                $patients = Patient::all();
+
+                                if ($patients->isEmpty()) {
+                                    return [];
+                                }
+
+                                return $patients->mapWithKeys(fn ($patient) => [$patient->id => $patient->full_name]);
                             })
-                            ->getOptionLabelFromRecordUsing(fn (Patient $record) => 
-                                "{$record->first_name} {$record->last_name}"
-                            )
-                            ->disabled(fn (Get $get) => $get('consultation_id')) 
+                            ->placeholder(fn (Get $get) => filled($get('consultation_id')) || Patient::count() === 0 ? 'No Patient Available' : 'Select Patient')
                             ->searchable()
                             ->preload()
+                            ->live()
                             ->required(fn (Get $get) => ! $get('consultation_id'))
-                            ->live(),
+                            ->disabled(fn (Get $get) => filled($get('consultation_id')) || Patient::count() === 0)
+                            ->hintAction(function () {
+                                if (Patient::count() === 0) {
+                                    return Action::make('addPatient')
+                                        ->label('Create Patient')
+                                        ->url(PatientResource::getUrl('create'))
+                                        ->color('primary')
+                                        ->icon('heroicon-m-plus');
+                                }
+                                return null;
+                            }),
                     ])->columns(2),
                 
                 Section::make('Patient Information')
