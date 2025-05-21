@@ -477,7 +477,7 @@ class PatientResource extends Resource
                 ]),
             ])
             ->modifyQueryUsing(function (Builder $query) {
-                if (auth()->user()->isAdmin()) {
+                if (auth()->user()->isAdmin() || auth()->user()->isMHO()) {
                     return $query->latest();
                 } else {
                     $userBarangayIds = auth()->user()->barangays->pluck('id')->toArray();

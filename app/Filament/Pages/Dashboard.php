@@ -20,7 +20,7 @@ class Dashboard extends Page
 
     protected static string $view = 'filament.pages.dashboard';
 
-    protected static ?string $title = 'MHO Dashboard';
+    // protected static ?string $title = 'MHO Dashboard';
 
     protected static ?string $navigationLabel = 'Dashboard';
 
@@ -174,6 +174,20 @@ class Dashboard extends Page
         }
         
         return $actions;
+    }
+
+    public function getTitle(): string|Htmlable
+    {
+        $userRole = auth()->user()->role;
+        
+        return match($userRole) {
+            'admin' => 'Admin Dashboard',
+            'mho' => 'MHO Dashboard',
+            'midwife' => 'Midwife Dashboard',
+            'bhw' => 'Barangay Health Worker Dashboard',
+            'resident', 'patient' => 'Patient Dashboard',
+            default => 'Dashboard'
+        };
     }
 
     public function getSubheading(): string|Htmlable|null

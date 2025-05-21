@@ -94,8 +94,7 @@ class UserResource extends Resource
                             ->label('Assigned Barangay')
                             ->relationship('barangays', 'name')
                             ->preload()
-                            ->searchable()
-                            ->required(fn (string $context): bool => $context === 'create' || $context === 'edit'),
+                            ->searchable(),
                     ]),
             ]);
     }

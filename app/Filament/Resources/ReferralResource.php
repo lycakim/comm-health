@@ -726,6 +726,12 @@ class ReferralResource extends Resource
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Referred By')
                     ->sortable(),
+                Tables\Columns\SelectColumn::make('status')
+                    ->options([
+                        'draft' => 'Draft',
+                        'reviewing' => 'Reviewing',
+                        'published' => 'Published',
+                    ])
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('urgency')

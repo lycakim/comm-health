@@ -227,9 +227,11 @@ class ConsultationResource extends Resource
                                     ->content(function (Forms\Get $get) {
                                         $patientId = $get('patient_id');
                                         if (!$patientId) return '-';
-                                        
+
                                         $patient = Patient::find($patientId);
-                                        return $patient ? $patient->category->name : '-';
+                                        if (!$patient) return '-';
+
+                                        return $patient->category ? $patient->category->name : '-';
                                     }),
                             ])
                             ->columns(3)
