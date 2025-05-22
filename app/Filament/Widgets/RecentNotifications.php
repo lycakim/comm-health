@@ -11,7 +11,9 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class RecentNotifications extends BaseWidget
 {
     protected static ?string $heading = 'Recent Notifications';
+
     protected static ?string $description = 'Latest updates and announcements from MHO';
+
     protected static ?int $sort = 4;
 
     public function table(Table $table): Table

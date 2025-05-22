@@ -13,7 +13,9 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class UpcomingHealthPrograms extends BaseWidget
 {
     protected static ?string $heading = 'Upcoming Health Programs';
+
     protected static ?string $description = 'Scheduled health programs for the next 30 days';
+
     protected static ?int $sort = 4;
 
     public function table(Table $table): Table

@@ -408,8 +408,8 @@ class PatientResource extends Resource
                 SelectFilter::make('sex')
                     ->label('Sex')
                     ->options([
-                        'male' => 'Male',
-                        'female' => 'Female',
+                        'Male' => 'Male',
+                        'Female' => 'Female',
                     ])    
                     ->searchable(),
             ])

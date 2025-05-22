@@ -97,39 +97,39 @@ class PatientFormOptionsServices
     public static function getPatientRelationships()
     {
         return [
-            'spouse' => 'Spouse',
-            'child' => 'Child',
-            'co-wife' => 'Co-wife',
-            'son-in-law' => 'Son-in-law',
-            'daughter-in-law' => 'Daughter-in-law',
-            'grandparent' => 'Grandparent',
-            'grandchild' => 'Grandchild',
-            'other' => 'Other',
+            'Spouse' => 'Spouse',
+            'Child' => 'Child',
+            'Co-Wife' => 'Co-wife',
+            'Son-in-Law' => 'Son-in-law',
+            'Daughter-in-Law' => 'Daughter-in-law',
+            'Grandparent' => 'Grandparent',
+            'Grandchild' => 'Grandchild',
+            'Other' => 'Other',
         ];
     }
 
     public static function getPatientStatus()
     {
         return [
-            'single' => 'Single',
-            'married' => 'Married',
-            'widowed' => 'Widowed',
-            'separated' => 'Separated',
-            'live-in' => 'Live-in',
+            'Single' => 'Single',
+            'Married' => 'Married',
+            'Widowed' => 'Widowed',
+            'Separated' => 'Separated',
+            'Live-in' => 'Live-in',
         ];
     }
 
     public static function getPatientEducationalAttainment()
     {
         return [
-            'none' => 'None',
-            'elementary_level' => 'Elementary Level',
-            'elementary_graduate' => 'Elementary Graduate',
-            'highschool_level' => 'Highschool Level',
-            'highschool_graduate' => 'Highschool Graduate',
-            'college_level' => 'College Level',
-            'college_graduate' => 'College Graduate',
-            'post_graduate' => 'Post Graduate',
+            'None' => 'None',
+            'Elementary Level' => 'Elementary Level',
+            'Elementary Graduate' => 'Elementary Graduate',
+            'Highschool Level' => 'Highschool Level',
+            'Highschool Graduate' => 'Highschool Graduate',
+            'College Level' => 'College Level',
+            'College Graduate' => 'College Graduate',
+            'Post Graduate' => 'Post Graduate',
         ];
     }
 
@@ -174,35 +174,35 @@ class PatientFormOptionsServices
     public static function getChildHealthStatus()
     {
         return [
-            'normal' => 'Normal',
-            'underweight' => 'Underweight',
-            'stunting' => 'Stunting',
-            'waisting' => 'Waisting',
-            'overweight' => 'Overweight',
+            'Normal' => 'Normal',
+            'Underweight' => 'Underweight',
+            'Stunting' => 'Stunting',
+            'Waisting' => 'Waisting',
+            'Overweight' => 'Overweight',
         ];
     }
 
     public static function getFamilyMonthlyIncome()
     {
         return [
-            '1k_to_4k' => '₱1000 to ₱4000',
-            '5k_to_9k' => '₱5000 to ₱9000',
-            '10k_to_14k' => '₱10000 to ₱14000',
-            '15k_to_19k' => '₱15000 to ₱19000',
-            '20k_to_24k' => '₱20000 to ₱24000',
-            '25k_to_29k' => '₱25000 to ₱29000',
-            'other' => 'Other',
+            '₱1000 to ₱4000' => '₱1000 to ₱4000',
+            '₱5000 to ₱9000' => '₱5000 to ₱9000',
+            '₱10000 to ₱14000' => '₱10000 to ₱14000',
+            '₱15000 to ₱19000' => '₱15000 to ₱19000',
+            '₱20000 to ₱24000' => '₱20000 to ₱24000',
+            '₱25000 to ₱29000' => '₱25000 to ₱29000',
+            'Other' => 'Other',
         ];
     }
 
     public static function getPatientHouseTypes()
     {
         return [
-            'barong_barong' => 'Barong-Barong',
-            'nipa_bamboo' => 'Nipa/Bamboo',
-            'wooden_house' => 'Wooden House',
-            'semi_concrete_house' => 'Semi-Concrete House',
-            'concrete_house' => 'Concrete House',
+            'Barong Barong' => 'Barong-Barong',
+            'Nipa/Bamboo' => 'Nipa/Bamboo',
+            'Wooden House' => 'Wooden House',
+            'Semi-Concrete House' => 'Semi-Concrete House',
+            'Concrete House' => 'Concrete House',
         ];
     }
 }

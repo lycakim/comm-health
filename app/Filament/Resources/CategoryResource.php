@@ -28,7 +28,7 @@ class CategoryResource extends Resource
 
     protected static ?string $navigationGroup = 'Utility';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
     
     public static function canAccess(): bool
     {

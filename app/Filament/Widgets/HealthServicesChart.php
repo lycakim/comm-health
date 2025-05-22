@@ -9,7 +9,9 @@ use Filament\Widgets\ChartWidget;
 class HealthServicesChart extends ChartWidget
 {
     protected static ?string $heading = 'Health Services Overview';
+
     protected static ?string $description = 'Distribution of health services provided in the last 30 days';
+
     protected static ?int $sort = 3;
 
     protected function getData(): array
