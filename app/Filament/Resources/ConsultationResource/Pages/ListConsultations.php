@@ -4,8 +4,9 @@ namespace App\Filament\Resources\ConsultationResource\Pages;
 
 use Filament\Actions;
 use App\Models\Barangay;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
+use Filament\Resources\Pages\ListRecords;
+use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\ConsultationResource;
 
 class ListConsultations extends ListRecords
@@ -24,34 +25,49 @@ class ListConsultations extends ListRecords
         ];
     }
 
-    public function getTabs(): array
+    public function getSubheading(): string|Htmlable|null
     {
-        if (auth()->user()->isMHO()) {
-            $tabs = [
-                'all' => Tab::make('All')
-                    ->modifyQueryUsing(function ($query) {
-                        return $query->latest();
-                    })
-                    ->badge(fn () => $this->getModel()::count()),
-            ];
+        $barangayFromRoute = request()->route('barangay');
 
-            $barangays = Barangay::all();
+        if ($barangayFromRoute) {
+            $barangay = Barangay::where('id', $barangayFromRoute)->first();
 
-            foreach ($barangays as $barangay) {
-                $tabs[$barangay->id] = Tab::make($barangay->name)
-                    ->modifyQueryUsing(function ($query) use ($barangay) {
-                        return $query->whereHas('patient', function ($query) use ($barangay) {
-                            $query->where('barangay_id', $barangay->id);
-                        })->latest();
-                    })
-                    ->badge(fn () => $this->getModel()::whereHas('patient', function ($query) use ($barangay) {
-                        $query->where('barangay_id', $barangay->id);
-                    })->count());
+            if (!$barangay) {
+                return 'View and manage consultation records across all barangays';
             }
-
-            return $tabs;
+            return 'View and manage consultation records across barangay ' . $barangay->name;
         }
-
-        return [];
+        return 'View and manage consultation records across all barangays';
     }
+
+    // public function getTabs(): array
+    // {
+    //     if (auth()->user()->isMHO()) {
+    //         $tabs = [
+    //             'all' => Tab::make('All')
+    //                 ->modifyQueryUsing(function ($query) {
+    //                     return $query->latest();
+    //                 })
+    //                 ->badge(fn () => $this->getModel()::count()),
+    //         ];
+
+    //         $barangays = Barangay::all();
+
+    //         foreach ($barangays as $barangay) {
+    //             $tabs[$barangay->id] = Tab::make($barangay->name)
+    //                 ->modifyQueryUsing(function ($query) use ($barangay) {
+    //                     return $query->whereHas('patient', function ($query) use ($barangay) {
+    //                         $query->where('barangay_id', $barangay->id);
+    //                     })->latest();
+    //                 })
+    //                 ->badge(fn () => $this->getModel()::whereHas('patient', function ($query) use ($barangay) {
+    //                     $query->where('barangay_id', $barangay->id);
+    //                 })->count());
+    //         }
+
+    //         return $tabs;
+    //     }
+
+    //     return [];
+    // }
 }

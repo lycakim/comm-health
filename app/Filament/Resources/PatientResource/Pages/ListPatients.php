@@ -4,6 +4,7 @@ namespace App\Filament\Resources\PatientResource\Pages;
 
 use Filament\Actions;
 use App\Models\Barangay;
+use Illuminate\Support\Facades\Auth;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
@@ -58,8 +59,15 @@ class ListPatients extends ListRecords
 
     public function getSubheading(): string|Htmlable|null
     {
-        if (auth()->user()->barangays->count() > 0) {
-            return 'View and manage patient records across barangay ' . auth()->user()->barangays->first()->name;
+        $barangayFromRoute = request()->route('barangay');
+
+        if ($barangayFromRoute) {
+            $barangay = Barangay::where('id', $barangayFromRoute)->first();
+
+            if (!$barangay) {
+                return 'View and manage patient records across all barangays';
+            }
+            return 'View and manage patient records across barangay ' . $barangay->name;
         }
         return 'View and manage patient records across all barangays';
     }
