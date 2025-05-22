@@ -98,7 +98,7 @@ document.addEventListener('alpine:init', () => {
 </script>
 <div x-data="chatWidget" 
         x-init="init()" 
-        class="fixed bottom-4 right-4 z-50" 
+        class="fixed bottom-4 right-4 z-50 {{ auth()->user()->isResident() ? 'hidden' : '' }}"
         style="position: absolute; right: 20px; bottom: 20px;">
     <div class="flex flex-wrap gap-3 items-end">
         <div id="chat-window"
