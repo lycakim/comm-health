@@ -4,8 +4,10 @@ namespace App\Filament\Resources\ConsultationResource\Pages;
 
 use Filament\Actions;
 use App\Models\Barangay;
+use Illuminate\Support\Facades\Auth;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\ConsultationResource;
 
@@ -38,6 +40,19 @@ class ListConsultations extends ListRecords
             return 'View and manage consultation records across barangay ' . $barangay->name;
         }
         return 'View and manage consultation records across all barangays';
+    }
+
+    protected function getTableQuery(): Builder
+    {
+        $query = parent::getTableQuery();
+
+        $barangayFromRoute = request()->route('barangay');
+
+        return $query
+            ->with(['patient.barangay'])
+            ->whereHas('patient', function ($patientQuery) use ($barangayFromRoute) {
+                $patientQuery->where('barangay_id', $barangayFromRoute ?? Auth::user()->barangay_id);
+            });
     }
 
     // public function getTabs(): array

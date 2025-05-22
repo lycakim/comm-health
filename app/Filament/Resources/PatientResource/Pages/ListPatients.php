@@ -26,36 +26,35 @@ class ListPatients extends ListRecords
         return [];
     }
 
-    public function getTabs(): array
-    {
-        if (auth()->user()->isMHO()) {
-            $tabs = [
-                'all' => Tab::make('All')
-                    ->modifyQueryUsing(function ($query) {
-                        return $query->latest();
-                    })
-                    ->badge(fn () => $this->getModel()::count()),
-            ];
+    // public function getTabs(): array
+    // {
+    //     if (auth()->user()->isMHO()) {
+    //         $tabs = [
+    //             'all' => Tab::make('All')
+    //                 ->modifyQueryUsing(function ($query) {
+    //                     return $query->latest();
+    //                 })
+    //                 ->badge(fn () => $this->getModel()::count()),
+    //         ];
     
-            if (auth()->user()->isMHO()) {
-                $barangays = Barangay::all();
-            } else {
-                $barangays = auth()->user()->barangays;
-            }
+    //         if (auth()->user()->isMHO()) {
+    //             $barangays = Barangay::all();
+    //         } else {
+    //             $barangays = auth()->user()->barangays;
+    //         }
     
-            // Create a tab for each barangay
-            foreach ($barangays as $barangay) {
-                $tabs[$barangay->id] = Tab::make($barangay->name)
-                    ->modifyQueryUsing(function ($query) use ($barangay) {
-                        return $query->where('barangay_id', $barangay->id)->latest();
-                    })
-                    ->badge(fn () => $this->getModel()::where('barangay_id', $barangay->id)->count());
-            }
+    //         foreach ($barangays as $barangay) {
+    //             $tabs[$barangay->id] = Tab::make($barangay->name)
+    //                 ->modifyQueryUsing(function ($query) use ($barangay) {
+    //                     return $query->where('barangay_id', $barangay->id)->latest();
+    //                 })
+    //                 ->badge(fn () => $this->getModel()::where('barangay_id', $barangay->id)->count());
+    //         }
     
-            return $tabs;
-        }
-        return [];
-    }
+    //         return $tabs;
+    //     }
+    //     return [];
+    // }
 
     public function getSubheading(): string|Htmlable|null
     {
@@ -76,15 +75,11 @@ class ListPatients extends ListRecords
     {
         $query = parent::getTableQuery();
         
-        // Get barangay from route parameter
         $barangayFromRoute = request()->route('barangay');
         
         if ($barangayFromRoute) {
-            // If barangay is in route, filter by that barangay
             return $query->where('barangay_id', $barangayFromRoute);
         } else {
-            // If no barangay in route, filter by authenticated user's barangay
-            // This happens when BHW accesses the index route
             return $query->where('barangay_id', Auth::user()->barangay_id);
         }
     }
