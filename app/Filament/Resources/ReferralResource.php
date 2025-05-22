@@ -620,16 +620,20 @@ class ReferralResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('height')
                                     ->numeric()
+                                    ->hint('cm')
                                     ->label('Height'),
                                 Forms\Components\TextInput::make('weight')
                                     ->numeric()
+                                    ->hint('kg')
                                     ->label('Weight'),
                                 Forms\Components\TextInput::make('blood_pressure')
                                     ->numeric()
+                                    ->hint('mm Hg')
                                     ->label('Blood Pressure'),
                                 Forms\Components\TextInput::make('rr')
                                     ->numeric()
-                                    ->label('RR'),
+                                    ->hint('bpm')
+                                    ->label('Respiratory Rate'),
                             ])
                             ->columns(4),
                         Forms\Components\Fieldset::make()
