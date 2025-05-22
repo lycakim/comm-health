@@ -123,7 +123,8 @@ class ConsultationResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\AllConsultations::route('/'),
+            'index' => Pages\IndexConsultations::route('/'),
+            'all' => Pages\AllConsultations::route('/all'),
             'list' => Pages\ListConsultations::route('/list/{barangay?}'),
             'create' => Pages\CreateConsultation::route('/create'),
             'edit' => Pages\EditConsultation::route('/{record}/edit'),

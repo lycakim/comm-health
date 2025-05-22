@@ -6,6 +6,7 @@ use Filament\Actions;
 use App\Models\Barangay;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\PatientResource;
 
@@ -61,5 +62,22 @@ class ListPatients extends ListRecords
             return 'View and manage patient records across barangay ' . auth()->user()->barangays->first()->name;
         }
         return 'View and manage patient records across all barangays';
+    }
+
+    protected function getTableQuery(): Builder
+    {
+        $query = parent::getTableQuery();
+        
+        // Get barangay from route parameter
+        $barangayFromRoute = request()->route('barangay');
+        
+        if ($barangayFromRoute) {
+            // If barangay is in route, filter by that barangay
+            return $query->where('barangay_id', $barangayFromRoute);
+        } else {
+            // If no barangay in route, filter by authenticated user's barangay
+            // This happens when BHW accesses the index route
+            return $query->where('barangay_id', Auth::user()->barangay_id);
+        }
     }
 }

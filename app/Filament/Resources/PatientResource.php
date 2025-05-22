@@ -47,6 +47,13 @@ class PatientResource extends Resource
 
     protected static ?string $description = 'View and manage patient records';
 
+    public function mount(): void
+    {
+        if (auth()->user()->isMHO()) {
+            $this->redirect(PatientResource::getUrl('all'));
+        }
+    }
+
     public static function getNavigationSort(): ?int
     {
         if (auth()->user()->isMHO()) {
@@ -514,21 +521,10 @@ class PatientResource extends Resource
 
     public static function getPages(): array
     {
-        $user = auth()->user();
-
-        if ($user->isAdmin() || $user->isMHO()) {
-            return [
-                'index' => Pages\AllPatients::route('/'), // Grid view as default
-                'list' => Pages\ListPatients::route('/list/{barangay?}'), // Optional barangay for filtering
-                'create' => Pages\CreatePatient::route('/create'),
-                'edit' => Pages\EditPatient::route('/{record}/edit'),
-                'view' => Pages\ViewPatient::route('/{record}/view'),
-            ];
-        }
-
-        // Assume Barangay Health Worker: only show list for their barangay
         return [
-            'index' => Pages\ListPatients::route('/list/' . $user->barangay_id),
+            'index' => Pages\IndexPatients::route('/'),
+            'all' => Pages\AllPatients::route('/all'),
+            'list' => Pages\ListPatients::route('/list/{barangay?}'),
             'create' => Pages\CreatePatient::route('/create'),
             'edit' => Pages\EditPatient::route('/{record}/edit'),
             'view' => Pages\ViewPatient::route('/{record}/view'),
@@ -541,13 +537,10 @@ class PatientResource extends Resource
             return null;
         }
         
-        // Convert height from cm to meters
         $heightInMeters = $height / 100;
         
-        // Calculate BMI: weight (kg) / height² (m²)
         $bmi = $weight / ($heightInMeters * $heightInMeters);
         
-        // Round to 2 decimal places
         return round($bmi, 2);
     }
 }
