@@ -1,4 +1,4 @@
-<div class="fixed bottom-4 right-4 z-50"  style="display: absolute; right: 20px; bottom: 20px;">
+<div class="fixed bottom-4 right-4 z-50 hidden"  style="display: absolute; right: 20px; bottom: 20px;">
     <div class="flex flex-wrap gap-3 items-end">
         <div id="chat-window"
              class="chat-window rounded-xl shadow-sm w-[300px] bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white" style="shadow: 0 4px 12px rgba(0, 168, 107, 0.3);">

@@ -7,9 +7,6 @@
                 <p class="text-sm text-gray-600 mt-1">
                     {{ $barangay->consultations_count }} {{ Str::plural('consultation', $barangay->consultations_count) }}
                 </p>
-                <p class="text-xs text-gray-500">
-                    {{ $barangay->patients_count }} {{ Str::plural('patient', $barangay->patients_count) }}
-                </p>
             </a>
         @endforeach
     </div>
