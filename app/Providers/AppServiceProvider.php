@@ -27,9 +27,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // FilamentView::registerRenderHook(
-        //     PanelsRenderHook::CONTENT_END,
-        //     fn (): View => view('filament.forms.components.sampleHook'),
-        // );
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::PAGE_START,
+            fn (): View => view('filament.forms.components.sampleHook'),
+        );
     }
 }

@@ -514,9 +514,21 @@ class PatientResource extends Resource
 
     public static function getPages(): array
     {
+        $user = auth()->user();
+
+        if ($user->isAdmin() || $user->isMHO()) {
+            return [
+                'index' => Pages\AllPatients::route('/'), // Grid view as default
+                'list' => Pages\ListPatients::route('/list/{barangay?}'), // Optional barangay for filtering
+                'create' => Pages\CreatePatient::route('/create'),
+                'edit' => Pages\EditPatient::route('/{record}/edit'),
+                'view' => Pages\ViewPatient::route('/{record}/view'),
+            ];
+        }
+
+        // Assume Barangay Health Worker: only show list for their barangay
         return [
-            'index' => Pages\AllPatients::route('/'),  // Grid view as default
-            'list' => Pages\ListPatients::route('/list/{barangay?}'),  // List view with optional barangay
+            'index' => Pages\ListPatients::route('/list/' . $user->barangay_id),
             'create' => Pages\CreatePatient::route('/create'),
             'edit' => Pages\EditPatient::route('/{record}/edit'),
             'view' => Pages\ViewPatient::route('/{record}/view'),

@@ -29,38 +29,63 @@ class StatsOverview extends BaseWidget
         $barangaysWithHealthWorkers = User::where('role', 'bhw')
             ->count();
 
+        if (auth()->user()->isAdmin() || auth()->user()->isMHO()) {
+            return [
+                Stat::make('Total Patients', Patient::count())
+                    ->description('+' . $patientIncrease . '% from last month')
+                    ->descriptionIcon($patientIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                    ->chart([10, 12, 13, 14, 15, 12]) // Replace with actual data points
+                    ->color('success'),
+                    
+                Stat::make('Consultations', Consultation::count())
+                    ->description('+' . $consultationIncrease . '% from last month')
+                    ->descriptionIcon($consultationIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                    ->chart([5, 8, 12, 7, 9, 10]) // Replace with actual data points
+                    ->color('success'),
+                    
+                Stat::make('Pending Referrals', Referral::where('status', 'pending')->count())
+                    ->description($referralChange > 0 ? '+' : '' . $referralChange . '% from last month')
+                    ->descriptionIcon($referralChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                    ->chart([4, 3, 5, 6, 4, 3]) // Replace with actual data points
+                    ->color($referralChange > 0 ? 'danger' : 'success'), // Negative trend is good for pending referrals
+                    
+                Stat::make('Upcoming Programs', Program::where('created_at', '>', now())->count())
+                    ->description('Next: ' . ($nextProgram ? $nextProgram->name . ' (' . $nextProgram->date->format('M d') . ')' : 'None'))
+                    ->color('primary'),
+                    
+                Stat::make('Reports Submitted', 12)
+                    ->description('+' . 10 . ' this week')
+                    ->descriptionIcon('heroicon-m-arrow-trending-up')
+                    ->color('success'),
+                    
+                Stat::make('Active Health Workers', $barangaysWithHealthWorkers)
+                    ->description('Across ' . $barangaysWithHealthWorkers . ' barangays')
+                    ->color('primary'),
+            ];
+        }
         return [
-            Stat::make('Total Patients', Patient::count())
-                ->description('+' . $patientIncrease . '% from last month')
-                ->descriptionIcon($patientIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                ->chart([10, 12, 13, 14, 15, 12]) // Replace with actual data points
-                ->color('success'),
-                
-            Stat::make('Consultations', Consultation::count())
-                ->description('+' . $consultationIncrease . '% from last month')
-                ->descriptionIcon($consultationIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                ->chart([5, 8, 12, 7, 9, 10]) // Replace with actual data points
-                ->color('success'),
-                
-            Stat::make('Pending Referrals', Referral::where('status', 'pending')->count())
-                ->description($referralChange > 0 ? '+' : '' . $referralChange . '% from last month')
-                ->descriptionIcon($referralChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                ->chart([4, 3, 5, 6, 4, 3]) // Replace with actual data points
-                ->color($referralChange > 0 ? 'danger' : 'success'), // Negative trend is good for pending referrals
-                
-            Stat::make('Upcoming Programs', Program::where('created_at', '>', now())->count())
-                ->description('Next: ' . ($nextProgram ? $nextProgram->name . ' (' . $nextProgram->date->format('M d') . ')' : 'None'))
-                ->color('primary'),
-                
-            Stat::make('Reports Submitted', 12)
-                ->description('+' . 10 . ' this week')
-                ->descriptionIcon('heroicon-m-arrow-trending-up')
-                ->color('success'),
-                
-            Stat::make('Active Health Workers', $barangaysWithHealthWorkers)
-                ->description('Across ' . $barangaysWithHealthWorkers . ' barangays')
-                ->color('primary'),
-        ];
+                Stat::make('Registered Patients', Patient::count())
+                    ->description('+' . $patientIncrease . '% from last month')
+                    ->descriptionIcon($patientIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                    ->chart([10, 12, 13, 14, 15, 12]) // Replace with actual data points
+                    ->color('success'),
+                    
+                Stat::make('Consultations', Consultation::count())
+                    ->description('+' . $consultationIncrease . '% from last month')
+                    ->descriptionIcon($consultationIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                    ->chart([5, 8, 12, 7, 9, 10]) // Replace with actual data points
+                    ->color('success'),
+                    
+                Stat::make('Pending Referrals', Referral::where('status', 'pending')->count())
+                    ->description($referralChange > 0 ? '+' : '' . $referralChange . '% from last month')
+                    ->descriptionIcon($referralChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                    ->chart([4, 3, 5, 6, 4, 3]) // Replace with actual data points
+                    ->color($referralChange > 0 ? 'danger' : 'success'), // Negative trend is good for pending referrals
+                    
+                Stat::make('Upcoming Programs', Program::where('created_at', '>', now())->count())
+                    ->description('Next: ' . ($nextProgram ? $nextProgram->name . ' (' . $nextProgram->date->format('M d') . ')' : 'None'))
+                    ->color('primary'),
+            ];
     }
 
     private function calculatePercentageChange(string $model, ?string $condition = null): int
