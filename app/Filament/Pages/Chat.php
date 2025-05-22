@@ -15,4 +15,9 @@ class Chat extends Page
     protected static ?string $title = 'Chat Messages';
     
     protected static ?int $navigationSort = 8;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
 }

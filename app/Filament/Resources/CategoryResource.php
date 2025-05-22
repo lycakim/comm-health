@@ -10,13 +10,15 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Illuminate\Validation\Rule;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\ToggleButtons;
 use App\Filament\Resources\CategoryResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\CategoryResource\RelationManagers;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
 
 class CategoryResource extends Resource
 {
@@ -41,8 +43,16 @@ class CategoryResource extends Resource
                     ->schema([
                         TextInput::make('name')
                             ->required()
-                            ->unique(),
+                            ->rules(function ($record) {
+                                return [
+                                    Rule::unique('categories', 'name')->ignore($record?->id),
+                                ];
+                            }),
                         Textarea::make('description'),
+                        ToggleButtons::make('is_child')
+                            ->label('Is Child Category?')
+                            ->grouped()
+                            ->boolean()
                     ])
             ]);
     }

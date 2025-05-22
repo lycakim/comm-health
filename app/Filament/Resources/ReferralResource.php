@@ -702,10 +702,24 @@ class ReferralResource extends Resource
                             return 'No ID';
                         }
                     })
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query
+                            ->with(['consultation', 'patient'])
+                            ->where('id', 'like', "%{$search}%")
+                            ->orWhereHas('patient', function (Builder $patientQuery) use ($search) {
+                                $patientQuery->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%");
+                            })
+                            ->orWhereHas('consultation', function (Builder $consultationQuery) use ($search) {
+                                $consultationQuery->whereHas('patient', function (Builder $patientQuery) use ($search) {
+                                    $patientQuery->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%");
+                                });
+                            });
+                    })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Referred On')
                     ->since()
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('urgency')
                     ->badge()
@@ -713,10 +727,12 @@ class ReferralResource extends Resource
                         $enum = UrgencyEnum::tryFrom($state);
                         return $enum?->getColor() ?? 'gray';
                     })
+                    ->searchable()
                     ->formatStateUsing(fn (string $state): string => 
                         UrgencyEnum::tryFrom($state)?->getLabel() ?? $state),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
+                    ->searchable()
                     ->color(fn (string $state): string => match ($state) {
                         'pending' => 'warning',
                         'accepted' => 'info',
@@ -725,13 +741,16 @@ class ReferralResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Referred By')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\SelectColumn::make('status')
                     ->options([
-                        'draft' => 'Draft',
-                        'reviewing' => 'Reviewing',
-                        'published' => 'Published',
+                        'pending' => 'Pending',
+                        'accepted' => 'Accepted',
+                        'completed' => 'Completed',
+                        'cancelled' => 'Cancelled',
                     ])
+                    ->searchable()
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('urgency')

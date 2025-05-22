@@ -26,4 +26,14 @@ class Barangay extends Model
     {
         return $this->hasMany(Patient::class);
     }
+
+    public function purok()
+    {
+        return $this->hasMany(Purok::class);
+    }
+
+    public function consultations()
+    {
+        return $this->hasManyThrough(Consultation::class, Patient::class);
+    }
 }

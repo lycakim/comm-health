@@ -369,7 +369,8 @@ class PatientResource extends Resource
                     ->searchable(['first_name', 'last_name'])
                     ->getStateUsing(function ($record) {
                         return $record->first_name . ' ' . $record->last_name;
-                    }),
+                    })
+                    ->sortable(),
                 TextColumn::make('sex')
                     ->formatStateUsing(fn ($state) => SexEnum::tryFrom($state)?->getLabel() ?? ucfirst($state))
                     ->badge()
@@ -382,6 +383,7 @@ class PatientResource extends Resource
                 TextColumn::make('barangay.name')
                     ->label('Assigned Barangay')
                     ->searchable()
+                    ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('category_id')
@@ -513,7 +515,8 @@ class PatientResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPatients::route('/'),
+            'index' => Pages\AllPatients::route('/'),  // Grid view as default
+            'list' => Pages\ListPatients::route('/list/{barangay?}'),  // List view with optional barangay
             'create' => Pages\CreatePatient::route('/create'),
             'edit' => Pages\EditPatient::route('/{record}/edit'),
             'view' => Pages\ViewPatient::route('/{record}/view'),

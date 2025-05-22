@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PatientResource\Pages;
 
 use Filament\Actions;
+use App\Models\Barangay;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\Support\Htmlable;
@@ -23,14 +24,36 @@ class ListPatients extends ListRecords
         return [];
     }
 
-    // public function getTabs(): array
-    // {
-    //     return [
-    //         'all' => Tab::make('All')->modifyQueryUsing(function ($query) {
-    //             return $query->latest();
-    //         }),
-    //     ];
-    // }
+    public function getTabs(): array
+    {
+        if (auth()->user()->isMHO()) {
+            $tabs = [
+                'all' => Tab::make('All')
+                    ->modifyQueryUsing(function ($query) {
+                        return $query->latest();
+                    })
+                    ->badge(fn () => $this->getModel()::count()),
+            ];
+    
+            if (auth()->user()->isMHO()) {
+                $barangays = Barangay::all();
+            } else {
+                $barangays = auth()->user()->barangays;
+            }
+    
+            // Create a tab for each barangay
+            foreach ($barangays as $barangay) {
+                $tabs[$barangay->id] = Tab::make($barangay->name)
+                    ->modifyQueryUsing(function ($query) use ($barangay) {
+                        return $query->where('barangay_id', $barangay->id)->latest();
+                    })
+                    ->badge(fn () => $this->getModel()::where('barangay_id', $barangay->id)->count());
+            }
+    
+            return $tabs;
+        }
+        return [];
+    }
 
     public function getSubheading(): string|Htmlable|null
     {

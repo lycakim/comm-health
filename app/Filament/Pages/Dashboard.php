@@ -10,6 +10,7 @@ use App\Filament\Widgets\RecentPatients;
 use App\Filament\Widgets\RecentReferrals;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Widgets\HealthServicesChart;
+use App\Filament\Widgets\PatientCategoryByBarangayChart;
 use App\Filament\Widgets\RecentNotifications;
 use App\Filament\Widgets\PatientCategoryChart;
 use App\Filament\Widgets\UpcomingHealthPrograms;
@@ -76,6 +77,7 @@ class Dashboard extends Page
                     RecentPatients::class,
                     UpcomingHealthPrograms::class,
                     RecentNotifications::class,
+                    PatientCategoryByBarangayChart::class
                 ];
                 break;
                 

@@ -18,7 +18,6 @@ return new class extends Migration
             $table->dateTime('date');
             
             // Consultation Details
-            $table->text('address');
             $table->boolean('disability')->default(false);
             $table->boolean('philhealth')->default(false);
             $table->boolean('member_of_4ps')->default(false);
@@ -27,8 +26,8 @@ return new class extends Migration
             $table->string('type')->nullable();
             
             // Mother Information
-            $table->string('mother_first_name');
-            $table->string('mother_last_name');
+            $table->string('mother_first_name')->nullable();
+            $table->string('mother_last_name')->nullable();
             $table->string('mother_middle_name')->nullable();
             
             // Child Information

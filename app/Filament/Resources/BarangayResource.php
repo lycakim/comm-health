@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\BarangayResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\BarangayResource\RelationManagers;
+use App\Filament\Resources\BarangayResource\RelationManagers\PurokRelationManager;
 use App\Filament\Resources\BarangayResource\RelationManagers\UsersRelationManager;
 
 class BarangayResource extends Resource
@@ -89,6 +90,7 @@ class BarangayResource extends Resource
     {
         return [
             UsersRelationManager::class,
+            PurokRelationManager::class
         ];
     }
 

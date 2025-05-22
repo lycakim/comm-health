@@ -185,12 +185,12 @@ class PatientFormOptionsServices
     public static function getFamilyMonthlyIncome()
     {
         return [
-            '1k_to_4k' => '1000 to 4000',
-            '5k_to_9k' => '5000 to 9000',
-            '10k_to_14k' => '10000 to 14000',
-            '15k_to_19k' => '15000 to 19000',
-            '20k_to_24k' => '20000 to 24000',
-            '25k_to_29k' => '25000 to 29000',
+            '1k_to_4k' => '₱1000 to ₱4000',
+            '5k_to_9k' => '₱5000 to ₱9000',
+            '10k_to_14k' => '₱10000 to ₱14000',
+            '15k_to_19k' => '₱15000 to ₱19000',
+            '20k_to_24k' => '₱20000 to ₱24000',
+            '25k_to_29k' => '₱25000 to ₱29000',
             'other' => 'Other',
         ];
     }
