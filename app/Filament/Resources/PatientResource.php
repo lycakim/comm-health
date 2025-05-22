@@ -421,7 +421,7 @@ class PatientResource extends Resource
                         ->color('primary'),
                     Tables\Actions\Action::make('add_new_user')
                         ->label('Create Access')
-                        ->hidden(fn ($record) => $record->user_id)
+                        ->hidden(fn ($record) => $record->account_user_id)
                         ->accessSelectedRecords()
                         ->color('gray')
                         ->icon('heroicon-o-plus')
@@ -469,47 +469,47 @@ class PatientResource extends Resource
                                 'email' => $data['email'],
                                 'password' => Hash::make($data['password']),
                             ]);
-    
-                            $record->user_id = $user->id;
+
+                            $record->account_user_id = $user->id;
                             $record->save();
                         
                             Notification::make()
                                 ->title('User created successfully')
                                 ->success()
                                 ->send();
-                        }),
+                        })
                 ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])
-            ->modifyQueryUsing(function (Builder $query) {
-                if (auth()->user()->isAdmin() || auth()->user()->isMHO()) {
-                    return $query->latest();
-                } else {
-                    $userBarangayIds = auth()->user()->barangays->pluck('id')->toArray();
+            ]);
+            // ->modifyQueryUsing(function (Builder $query) {
+            //     if (auth()->user()->isAdmin() || auth()->user()->isMHO()) {
+            //         return $query->latest();
+            //     } else {
+            //         $userBarangayIds = auth()->user()->barangays->pluck('id')->toArray();
                     
-                    if (Schema::hasColumn('patients', 'barangay_id')) {
-                        return $query->whereIn('barangay_id', $userBarangayIds)->latest();
-                    }
+            //         if (Schema::hasColumn('patients', 'barangay_id')) {
+            //             return $query->whereIn('barangay_id', $userBarangayIds)->latest();
+            //         }
 
-                    return $query
-                        ->where(function($query) use ($userBarangayIds) {
-                            $query->whereHas('user', function ($subquery) use ($userBarangayIds) {
-                                $subquery->whereHas('barangays', function ($barangayQuery) use ($userBarangayIds) {
-                                    $barangayQuery->whereIn('barangays.id', $userBarangayIds);
-                                });
-                            });
+            //         return $query
+            //             ->where(function($query) use ($userBarangayIds) {
+            //                 $query->whereHas('user', function ($subquery) use ($userBarangayIds) {
+            //                     $subquery->whereHas('barangays', function ($barangayQuery) use ($userBarangayIds) {
+            //                         $barangayQuery->whereIn('barangays.id', $userBarangayIds);
+            //                     });
+            //                 });
 
-                            if (Schema::hasColumn('patients', 'barangay_id')) {
-                                $query->orWhereIn('barangay_id', $userBarangayIds);
-                            }
-                        })
-                        ->latest();
-                }
-            });
+            //                 if (Schema::hasColumn('patients', 'barangay_id')) {
+            //                     $query->orWhereIn('barangay_id', $userBarangayIds);
+            //                 }
+            //             })
+            //             ->latest();
+            //     }
+            // });
     }
 
     public static function getRelations(): array

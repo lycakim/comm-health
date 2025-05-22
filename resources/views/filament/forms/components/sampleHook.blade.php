@@ -1,4 +1,105 @@
-<div class="fixed bottom-4 right-4 z-50" style="display: absolute; right: 20px; bottom: 20px;">
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('chatWidget', () => ({
+        init() {
+           const chatWindow = document.getElementById('chat-window');
+            const chatBubble = document.getElementById('chat-bubble');
+            const chatIcon = document.getElementById('chat-icon');
+            const closeIcon = document.getElementById('close-icon');
+            const closeChatBtn = document.getElementById('close-chat');
+            
+            let isChatOpen = false;
+            
+            // Function to show chat window
+            function showChatWindow() {
+                chatWindow.style.display = 'block';
+                chatIcon.style.display = 'none';
+                closeIcon.style.display = 'block';
+                isChatOpen = true;
+            }
+            
+            // Function to hide chat window
+            function hideChatWindow() {
+                chatWindow.style.display = 'none';
+                chatIcon.style.display = 'block';
+                closeIcon.style.display = 'none';
+                isChatOpen = false;
+            }
+            
+            // Chat bubble functionality - toggle open/close
+            if (chatBubble) {
+                chatBubble.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (isChatOpen) {
+                        hideChatWindow();
+                    } else {
+                        showChatWindow();
+                    }
+                });
+            }
+
+            if (closeChatBtn) {
+                closeChatBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    hideChatWindow();
+                });
+            }
+            
+            // Optional: Close chat when clicking outside (uncomment if needed)
+            /*
+            document.addEventListener('click', function(e) {
+                const chatContainer = e.target.closest('#chat-window, #chat-bubble');
+                if (!chatContainer && chatWindow.style.display !== 'none') {
+                    hideChatWindow();
+                }
+            });
+            */
+            
+            // Optional: Send message functionality
+            const sendBtn = document.querySelector('.send-btn');
+            const messageInput = document.querySelector('.message-input');
+            
+            if (sendBtn && messageInput) {
+                // Send on button click
+                sendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    sendMessage();
+                });
+                
+                // Send on Enter key press
+                messageInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+            }
+            
+            function sendMessage() {
+                const message = messageInput?.value.trim();
+                if (message) {
+                    // Add your message sending logic here
+                    console.log('Sending message:', message);
+                    
+                    // Clear input
+                    if (messageInput) {
+                        messageInput.value = '';
+                    }
+                    
+                    // You can add code here to:
+                    // - Add message to chat body
+                    // - Send to backend via AJAX
+                    // - Handle response
+                }
+            }
+        }
+    }))
+})
+</script>
+<div x-data="chatWidget" 
+        x-init="init()" 
+        class="fixed bottom-4 right-4 z-50" 
+        style="position: absolute; right: 20px; bottom: 20px;">
     <div class="flex flex-wrap gap-3 items-end">
         <div id="chat-window"
              class="chat-window rounded w-[320px] bg-white dark:bg-gray-800 text-gray-900 dark:text-white mb-3 border border-gray-200 dark:border-gray-700 overflow-hidden backdrop-blur-sm" 
@@ -61,101 +162,6 @@
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const chatWindow = document.getElementById('chat-window');
-    const chatBubble = document.getElementById('chat-bubble');
-    const chatIcon = document.getElementById('chat-icon');
-    const closeIcon = document.getElementById('close-icon');
-    const closeChatBtn = document.getElementById('close-chat');
-    
-    let isChatOpen = false;
-    
-    // Function to show chat window
-    function showChatWindow() {
-        chatWindow.style.display = 'block';
-        chatIcon.style.display = 'none';
-        closeIcon.style.display = 'block';
-        isChatOpen = true;
-    }
-    
-    // Function to hide chat window
-    function hideChatWindow() {
-        chatWindow.style.display = 'none';
-        chatIcon.style.display = 'block';
-        closeIcon.style.display = 'none';
-        isChatOpen = false;
-    }
-    
-    // Chat bubble functionality - toggle open/close
-    if (chatBubble) {
-        chatBubble.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (isChatOpen) {
-                hideChatWindow();
-            } else {
-                showChatWindow();
-            }
-        });
-    }
-
-    if (closeChatBtn) {
-        closeChatBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            hideChatWindow();
-        });
-    }
-    
-    // Optional: Close chat when clicking outside (uncomment if needed)
-    /*
-    document.addEventListener('click', function(e) {
-        const chatContainer = e.target.closest('#chat-window, #chat-bubble');
-        if (!chatContainer && chatWindow.style.display !== 'none') {
-            hideChatWindow();
-        }
-    });
-    */
-    
-    // Optional: Send message functionality
-    const sendBtn = document.querySelector('.send-btn');
-    const messageInput = document.querySelector('.message-input');
-    
-    if (sendBtn && messageInput) {
-        // Send on button click
-        sendBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            sendMessage();
-        });
-        
-        // Send on Enter key press
-        messageInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-    }
-    
-    function sendMessage() {
-        const message = messageInput?.value.trim();
-        if (message) {
-            // Add your message sending logic here
-            console.log('Sending message:', message);
-            
-            // Clear input
-            if (messageInput) {
-                messageInput.value = '';
-            }
-            
-            // You can add code here to:
-            // - Add message to chat body
-            // - Send to backend via AJAX
-            // - Handle response
-        }
-    }
-});
-</script>
 
 <style>
 /* Additional styles for smooth transitions */

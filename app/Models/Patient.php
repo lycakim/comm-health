@@ -51,6 +51,11 @@ class Patient extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'account_user_id');
+    }
+
     protected function fullName(): Attribute
     {
         return Attribute::make(

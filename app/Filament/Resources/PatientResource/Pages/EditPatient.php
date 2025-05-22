@@ -23,8 +23,8 @@ class EditPatient extends EditRecord
 
     public function getSubheading(): string|Htmlable|null
     {
-        if ($this->record->user_id) {
-            return 'This patient already has an account: ' . $this->record->user->email . '.';
+        if ($this->record->account_user_id) {
+            return 'This patient already has an account: ' . $this->record->account->email . '.';
         }
 
         return null;
