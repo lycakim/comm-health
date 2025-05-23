@@ -35,6 +35,11 @@ class ReferralResource extends Resource
 
     // protected static ?string $recordTitleAttribute = 'id';
 
+    public static function canAccess(): bool
+    {
+        return !auth()->user()->isMidwife();
+    }
+
     public static function form(Form $form): Form
     {
         return $form
