@@ -219,10 +219,6 @@ class PatientResource extends Resource
                                             ->gridDirection('row')
                                             ->options(fn () => PatientFormOptionsServices::getFamilyPlanningMethods())
                                     ]),
-                                Select::make('child_health_status')
-                                    ->label('Child Health Status')
-                                    ->columnSpanFull()
-                                    ->options(fn () => PatientFormOptionsServices::getChildHealthStatus()),
                                 Select::make('family_monthly_income')
                                     ->label('Family Monthly Income')
                                     ->preload()

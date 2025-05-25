@@ -171,17 +171,6 @@ class PatientFormOptionsServices
         ];
     }
 
-    public static function getChildHealthStatus()
-    {
-        return [
-            'Normal' => 'Normal',
-            'Underweight' => 'Underweight',
-            'Stunting' => 'Stunting',
-            'Waisting' => 'Waisting',
-            'Overweight' => 'Overweight',
-        ];
-    }
-
     public static function getFamilyMonthlyIncome()
     {
         return [

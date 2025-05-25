@@ -83,33 +83,6 @@
                 
                 <div class="flex justify-between">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-200">
-                        Immunization Coverage Report
-                    </h3>
-                    <x-filament::badge icon="heroicon-m-calendar">
-                        Quarterly
-                    </x-filament::badge>
-                </div>
-                
-                <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 mt-1 transition-colors duration-200">
-                    Child Health
-                </p>
-
-                <div class="flex justify-between mt-6">
-                    <x-filament::button color="gray" icon="heroicon-o-eye">
-                        Preview
-                    </x-filament::button>
-                    <x-filament::button icon="heroicon-o-plus">
-                        Generate Report
-                    </x-filament::button>
-                </div>
-            </div>
-            <div class="template-card group block p-4 rounded-lg border transition-all duration-200 ease-in-out
-                      bg-white hover:bg-green-50 border-gray-200 hover:border-green-300 hover:shadow-md
-                      dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600
-                      transform hover:scale-105">
-                
-                <div class="flex justify-between">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-200">
                         Senior Citizens Health Status Report
                     </h3>
                     <x-filament::badge icon="heroicon-m-calendar">

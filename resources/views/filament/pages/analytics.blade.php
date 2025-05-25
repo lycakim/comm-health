@@ -15,11 +15,6 @@
 
                     <x-filament::tabs.item 
                         @click="tab = 'tab3'" :alpine-active="'tab === \'tab3\''">
-                        Child Health
-                    </x-filament::tabs.item>
-
-                    <x-filament::tabs.item 
-                        @click="tab = 'tab4'" :alpine-active="'tab === \'tab4\''">
                         Disease
                     </x-filament::tabs.item>
                 </div>
