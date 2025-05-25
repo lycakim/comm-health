@@ -5,14 +5,15 @@ namespace App\Filament\Resources;
 use Dom\Text;
 use Filament\Forms;
 use Filament\Tables;
+use Filament\Forms\Get;
 use App\Models\Category;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rule;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
-use Illuminate\Validation\Rule;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\ToggleButtons;
@@ -51,6 +52,14 @@ class CategoryResource extends Resource
                         Textarea::make('description'),
                         ToggleButtons::make('is_child')
                             ->label('Is Child Category?')
+                            ->live()
+                            ->disabled(fn (Get $get) => $get('is_maternal'))
+                            ->grouped()
+                            ->boolean(),
+                        ToggleButtons::make('is_maternal')
+                            ->live()
+                            ->disabled(fn (Get $get) => $get('is_child'))
+                            ->label('Is Maternal Category?')
                             ->grouped()
                             ->boolean()
                     ])

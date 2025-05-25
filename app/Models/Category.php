@@ -12,6 +12,11 @@ class Category extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'is_child' => 'boolean',
+        'is_maternal' => 'boolean',
+    ];
+
     public function patients(): HasMany
     {
         return $this->hasMany(Patient::class);
