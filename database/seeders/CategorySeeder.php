@@ -14,10 +14,10 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            ['name' => 'Child', 'is_child' => true],
-            ['name' => 'Senior Citizen', 'is_child' => false],
-            ['name' => 'Maternal', 'is_child' => false],
-            ['name' => 'Chronic Conditions', 'is_child' => false],
+            ['name' => 'Child', 'is_child' => true, 'is_maternal' => false],
+            ['name' => 'Senior Citizen', 'is_child' => false, 'is_maternal' => false],
+            ['name' => 'Maternal', 'is_child' => false, 'is_maternal' => true],
+            ['name' => 'Chronic Conditions', 'is_child' => false, 'is_maternal' => false],
         ];
 
         foreach ($categories as $category) {

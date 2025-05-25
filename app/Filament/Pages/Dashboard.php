@@ -127,8 +127,8 @@ class Dashboard extends Page
         
         $actions = [];
         
-        // Barangay filter - available for superadmin, mho, and midwife
-        if (in_array($userRole, ['superadmin', 'mho', 'midwife'])) {
+        // Barangay filter - available for superadmin, mho
+        if (in_array($userRole, ['superadmin', 'mho'])) {
             $actions[] = \Filament\Actions\Action::make('filterBarangay')
                 ->label('Select Barangay')
                 ->form([

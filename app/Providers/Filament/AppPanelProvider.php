@@ -11,14 +11,15 @@ use Filament\Navigation\MenuItem;
 use App\Filament\Pages\Auth\Login;
 use Filament\Support\Colors\Color;
 use App\Filament\Pages\Auth\Register;
-use Filament\Navigation\NavigationItem;
 use Illuminate\Support\Facades\Route;
+use Filament\Navigation\NavigationItem;
 use Filament\Navigation\NavigationGroup;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Navigation\NavigationBuilder;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Filament\Http\Middleware\AuthenticateSession;
+use Afsakar\FilamentOtpLogin\FilamentOtpLoginPlugin;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -34,7 +35,7 @@ class AppPanelProvider extends PanelProvider
             ->default()
             ->id('app')
             ->path('app')
-            ->login(Login::class)
+            // ->login(Login::class)
             ->registration(Register::class)
             ->colors([
                 'primary' => Color::Green,
@@ -67,9 +68,13 @@ class AppPanelProvider extends PanelProvider
             ->brandName('CommHealth')
             ->brandLogo(fn() => Route::is('filament.app.auth.*') 
                 ? asset('comm-health-icon.png')
-                : asset('comm-health-logo.png')
+                : asset('comm-health-icon.png')
             )
             ->databaseNotifications()
-            ->databaseNotificationsPolling('30s');
+            ->databaseNotificationsPolling('30s')
+            ->plugins([
+                FilamentOtpLoginPlugin::make()
+                    ->loginPage(Login::class),
+            ]);
     }
 }

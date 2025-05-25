@@ -123,4 +123,7 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'filament-otp-login.code.length' => env('APP_FILAMENT_OTP_LOGIN_CODE_LENGTH', 6),
+    'filament-otp-login-code-expires' => env('APP_FILAMENT_OTP_LOGIN_CODE_EXPIRES', 120),
+
 ];
