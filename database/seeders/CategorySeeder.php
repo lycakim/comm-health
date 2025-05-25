@@ -14,14 +14,14 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            'Child',
-            'Senior Citizen',
-            'Maternal',
-            'Chronic Conditions',
+            ['name' => 'Child', 'is_child' => true],
+            ['name' => 'Senior Citizen', 'is_child' => false],
+            ['name' => 'Maternal', 'is_child' => false],
+            ['name' => 'Chronic Conditions', 'is_child' => false],
         ];
 
-        foreach ($categories as $name) {
-            Category::create(['name' => $name]);
+        foreach ($categories as $category) {
+            Category::create($category);
         }
     }
 }

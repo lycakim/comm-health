@@ -57,6 +57,7 @@ class ConsultationFormService
                         Select::make('patient_id')
                             ->label('Patient')
                             ->reactive()
+                            ->live()
                             ->options(function () {
                                 return Patient::query()
                                     ->get()
@@ -107,8 +108,7 @@ class ConsultationFormService
                                         $patient = Patient::find($patientId);
                                         if (!$patient) return '-';
 
-                                        $enum = CivilStatusEnum::tryFrom($patient->civil_status);
-                                        return $enum ? $enum->getLabel() : '-';
+                                        return $patient->civil_status ?? '-';
                                     }),
                                 Placeholder::make('age')
                                     ->label('Age')
@@ -120,6 +120,13 @@ class ConsultationFormService
                                         return $patient ? $patient->age : '-';
                                     }),
                                 Placeholder::make('educational_attainment')
+                                    ->visible(function (Get $get) {
+                                        $patientId = $get('patient_id');
+                                        if (!$patientId) return false;
+                                        
+                                        $patient = Patient::with('category')->find($patientId);
+                                        return $patient && !$patient->category->is_maternal ? $patient->educational_attainment : false;
+                                    })
                                     ->label('Educational Attainment')
                                     ->content(function (Get $get) {
                                         $patientId = $get('patient_id');
@@ -128,8 +135,7 @@ class ConsultationFormService
                                         $patient = Patient::find($patientId);
                                         if (!$patient) return '-';
 
-                                        $enum = EducationalAttainmentEnum::tryFrom($patient->educational_attainment);
-                                        return $enum ? $enum->getLabel() : '-';
+                                        return $patient->educational_attainment ?? '-';
                                     }),
                                 Placeholder::make('birth_date')
                                     ->label('Date of Birth')
@@ -365,16 +371,66 @@ class ConsultationFormService
                             ->label('Purok')
                             ->required()
                             ->columnSpanFull()
-                            ->options(Purok::query()->get()->pluck('name', 'id')->toArray())
-                            ->createOptionForm([
-                                TextInput::make('name')
-                                    ->required(),
-                                Select::make('barangay_id')
-                                    ->label('Barangay')
-                                    ->required()  
-                                    ->options(Barangay::query()->get()->pluck('name', 'id')->toArray()),
-                            ])
-                            ->createOptionUsing(function (array $data): int {
+                            ->disabled(fn (Get $get) => ! $get('patient_id'))
+                            ->options(function (Get $get) {
+                                $patientId = $get('patient_id');
+                                
+                                if (!$patientId) {
+                                    return [];
+                                }
+                                
+                                $patient = Patient::with('barangay')->find($patientId);
+                                
+                                if (!$patient || !$patient->barangay_id) {
+                                    return [];
+                                }
+                                
+                                return Purok::query()
+                                    ->with('barangay')
+                                    ->where('barangay_id', $patient->barangay_id)
+                                    ->get()
+                                    ->mapWithKeys(function ($purok) {
+                                        return [$purok->id => $purok->name . ', ' . $purok->barangay->name];
+                                    })
+                                    ->toArray();
+                            })
+                            ->createOptionForm(function (Get $get) {
+                                $patientId = $get('patient_id');
+                                $patient = $patientId ? Patient::with('barangay')->find($patientId) : null;
+                                $barangayId = $patient?->barangay_id;
+                                
+                                return [
+                                    TextInput::make('name')
+                                        ->required(),
+                                    Select::make('barangay_id')
+                                        ->label('Barangay')
+                                        ->required()
+                                        ->options(function () use ($barangayId) {
+                                            if (!$barangayId) {
+                                                return [];
+                                            }
+                                            
+                                            return Barangay::query()
+                                                ->where('id', $barangayId)
+                                                ->get()
+                                                ->pluck('name', 'id')
+                                                ->toArray();
+                                        })
+                                        ->default($barangayId)
+                                        ->disabled(),
+                                ];
+                            })
+                            ->createOptionUsing(function (array $data, Get $get): int {
+                                // Ensure barangay_id is set from the patient's barangay
+                                $patientId = $get('patient_id');
+                                
+                                if ($patientId) {
+                                    $patient = Patient::with('barangay')->find($patientId);
+                                    if ($patient && $patient->barangay_id) {
+                                        $data['barangay_id'] = $patient->barangay_id;
+                                    }
+                                }
+                                
                                 return Purok::create($data)->getKey();
                             }),
                         Fieldset::make()
@@ -383,6 +439,7 @@ class ConsultationFormService
                                     ->label('With Disability?')
                                     ->boolean()
                                     ->reactive()
+                                    ->required()
                                     ->inline(),
                                 ToggleButtons::make('philhealth')
                                     ->label('With Philhealth?')
@@ -423,6 +480,217 @@ class ConsultationFormService
                                 if (!$patient->category) return false;
 
                                 return $patient->category->is_child;
+                            })
+                            ->columns(3),
+                        Fieldset::make('Maternal Information for Husband/Partner')
+                            ->schema([
+                                TextInput::make('husband_first_name')
+                                    ->label('Husband/Partner First name'),
+                                TextInput::make('husband_last_name')
+                                    ->label('Husband/Partner Last Name'),
+                                TextInput::make('husband_middle_name')
+                                    ->label('Husband/Partner Middle Name'),
+                                TextInput::make('husband_contact_no')
+                                    ->label('Husband/Partner Contact No'),
+                                TextInput::make('husband_occupation')
+                                    ->label('Husband/Partner Occupation'),
+                                ToggleButtons::make('husband_philhealth')
+                                    ->label('With Philhealth?')
+                                    ->boolean()
+                                    ->inline(),
+                                ToggleButtons::make('husband_member_of_4ps')
+                                    ->label('4ps member?')
+                                    ->boolean()
+                                    ->inline(),
+                                ToggleButtons::make('husband_nhts_member')
+                                    ->label('NHTS Member?')
+                                    ->boolean()
+                                    ->inline(),
+                                
+                            ])
+                            ->visible(function (Get $get) {
+                                $patientId = $get('patient_id');
+                                if (!$patientId) return false;
+                                
+                                $patient = Patient::with('category')->find($patientId);
+                                if (!$patient->category) return false;
+
+                                return $patient->category->is_maternal;
+                            })
+                            ->columns(3),
+                        Fieldset::make('Maternal Information for Mother')
+                            ->schema([
+                                DatePicker::make('mother_lmp_date')
+                                    ->helperText('Last Menstrual Period')
+                                    ->label('LMP Date'),
+                                TextInput::make('child_order')
+                                    ->label('Child Order')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(20),
+                                TextInput::make('delivery_address')
+                                    ->label('Where the child was delivered?'),
+                                DatePicker::make('mother_edc_date')
+                                    ->helperText('Estimated Date of Confinement')
+                                    ->label('EDC Date'),
+                                ToggleButtons::make('mother_and_child_book')
+                                    ->label('Mother and Child Book')
+                                    ->boolean()
+                                    ->inline(),
+                                TextInput::make('number_of_pregnancies')
+                                    ->label('Number of Pregnancies')
+                                    ->helperText('Gravida')
+                                    ->numeric(),
+                                TextInput::make('successful_deliveries')
+                                    ->label('Successful Deliveries')
+                                    ->helperText('Para')
+                                    ->numeric(),
+                                TextInput::make('pregnancy_losses')
+                                    ->label('Pregnancy Losses')
+                                    ->helperText('Abortus')
+                                    ->numeric(),
+                                ToggleButtons::make('birth_plan')
+                                    ->label('Birth Plan')
+                                    ->boolean()
+                                    ->inline(),
+                            ])
+                            ->visible(function (Get $get) {
+                                $patientId = $get('patient_id');
+                                if (!$patientId) return false;
+                                
+                                $patient = Patient::with('category')->find($patientId);
+                                if (!$patient->category) return false;
+
+                                return $patient->category->is_maternal;
+                            })
+                            ->columns(3),
+                        Fieldset::make('GPA')
+                            ->schema([
+                                TextInput::make('laboratory_exam')
+                                    ->label('Laboratory Exam'),
+                                TextInput::make('first_hgb')
+                                    ->label('1st HGB'),
+                                TextInput::make('blood_type')
+                                    ->label('Blood Type'),
+                                TextInput::make('iron_imms')
+                                    ->label('Iron/IMMS'),
+                                TextInput::make('iodized_salt')
+                                    ->label('Iodized Salt'),
+                                TextInput::make('second_hgb')
+                                    ->label('2nd HGB'),
+                                TextInput::make('ua')
+                                    ->columnSpanFull()
+                                    ->label('U/A'),
+                            ])
+                            ->visible(function (Get $get) {
+                                $patientId = $get('patient_id');
+                                if (!$patientId) return false;
+                                
+                                $patient = Patient::with('category')->find($patientId);
+                                if (!$patient->category) return false;
+
+                                return $patient->category->is_maternal;
+                            })
+                            ->columns(3),
+                        Fieldset::make('Laboratory')
+                            ->schema([
+                                DatePicker::make('imm_received_dates')
+                                    ->label('IMM./Received Dates'),
+                                DatePicker::make('tt1_date')
+                                    ->label('TT1 Date'),
+                                DatePicker::make('tt2_date')
+                                    ->label('TT2 Date'),
+                                DatePicker::make('tt3_date')
+                                    ->label('TT3 Date'),
+                                DatePicker::make('tt4_date')
+                                    ->label('TT4 Date'),
+                                DatePicker::make('tt5_date')
+                                    ->label('TT5 Date'),
+                                DatePicker::make('tt_imm')
+                                    ->default(Carbon::now())
+                                    ->label('TT IMM'),
+                            ])
+                            ->visible(function (Get $get) {
+                                $patientId = $get('patient_id');
+                                if (!$patientId) return false;
+                                
+                                $patient = Patient::with('category')->find($patientId);
+                                if (!$patient->category) return false;
+
+                                return $patient->category->is_maternal;
+                            })
+                            ->columns(2),
+                        Fieldset::make('Previous TT/TD - tetanus toxoid OR tetanus & diphtheria')
+                            ->schema([
+                                TextInput::make('number_of_pregnancies')
+                                    ->label('Number of Pregnancies')
+                                    ->helperText('Gravida')
+                                    ->numeric(),
+                                TextInput::make('successful_deliveries')
+                                    ->label('Successful Deliveries')
+                                    ->helperText('Para')
+                                    ->numeric(),
+                                TextInput::make('pregnancy_losses')
+                                    ->label('Pregnancy Losses')
+                                    ->helperText('Abortus')
+                                    ->numeric(),
+                                ToggleButtons::make('birth_plan')
+                                    ->label('Birth Plan')
+                                    ->boolean()
+                                    ->inline(),
+                            ])
+                            ->visible(function (Get $get) {
+                                $patientId = $get('patient_id');
+                                if (!$patientId) return false;
+                                
+                                $patient = Patient::with('category')->find($patientId);
+                                if (!$patient->category) return false;
+
+                                return $patient->category->is_maternal;
+                            })
+                            ->columns(2),
+                        Fieldset::make('Other Maternal Labs')
+                            ->schema([
+                                TextInput::make('blood_pressure')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->label('Blood Pressure')
+                                    ->hint('mm Hg'),
+                                TextInput::make('weight')
+                                    ->minValue(0)
+                                    ->columnSpan(2)
+                                    ->hint('kg')
+                                    ->numeric()
+                                    ->label('Weight'),
+                                TextInput::make('height')
+                                    ->minValue(0)
+                                    ->numeric()
+                                    ->hint('cm')
+                                    ->label('Height'),
+                                TextInput::make('fundal_height')
+                                    ->minValue(0)
+                                    ->numeric()
+                                    ->hint('cm')
+                                    ->label('Fundal Height'),
+                                TextInput::make('fetal_hydronephrosis')
+                                    ->minValue(0)
+                                    ->numeric()
+                                    ->hint('cm')
+                                    ->label('Fetal Hydronephrosis'),
+                                TextInput::make('age_of_gestation')
+                                    ->minValue(0)
+                                    ->numeric()
+                                    ->hint('cm')
+                                    ->label('Age of Gestation'),
+                            ])
+                            ->visible(function (Get $get) {
+                                $patientId = $get('patient_id');
+                                if (!$patientId) return false;
+                                
+                                $patient = Patient::with('category')->find($patientId);
+                                if (!$patient->category) return false;
+
+                                return $patient->category->is_maternal;
                             })
                             ->columns(3),
                         Fieldset::make('Child Information')

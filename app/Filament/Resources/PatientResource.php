@@ -121,13 +121,13 @@ class PatientResource extends Resource
                     ->schema([
                         Fieldset::make('Personal Information')
                             ->schema([
-                                TextInput::make('first_name')->required(),
-                                TextInput::make('last_name')->required(),
+                                TextInput::make('first_name')->required()->unique('patients', 'first_name'),
+                                TextInput::make('last_name')->required()->unique('patients', 'last_name'),
                                 // Select::make('resident_id')
                                 //     ->label('Resident')
                                 //     ->options(User::query()->get()->pluck('name', 'id')->toArray())
                                 //     ->columnSpanFull(),
-                                TextInput::make('middle_name'),
+                                TextInput::make('middle_name')->unique('patients', 'middle_name'),
                                 Select::make('relationship_to_head_of_family')
                                     ->label('Relationship to the Head of the Family')
                                     ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'other' ? 2 : 'full')

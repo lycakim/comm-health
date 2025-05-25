@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Tables;
+use App\Models\Purok;
 use App\Enums\SexEnum;
 use App\Models\Patient;
 use Filament\Forms\Get;
@@ -18,9 +19,9 @@ use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Fieldset;
-use Filament\Forms\Components\Actions\Action;
 use App\Enums\EducationalAttainmentEnum;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Actions\Action;
 use App\Filament\Resources\ReferralResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\ReferralResource\RelationManagers;
@@ -261,10 +262,11 @@ class ReferralResource extends Resource
                                         $consultationId = $get('consultation_id');
                                         if (!$consultationId) return '-';
                                         
-                                        $consultation = Consultation::find($consultationId);
+                                        $consultation = Consultation::with('patient')->find($consultationId);
                                         if (!$consultation) return '-';
 
-                                        $enum = SexEnum::tryFrom($consultation->educational_attainment);
+                                        // return $consultation;
+                                        $enum = SexEnum::tryFrom($consultation->patient->sex);
                                         return $enum ? $enum->getLabel() : '-';
                                     }),
                                 Forms\Components\Placeholder::make('civil_status')
@@ -273,11 +275,10 @@ class ReferralResource extends Resource
                                         $consultationId = $get('consultation_id');
                                         if (!$consultationId) return '-';
                                         
-                                        $consultation = Consultation::find($consultationId);
+                                        $consultation = Consultation::with('patient')->find($consultationId);
                                         if (!$consultation) return '-';
 
-                                        $enum = CivilStatusEnum::tryFrom($consultation->educational_attainment);
-                                        return $enum ? $enum->getLabel() : '-';
+                                        return $consultation->patient->civil_status ?? '-';
                                     }),
                                 Forms\Components\Placeholder::make('age')
                                     ->label('Age')
@@ -294,11 +295,10 @@ class ReferralResource extends Resource
                                         $consultationId = $get('consultation_id');
                                         if (!$consultationId) return '-';
                                         
-                                        $consultation = Consultation::find($consultationId);
+                                        $consultation = Consultation::with('patient')->find($consultationId);
                                         if (!$consultation) return '-';
 
-                                        $enum = EducationalAttainmentEnum::tryFrom($consultation->educational_attainment);
-                                        return $enum ? $enum->getLabel() : '-';
+                                        return $consultation->patient->educational_attainment;
                                     }),
                                 Forms\Components\Placeholder::make('birth_date')
                                     ->label('Date of Birth')
@@ -317,7 +317,10 @@ class ReferralResource extends Resource
                                         if (!$consultationId) return '-';
                                         
                                         $consultation = Consultation::find($consultationId);
-                                        return $consultation ? $consultation->address : '-';
+                                        if (!$consultation->purok_id) return '-';
+                                        
+                                        $purok = Purok::find($consultation->purok_id);
+                                        return $purok ? $purok->name . ', ' . $purok->barangay->name : '-';
                                     }),
                             ])
                             ->columns(3),
@@ -501,7 +504,7 @@ class ReferralResource extends Resource
                                         if (!$consultationId) return '-';
                                         
                                         $consultation = Consultation::find($consultationId);
-                                        return $consultation ? $consultation->mother_first_name . ' ' . $consultation->mother_middle_name . ' ' . $consultation->mother_last_name : '-';
+                                        return $consultation && $consultation->first_name && $consultation->mother->last_name ? $consultation->mother->first_name . ' ' . $consultation->mother->middle_name . ' ' . $consultation->mother->last_name : '-';
                                     }),
                                 Forms\Components\Placeholder::make('weight')
                                     ->label('Child Weight')
@@ -510,7 +513,7 @@ class ReferralResource extends Resource
                                         if (!$consultationId) return '-';
                                         
                                         $consultation = Consultation::find($consultationId);
-                                        return $consultation ? $consultation->child_weight : '-';
+                                        return $consultation && $consultation->child_weight ? $consultation->child_weight : '-';
                                     }),
                                 Forms\Components\Placeholder::make('child_order')
                                     ->label('Child Order')
@@ -529,7 +532,7 @@ class ReferralResource extends Resource
                                             default => 'th',
                                         };
                                         
-                                        return $number . $suffix;
+                                        return $number ? $number . $suffix : '-';
                                     }),
                                 Forms\Components\Placeholder::make('mother_status')
                                     ->label('Mother\'s Status')
