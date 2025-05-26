@@ -63,6 +63,9 @@ class StatsOverview extends BaseWidget
                     ->color('primary'),
             ];
         }
+        if (auth()->user()->isResident()) {
+            return [];
+        }
         return [
                 Stat::make('Registered Patients', Patient::count())
                     ->description('+' . $patientIncrease . '% from last month')
