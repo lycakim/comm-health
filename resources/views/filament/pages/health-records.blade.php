@@ -27,7 +27,7 @@
         </div>
     </div>
     <div x-show="tab === 'tab1'">
-        lorem   
+
     </div>
     <div x-show="tab === 'tab2'" x-cloak>
         <div class="grid w-full grid-cols-1 md:grid-cols-2 gap-4">
