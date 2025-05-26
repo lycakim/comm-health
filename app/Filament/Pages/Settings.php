@@ -15,6 +15,11 @@ class Settings extends Page
 
     protected static ?int $navigationSort = 4;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW();
+    }
+
     public function getSubheading(): string|Htmlable|null
     {
         return 'Manage your account settings';

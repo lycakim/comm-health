@@ -1,0 +1,171 @@
+<x-filament-panels::page  x-data="{ tab: 'tab1' }">
+    <div class="flex">
+        <div class="flex flex-col w-64" >
+            <x-filament::tabs class="flex flex-col justify-start w-full space-y-4">
+                <div class="flex justify-start gap-2">
+                    <x-filament::tabs.item 
+                        active @click="tab = 'tab1'" :alpine-active="'tab === \'tab1\''">
+                        Summary
+                    </x-filament::tabs.item>
+                    
+                    <x-filament::tabs.item 
+                        @click="tab = 'tab2'" :alpine-active="'tab === \'tab2\''">
+                        Consultations
+                    </x-filament::tabs.item>
+                    
+                    <x-filament::tabs.item 
+                        @click="tab = 'tab3'" :alpine-active="'tab === \'tab3\''">
+                        Medications
+                    </x-filament::tabs.item>
+
+                    <x-filament::tabs.item 
+                        @click="tab = 'tab4'" :alpine-active="'tab === \'tab4\''">
+                        Immunizations
+                    </x-filament::tabs.item>
+                </div>
+            </x-filament::tabs>
+        </div>
+    </div>
+    <div x-show="tab === 'tab1'">
+        lorem   
+    </div>
+    <div x-show="tab === 'tab2'" x-cloak>
+        <div class="grid w-full grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="template-card group block p-4 rounded-lg border transition-all duration-200 ease-in-out
+                      bg-white hover:bg-green-50 border-gray-200 hover:border-green-300 hover:shadow-md
+                      dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600
+                      transform hover:scale-105">
+                
+                <div class="flex justify-between">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-200">
+                        Patient Profiling Report
+                    </h3>
+                    <x-filament::badge icon="heroicon-m-calendar">
+                        Monthly
+                    </x-filament::badge>
+                </div>
+                
+                <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 mt-1 transition-colors duration-200">
+                    Patient Profiling
+                </p>
+
+                <div class="flex justify-between mt-6">
+                    <x-filament::button color="gray" icon="heroicon-o-eye">
+                        Preview
+                    </x-filament::button>
+                    <x-filament::button icon="heroicon-o-plus">
+                        Generate Report
+                    </x-filament::button>
+                </div>
+            </div>
+            <div class="template-card group block p-4 rounded-lg border transition-all duration-200 ease-in-out
+                      bg-white hover:bg-green-50 border-gray-200 hover:border-green-300 hover:shadow-md
+                      dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600
+                      transform hover:scale-105">
+                
+                <div class="flex justify-between">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-200">
+                        Maternal and Child Report
+                    </h3>
+                    <x-filament::badge icon="heroicon-m-calendar">
+                        Quarterly
+                    </x-filament::badge>
+                </div>
+                
+                <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 mt-1 transition-colors duration-200">
+                    Maternal Care
+                </p>
+
+                <div class="flex justify-between mt-6">
+                    <x-filament::button color="gray" icon="heroicon-o-eye">
+                        Preview
+                    </x-filament::button>
+                    <x-filament::button icon="heroicon-o-plus">
+                        Generate Report
+                    </x-filament::button>
+                </div>
+            </div>
+            <div class="template-card group block p-4 rounded-lg border transition-all duration-200 ease-in-out
+                      bg-white hover:bg-green-50 border-gray-200 hover:border-green-300 hover:shadow-md
+                      dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600
+                      transform hover:scale-105">
+                
+                <div class="flex justify-between">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-200">
+                        Senior Citizens Health Status Report
+                    </h3>
+                    <x-filament::badge icon="heroicon-m-calendar">
+                        Quarterly
+                    </x-filament::badge>
+                </div>
+                
+                <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 mt-1 transition-colors duration-200">
+                    Geriatric Care
+                </p>
+
+                <div class="flex justify-between mt-6">
+                    <x-filament::button color="gray" icon="heroicon-o-eye">
+                        Preview
+                    </x-filament::button>
+                    <x-filament::button icon="heroicon-o-plus">
+                        Generate Report
+                    </x-filament::button>
+                </div>
+            </div>
+            <div class="template-card group block p-4 rounded-lg border transition-all duration-200 ease-in-out
+                      bg-white hover:bg-green-50 border-gray-200 hover:border-green-300 hover:shadow-md
+                      dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600
+                      transform hover:scale-105">
+                
+                <div class="flex justify-between">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-200">
+                        Family Planning Usage Report
+                    </h3>
+                    <x-filament::badge icon="heroicon-m-calendar">
+                        Quarterly
+                    </x-filament::badge>
+                </div>
+                
+                <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 mt-1 transition-colors duration-200">
+                    Reproductive Health
+                </p>
+
+                <div class="flex justify-between mt-6">
+                    <x-filament::button color="gray" icon="heroicon-o-eye">
+                        Preview
+                    </x-filament::button>
+                    <x-filament::button icon="heroicon-o-plus">
+                        Generate Report
+                    </x-filament::button>
+                </div>
+            </div>
+            <div class="template-card group block p-4 rounded-lg border transition-all duration-200 ease-in-out
+                      bg-white hover:bg-green-50 border-gray-200 hover:border-green-300 hover:shadow-md
+                      dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600
+                      transform hover:scale-105">
+                
+                <div class="flex justify-between">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-200">
+                        Morbidity and Mortality Report
+                    </h3>
+                    <x-filament::badge icon="heroicon-m-calendar">
+                        Quarterly
+                    </x-filament::badge>
+                </div>
+                
+                <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 mt-1 transition-colors duration-200">
+                    Disease Surveillance
+                </p>
+
+                <div class="flex justify-between mt-6">
+                    <x-filament::button color="gray" icon="heroicon-o-eye">
+                        Preview
+                    </x-filament::button>
+                    <x-filament::button icon="heroicon-o-plus">
+                        Generate Report
+                    </x-filament::button>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-filament-panels::page>

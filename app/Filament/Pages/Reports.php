@@ -27,6 +27,11 @@ class Reports extends Page implements HasTable
 
     protected static ?int $navigationSort = 2;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW();
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -30,6 +30,11 @@ class ConsultationResource extends Resource
         return 2;
     }
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW();
+    }
+
     public static function form(Form $form): Form
     {
         return $form
