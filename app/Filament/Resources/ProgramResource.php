@@ -72,13 +72,15 @@ class ProgramResource extends Resource
             ->schema([
                 Section::make()
                     ->schema([
-                        TextInput::make('name')->required(),
+                        TextInput::make('name')->label('Program Name')->required(),
                         Select::make('category_id')
                             ->label('Category')
+                            ->searchable()
                             ->options(Category::query()->get()->pluck('name', 'id')->toArray())
                             ->required(),
                         Select::make('barangay_id')
                             ->label('Barangay')
+                            ->searchable()
                             ->options(Barangay::query()->get()->pluck('name', 'id')->toArray())
                             ->required(),
                         Textarea::make('description')
@@ -87,9 +89,9 @@ class ProgramResource extends Resource
                         TimePicker::make('program_start_time')->required(),
                         TimePicker::make('program_end_time')->required(),
                         
-                        // Select::make('coordinator')
-                        //     ->label('Coordinator')
-                        //     ->options(User::query()->get()->pluck('name', 'id')->toArray()),
+                        Select::make('coordinator')
+                            ->label('Coordinator')
+                            ->options(User::query()->get()->pluck('name', 'id')->toArray()),
                     ])
                     ->columns(3),
             ]);

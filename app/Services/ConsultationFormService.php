@@ -64,8 +64,11 @@ class ConsultationFormService
                                     ->mapWithKeys(function ($patient) {
                                         return [$patient->id => $patient->first_name . ' ' . $patient->last_name];
                                     })
+                                    ->sort()
                                     ->toArray();
                             })
+                            ->preload()
+                            ->searchable()
                             ->disabledOn('edit')
                             ->required(),
                         DateTimePicker::make('date')
@@ -286,6 +289,7 @@ class ConsultationFormService
                                         TextInput::make('middle_name')->label('Middle Name'),
                                         Select::make('sex')
                                             ->label('Gender')
+                                            ->searchable()
                                             ->options([
                                                 'male' => 'Male',
                                                 'female' => 'Female',
@@ -293,21 +297,25 @@ class ConsultationFormService
                                             ->required(),
                                         Select::make('civil_status')
                                             ->label('Civil Status')
+                                            ->searchable()
                                             ->options(PatientFormOptionsServices::getPatientStatus())
                                             ->required(),
                                         DatePicker::make('birth_date')->label('Date of Birth')->required(),
                                         Select::make('educational_attainment')
                                             ->label('Educational Attainment')
                                             ->columnSpanFull()
-                                            ->options(PatientFormOptionsServices::getPatientEducationalAttainment()),
+                                            ->searchable()
+                                            ->preload()
+                                            ->options(fn() => collect(PatientFormOptionsServices::getPatientEducationalAttainment())->sort()->toArray())
                                     ])
                                     ->columns(2),
                                 Fieldset::make('Medical Information')
                                     ->schema([
                                         Select::make('category_id')
                                             ->label('Category')
+                                            ->searchable()
                                             ->columnSpanFull()
-                                            ->options(Category::query()->get()->pluck('name', 'id')->toArray())
+                                            ->options(Category::query()->get()->pluck('name', 'id')->sort()->toArray())
                                             ->required(),
                                         TextInput::make('blood_pressure')
                                             ->numeric()
@@ -367,72 +375,6 @@ class ConsultationFormService
 
                 Section::make('Consultation Details')
                     ->schema([
-                        Select::make('purok_id')
-                            ->label('Purok')
-                            ->required()
-                            ->columnSpanFull()
-                            ->disabled(fn (Get $get) => ! $get('patient_id'))
-                            ->options(function (Get $get) {
-                                $patientId = $get('patient_id');
-                                
-                                if (!$patientId) {
-                                    return [];
-                                }
-                                
-                                $patient = Patient::with('barangay')->find($patientId);
-                                
-                                if (!$patient || !$patient->barangay_id) {
-                                    return [];
-                                }
-                                
-                                return Purok::query()
-                                    ->with('barangay')
-                                    ->where('barangay_id', $patient->barangay_id)
-                                    ->get()
-                                    ->mapWithKeys(function ($purok) {
-                                        return [$purok->id => $purok->name . ', ' . $purok->barangay->name];
-                                    })
-                                    ->toArray();
-                            })
-                            ->createOptionForm(function (Get $get) {
-                                $patientId = $get('patient_id');
-                                $patient = $patientId ? Patient::with('barangay')->find($patientId) : null;
-                                $barangayId = $patient?->barangay_id;
-                                
-                                return [
-                                    TextInput::make('name')
-                                        ->required(),
-                                    Select::make('barangay_id')
-                                        ->label('Barangay')
-                                        ->required()
-                                        ->options(function () use ($barangayId) {
-                                            if (!$barangayId) {
-                                                return [];
-                                            }
-                                            
-                                            return Barangay::query()
-                                                ->where('id', $barangayId)
-                                                ->get()
-                                                ->pluck('name', 'id')
-                                                ->toArray();
-                                        })
-                                        ->default($barangayId)
-                                        ->disabled(),
-                                ];
-                            })
-                            ->createOptionUsing(function (array $data, Get $get): int {
-                                // Ensure barangay_id is set from the patient's barangay
-                                $patientId = $get('patient_id');
-                                
-                                if ($patientId) {
-                                    $patient = Patient::with('barangay')->find($patientId);
-                                    if ($patient && $patient->barangay_id) {
-                                        $data['barangay_id'] = $patient->barangay_id;
-                                    }
-                                }
-                                
-                                return Purok::create($data)->getKey();
-                            }),
                         Fieldset::make()
                             ->schema([
                                 ToggleButtons::make('disability')

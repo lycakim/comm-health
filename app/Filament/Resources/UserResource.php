@@ -5,7 +5,10 @@ namespace App\Filament\Resources;
 use Filament\Forms;
 use App\Models\User;
 use Filament\Tables;
+use App\Models\Purok;
 use App\Enums\RoleEnum;
+use Filament\Forms\Get;
+use App\Models\Barangay;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
@@ -65,10 +68,12 @@ class UserResource extends Resource
                     ->schema([
                         TextInput::make('name')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->columnSpanFull(),
                         TextInput::make('email')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->columnSpanFull(),
                         TextInput::make('password')
                             ->password()
                             ->revealable()
@@ -76,10 +81,12 @@ class UserResource extends Resource
                             ->minLength(8)
                             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                             ->dehydrated(fn ($state) => filled($state))
-                            ->required(fn (string $context): bool => $context === 'create'),
+                            ->required(fn (string $context): bool => $context === 'create')
+                            ->columnSpanFull(),
                         Select::make('role')
                             ->visible(auth()->user()->isAdmin())
                             ->live()
+                            ->searchable()
                             ->options([
                                 'bhw' => 'Barangay Health Worker',
                                 'mho' => 'Municipal Health Officer',
@@ -89,13 +96,60 @@ class UserResource extends Resource
                             ])
                             ->default('admin')
                             ->in(['mho', 'bhw', 'resident', 'midwife', 'admin'])
-                            ->required(),
+                            ->required()
+                            ->columnSpanFull(),
                         Select::make('barangay_id')
                             ->label('Assigned Barangay')
                             ->relationship('barangays', 'name')
                             ->preload()
+                            ->live()
                             ->searchable(),
-                    ]),
+                        Select::make('purok_id')
+                            ->label('Purok')
+                            ->searchable()
+                            ->disabled(fn (Get $get) => ! $get('barangay_id'))
+                            ->options(function (Get $get) {
+                                $barangayId = $get('barangay_id');
+                                return Purok::query()->where('barangay_id', $barangayId)->get()->pluck('name', 'id')->sort()->toArray();
+                            })
+                            ->preload()
+                            ->createOptionForm(function (Get $get) {
+                                $barangayId = $get('barangay_id');
+                                
+                                return [
+                                    TextInput::make('name')
+                                        ->unique('puroks', 'name', modifyRuleUsing: function ($rule, Get $get) {
+                                            $barangayId = $get('barangay_id');
+                                            return $rule->where('barangay_id', $barangayId);
+                                        })
+                                        ->required(),
+                                    Select::make('barangay_id')
+                                        ->label('Barangay')
+                                        ->required()
+                                        ->options(function () use ($barangayId) {
+                                            if (!$barangayId) {
+                                                return [];
+                                            }
+                                            
+                                            return Barangay::query()
+                                                ->where('id', $barangayId)
+                                                ->get()
+                                                ->pluck('name', 'id')
+                                                ->toArray();
+                                        })
+                                        ->default($barangayId)
+                                        ->disabled(),
+                                ];
+                            })
+                            ->createOptionUsing(function (array $data, Get $get): int {
+                                $barangayId = $get('barangay_id');
+
+                                $data['barangay_id'] = $barangayId;
+                                
+                                return Purok::create($data)->getKey();
+                            }),
+                    ])
+                    ->columns(2),
             ]);
     }
 
