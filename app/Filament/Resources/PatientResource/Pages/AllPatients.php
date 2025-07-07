@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PatientResource\Pages;
 
+use App\Models\Patient;
 use App\Filament\Resources\PatientResource;
 use App\Models\Barangay;
 use Filament\Resources\Pages\Page;
@@ -14,8 +15,11 @@ class AllPatients extends Page
 
     public $barangays;
 
+    public $patients;
+
     public function mount()
     {
         $this->barangays = Barangay::withCount('patients')->get();
+        $this->patients = Patient::count();
     }
 }

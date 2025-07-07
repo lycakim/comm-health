@@ -16,6 +16,20 @@
                 </p>
             </a>
         @endforeach
+        <a href="{{ \App\Filament\Resources\PatientResource::getUrl('list', ['barangay' => 'all']) }}"
+            class="barangay-card group block p-4 rounded-lg border transition-all duration-200 ease-in-out
+                    bg-white hover:bg-green-50 border-gray-200 hover:border-green-300 hover:shadow-md
+                    dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600
+                    transform hover:scale-105">
+            
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-200">
+                All Patients
+            </h3>
+            
+            <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 mt-1 transition-colors duration-200">
+                {{ $patients }} {{ Str::plural('patient', $patients) }}
+            </p>
+        </a>
     </div>
 
     <style>

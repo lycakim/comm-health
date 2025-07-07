@@ -630,26 +630,26 @@ class ReferralResource extends Resource
                                     ->required(fn (Forms\Get $get) => $get('drug_allergy')),
                             ])
                             ->columns(3),
-                        Forms\Components\Fieldset::make('Physical Examination')
-                            ->schema([
-                                Forms\Components\TextInput::make('height')
-                                    ->numeric()
-                                    ->hint('cm')
-                                    ->label('Height'),
-                                Forms\Components\TextInput::make('weight')
-                                    ->numeric()
-                                    ->hint('kg')
-                                    ->label('Weight'),
-                                Forms\Components\TextInput::make('blood_pressure')
-                                    ->numeric()
-                                    ->hint('mm Hg')
-                                    ->label('Blood Pressure'),
-                                Forms\Components\TextInput::make('rr')
-                                    ->numeric()
-                                    ->hint('bpm')
-                                    ->label('Respiratory Rate'),
-                            ])
-                            ->columns(4),
+                        // Forms\Components\Fieldset::make('Physical Examination')
+                        //     ->schema([
+                        //         Forms\Components\TextInput::make('height')
+                        //             ->numeric()
+                        //             ->hint('cm')
+                        //             ->label('Height'),
+                        //         Forms\Components\TextInput::make('weight')
+                        //             ->numeric()
+                        //             ->hint('kg')
+                        //             ->label('Weight'),
+                        //         Forms\Components\TextInput::make('blood_pressure')
+                        //             ->numeric()
+                        //             ->hint('mm Hg')
+                        //             ->label('Blood Pressure'),
+                        //         Forms\Components\TextInput::make('rr')
+                        //             ->numeric()
+                        //             ->hint('bpm')
+                        //             ->label('Respiratory Rate'),
+                        //     ])
+                        //     ->columns(4),
                         Forms\Components\Fieldset::make()
                             ->schema([
                                 Forms\Components\Radio::make('referral_reason')

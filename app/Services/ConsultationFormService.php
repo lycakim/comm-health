@@ -9,6 +9,7 @@ use App\Models\Patient;
 use Filament\Forms\Get;
 use App\Models\Barangay;
 use App\Models\Category;
+use App\Models\PersonType;
 use App\Enums\CivilStatusEnum;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
@@ -399,10 +400,32 @@ class ConsultationFormService
                                     ->label('Birth planned?')
                                     ->boolean()
                                     ->inline(),
-                                ToggleButtons::make('type')
-                                    ->inline()
-                                    ->inlineLabel(false)
-                                    ->options(fn () => ConsultationFormOptionServices::getTypeOptions()),
+                                Select::make('type')
+                                    ->preload()
+                                    ->label('Type')
+                                    ->searchable()
+                                    ->options(fn () => PersonType::query()->get()->pluck('name', 'id')->sort()->toArray())
+                                    ->createOptionForm(function () {
+                                        return [
+                                            TextInput::make('name')
+                                                ->unique('person_types', 'name')
+                                                ->required(),
+                                            Textarea::make('description'),
+                                            ToggleButtons::make('is_active')
+                                                ->label('Is Active?')
+                                                ->boolean()
+                                                ->default(true)
+                                                ->grouped()
+                                                ->inline(),
+                                        ];
+                                    })
+                                    ->createOptionUsing(function (array $data, Get $get): int {
+                                        return PersonType::create($data)->getKey();
+                                    }),
+                                // ToggleButtons::make('type')
+                                //     ->inline()
+                                //     ->inlineLabel(false)
+                                //     ->options(fn () => ConsultationFormOptionServices::getTypeOptions()),
                             ])
                             ->columns(3),
                         Fieldset::make('Mother Information')
