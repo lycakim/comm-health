@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use Carbon\Carbon;
 use App\Models\User;
 use Filament\Tables;
+use App\Models\Purok;
 use App\Enums\SexEnum;
 use App\Models\Patient;
 use Filament\Forms\Get;
@@ -130,11 +131,15 @@ class PatientResource extends Resource
                                 TextInput::make('middle_name')->unique('patients', 'middle_name'),
                                 Select::make('relationship_to_head_of_family')
                                     ->label('Relationship to the Head of the Family')
-                                    ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'other' ? 2 : 'full')
-                                    ->options(fn () => PatientFormOptionsServices::getPatientRelationships())
+                                    // ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'other' ? 2 : 'full')
+                                    ->columnSpan(2)
+                                    ->options(fn () => collect(PatientFormOptionsServices::getPatientRelationships())->sort()->toArray())
                                     ->live()
+                                    ->preload()
+                                    ->searchable()
                                     ->required(fn (Get $get) => $get('relationship_to_head_of_family') !== 'other'),
-
+                                TextInput::make('suffix')
+                                    ->hint('Jr., Sr., II, III, etc.'),
                                 TextInput::make('relationship_to_head_of_family_other')
                                     ->label('Please specify relationship')
                                     ->columnSpan(1)
@@ -162,6 +167,8 @@ class PatientResource extends Resource
                                     }),
                                 Select::make('sex')
                                     ->label('Gender')
+                                    ->searchable()
+                                    ->live()
                                     ->options([
                                         'male' => 'Male',
                                         'female' => 'Female',
@@ -169,23 +176,72 @@ class PatientResource extends Resource
                                     ->required(),
                                 Select::make('civil_status')
                                     ->label('Civil Status')
-                                    ->options(fn () => PatientFormOptionsServices::getPatientStatus())
+                                    ->searchable()
+                                    ->options(fn () => collect(PatientFormOptionsServices::getPatientStatus())->sort()->toArray())
                                     ->required(),
                                 Select::make('educational_attainment')
                                     ->label('Educational Attainment')
-                                    ->options(fn () => PatientFormOptionsServices::getPatientEducationalAttainment())
+                                    ->searchable()
+                                    ->options(fn () => collect(PatientFormOptionsServices::getPatientEducationalAttainment())->sort()->toArray())
                                     ->required(),
                                 Select::make('occupation')
                                     ->label('Occupation')
-                                    ->options(fn () => PatientFormOptionsServices::getPatientOccupation())
+                                    ->searchable()
+                                    ->options(fn () => collect(PatientFormOptionsServices::getPatientOccupation())->sort()->toArray())
                                     ->required(),
                                 Select::make('barangay_id')
                                     ->label('Barangay')
-                                    ->options(Barangay::query()->get()->pluck('name', 'id')->toArray())
+                                    ->searchable()
+                                    ->options(Barangay::query()->get()->pluck('name', 'id')->sort()->toArray())
                                     ->preload()
-                                    ->columnSpan(2),
+                                    ->live(),
+                                Select::make('purok_id')
+                                    ->label('Purok')
+                                    ->searchable()
+                                    ->disabled(fn (Get $get) => ! $get('barangay_id'))
+                                    ->options(function (Get $get) {
+                                        $barangayId = $get('barangay_id');
+                                        return Purok::query()->where('barangay_id', $barangayId)->get()->pluck('name', 'id')->sort()->toArray();
+                                    })
+                                    ->preload()
+                                    ->createOptionForm(function (Get $get) {
+                                        $barangayId = $get('barangay_id');
+                                        
+                                        return [
+                                            TextInput::make('name')
+                                                ->unique('puroks', 'name', modifyRuleUsing: function ($rule, Get $get) {
+                                                    $barangayId = $get('barangay_id');
+                                                    return $rule->where('barangay_id', $barangayId);
+                                                })
+                                                ->required(),
+                                            Select::make('barangay_id')
+                                                ->label('Barangay')
+                                                ->required()
+                                                ->options(function () use ($barangayId) {
+                                                    if (!$barangayId) {
+                                                        return [];
+                                                    }
+                                                    
+                                                    return Barangay::query()
+                                                        ->where('id', $barangayId)
+                                                        ->get()
+                                                        ->pluck('name', 'id')
+                                                        ->toArray();
+                                                })
+                                                ->default($barangayId)
+                                                ->disabled(),
+                                        ];
+                                    })
+                                    ->createOptionUsing(function (array $data, Get $get): int {
+                                        $barangayId = $get('barangay_id');
+
+                                        $data['barangay_id'] = $barangayId;
+                                        
+                                        return Purok::create($data)->getKey();
+                                    }),
                                 Select::make('category_id')
                                     ->label('Category')
+                                    ->searchable()
                                     ->options(Category::query()->get()->pluck('name', 'id')->toArray())
                                     ->preload(),
                             ])

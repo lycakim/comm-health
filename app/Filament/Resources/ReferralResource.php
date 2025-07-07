@@ -53,10 +53,12 @@ class ReferralResource extends Resource
                                 Patient::query()
                                     ->get()
                                     ->mapWithKeys(function ($patient) {
-                                        return [$patient->id => "Patient #{$patient->id} {$patient->first_name} {$patient->last_name}"];
+                                        return [$patient->id => "{$patient->first_name} {$patient->last_name}"];
                                     })
+                                    ->sort()
                                     ->toArray()
                             )
+                            ->searchable()
                             ->reactive()
                             ->disabled(fn ($get) => !empty($get('consultation_id'))),
 
@@ -68,10 +70,13 @@ class ReferralResource extends Resource
                                     ->get()
                                     ->mapWithKeys(function ($consultation) {
                                         $patientName = $consultation->patient ? "{$consultation->patient->first_name} {$consultation->patient->last_name}" : 'No Patient';
-                                        return [$consultation->id => "Consultation #{$consultation->id} {$patientName}"];
+                                        $consultationDate = $consultation->created_at ? $consultation->created_at->format('M d, Y') : 'No Date';
+                                        return [$consultation->id => "{$patientName} - Consultation #{$consultation->id} ({$consultationDate})"];
                                     })
+                                    ->sort()
                                     ->toArray()
                             )
+                            ->searchable()
                             ->reactive()
                             ->disabled(fn ($get) => !empty($get('patient_id'))),
                     ])->columns(2),
@@ -596,6 +601,7 @@ class ReferralResource extends Resource
                                     ->default('Carmen MHO')
                                     ->required(),
                                 Forms\Components\Select::make('status')
+                                    ->searchable()
                                     ->options([
                                         'pending' => 'Pending',
                                         'accepted' => 'Accepted',
