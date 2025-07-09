@@ -48,6 +48,10 @@ class ListConsultations extends ListRecords
 
         $barangayFromRoute = request()->route('barangay');
 
+        if ($barangayFromRoute === 'all') {
+            return $query;
+        }
+
         return $query
             ->with(['patient.barangay'])
             ->whereHas('patient', function ($patientQuery) use ($barangayFromRoute) {

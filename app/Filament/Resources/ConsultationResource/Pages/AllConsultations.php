@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ConsultationResource\Pages;
 
 use App\Models\Barangay;
+use App\Models\Consultation;
 use Filament\Resources\Pages\Page;
 use App\Filament\Resources\ConsultationResource;
 
@@ -14,8 +15,11 @@ class AllConsultations extends Page
 
     public $barangays;
 
+    public $consultations;
+
     public function mount()
     {
         $this->barangays = Barangay::withCount(['consultations', 'patients'])->get();
+        $this->consultations = Consultation::count();
     }
 }
