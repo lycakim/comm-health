@@ -77,6 +77,7 @@ class CreateConsultation extends CreateRecord
                         $this->form->validate();
 
                         $formData = $this->form->getState();
+                        logger($formData);
                         if (empty(array_filter($formData))) {
                             throw new \Exception('Please fill in all required fields before proceeding.');
                         }
@@ -135,6 +136,31 @@ class CreateConsultation extends CreateRecord
                             $record->title ?? 
                             $record->label ?? 
                             $record->display_name ?? 
+                            "ID: {$value}";
+                    }
+                }
+            }
+            
+            return "ID: {$value}";
+        } catch (\Exception $e) {
+            return "ID: {$value}";
+        }
+    }
+
+    protected function getPersonTypeName($value)
+    {
+        try {
+            // Get the form schema to find the relationship
+            $schema = $this->form->getSchema();
+            
+            foreach ($schema as $component) {
+                if ($component->getName() === 'type') {
+                    $relationship = $component->getRelationship();
+                    $relatedModel = $component->getRelationship()->getRelated();
+                    $record = $relatedModel::find($value);
+                    
+                    if ($record) {
+                        return $record->name ??
                             "ID: {$value}";
                     }
                 }

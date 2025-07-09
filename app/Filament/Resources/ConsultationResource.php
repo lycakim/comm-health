@@ -8,6 +8,10 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\Consultation;
 use Filament\Resources\Resource;
+use Filament\Tables\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use App\Services\ConsultationFormService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -98,18 +102,42 @@ class ConsultationResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('create_referral')
-                    ->label('Create Referral')
-                    ->url(fn (Consultation $record) => ReferralResource::getUrl('create', ['consultation_id' => $record->id]))
-                    ->icon('heroicon-o-paper-airplane')
-                    ->color('warning')
-                    ->visible(fn (Consultation $record) => in_array($record->status, ['needs_referral', 'referred']) && !$record->referral),
-                Tables\Actions\Action::make('view_referral')
-                    ->label('View Referral')
-                    ->url(fn (Consultation $record) => $record->referral ? ReferralResource::getUrl('view', ['record' => $record->referral]) : null)
-                    ->icon('heroicon-o-paper-airplane')
-                    ->color('success')
-                    ->visible(fn (Consultation $record) => $record->referral),
+                // Tables\Actions\Action::make('create_referral')
+                //     ->label('Create Referral')
+                //     ->modalHeading(fn ($record) => "Creating a referral for '{$record->name}'")
+                //     ->color('warning')
+                //     ->requiresConfirmation()
+                //     ->modalWidth('md')
+                //     ->slideOver()
+                //     ->form([
+                //         TextInput::make('referral_reason')
+                //             ->label('Referral Reason')
+                //             ->required()
+                //             ->maxLength(255),
+                        
+                //         Textarea::make('notes')
+                //             ->label('Additional Notes')
+                //             ->rows(3)
+                //             ->maxLength(1000),
+                //     ])
+                //     ->action(function ($record, array $data) {
+                //         try {
+                //             Notification::make()
+                //                 ->title('Referral created successfully')
+                //                 ->success()
+                //                 ->send();
+                            
+                //         } catch (\Exception $e) {
+                //             Notification::make()
+                //                 ->title('Error creating referral')
+                //                 ->danger()
+                //                 ->send();
+                //         }
+                //     })
+                //     ->after(function () {
+                //         // Explicitly prevent any table refresh
+                //         // This ensures the table state remains intact
+                //     }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

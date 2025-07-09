@@ -39,7 +39,7 @@
                                                         @php
                                                             $relationshipName = $this->getRelationshipDisplayName($key, $item);
                                                         @endphp
-                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                                        <span class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
                                                             <x-heroicon-o-link class="w-3 h-3 mr-1" />
                                                             {{ $relationshipName ?? "ID: {$item}" }}
                                                         </span>
@@ -53,7 +53,7 @@
                                         @endif
                                     
                                     {{-- Handle Boolean Values --}}
-                                    @elseif(is_bool($value) || in_array($value, ['0', '1', 0, 1]) || in_array(strtolower($value), ['true', 'false', 'yes', 'no']))
+                                    @elseif(!in_array($key, ['user_id', 'type']) && (is_bool($value) || in_array($value, ['0', '1', 0, 1]) || in_array(strtolower($value), ['true', 'false', 'yes', 'no'])))
                                         @php
                                             $boolValue = is_bool($value) ? $value : (
                                                 in_array($value, ['1', 1, 'true', 'yes']) ? true : false
@@ -76,9 +76,25 @@
                                         @php
                                             $relationshipName = $this->getRelationshipDisplayName($key, $value);
                                         @endphp
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                        <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
                                             <x-heroicon-o-link class="w-3 h-3 mr-1" />
                                             {{ $relationshipName ?? "ID: {$value}" }}
+                                        </span>
+                                    
+                                    @elseif($key === 'type')
+                                        @php
+                                            // If you have access to the consultation model instance, use the relationship
+                                            // Otherwise, query the PersonType model
+                                            if (isset($consultation) && $consultation->person_type) {
+                                                $typeName = $consultation->person_type->name;
+                                            } else {
+                                                $personType = \App\Models\PersonType::find($value);
+                                                $typeName = $personType->name ?? "Unknown Type";
+                                            }
+                                        @endphp
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                                            <x-heroicon-o-user-group class="w-3 h-3 mr-1" />
+                                            {{ $typeName }}
                                         </span>
                                     
                                     {{-- Handle Regular Numeric Values --}}
