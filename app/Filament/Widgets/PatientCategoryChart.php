@@ -39,7 +39,7 @@ class PatientCategoryChart extends ChartWidget
 
     // protected function getData(): array
     // {
-    //     $user = auth()->user();
+    //     $user = Auth::user();
         
     //     // If user is BHW, only show data for their assigned barangay
     //     if ($user->role === 'bhw' && $user->barangay_id) {

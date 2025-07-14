@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Auth;
 use App\Filament\Widgets\PatientChart;
 use Illuminate\Contracts\Support\Htmlable;
 
@@ -16,7 +17,7 @@ class Notifications extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isResident();
+        return Auth::user()->isResident();
     }
 
     public function getSubheading(): string|Htmlable|null

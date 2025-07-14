@@ -17,7 +17,7 @@ class ListPatients extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        if (!auth()->user()->isMHO()) {
+        if (!Auth::user()->isMHO()) {
             return [
                 Actions\CreateAction::make()
                     ->icon('heroicon-o-plus'),
@@ -28,7 +28,7 @@ class ListPatients extends ListRecords
 
     // public function getTabs(): array
     // {
-    //     if (auth()->user()->isMHO()) {
+    //     if (Auth::user()->isMHO()) {
     //         $tabs = [
     //             'all' => Tab::make('All')
     //                 ->modifyQueryUsing(function ($query) {
@@ -37,10 +37,10 @@ class ListPatients extends ListRecords
     //                 ->badge(fn () => $this->getModel()::count()),
     //         ];
     
-    //         if (auth()->user()->isMHO()) {
+    //         if (Auth::user()->isMHO()) {
     //             $barangays = Barangay::all();
     //         } else {
-    //             $barangays = auth()->user()->barangays;
+    //             $barangays = Auth::user()->barangays;
     //         }
     
     //         foreach ($barangays as $barangay) {

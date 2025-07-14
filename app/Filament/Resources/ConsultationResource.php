@@ -3,12 +3,19 @@
 namespace App\Filament\Resources;
 
 use Filament\Forms;
+use App\Models\User;
 use Filament\Tables;
+use App\Enums\RoleEnum;
+use App\Models\Patient;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\Consultation;
+use App\Traits\HasUserTypeUrls;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\DB;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Grouping\Group;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -20,6 +27,8 @@ use App\Filament\Resources\ConsultationResource\RelationManagers;
 
 class ConsultationResource extends Resource
 {
+    use HasUserTypeUrls;
+
     protected static ?string $model = Consultation::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-heart';
@@ -28,7 +37,7 @@ class ConsultationResource extends Resource
 
     public static function getNavigationSort(): ?int
     {
-        if (auth()->user()->isMHO()) {
+        if (self::currentUser()->isMHO()) {
             return 3;
         }
         return 2;
@@ -36,7 +45,11 @@ class ConsultationResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW();
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+            RoleEnum::BHW,
+        ]);
     }
 
     public static function form(Form $form): Form
@@ -101,48 +114,54 @@ class ConsultationResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                // Tables\Actions\Action::make('create_referral')
-                //     ->label('Create Referral')
-                //     ->modalHeading(fn ($record) => "Creating a referral for '{$record->name}'")
-                //     ->color('warning')
-                //     ->requiresConfirmation()
-                //     ->modalWidth('md')
-                //     ->slideOver()
-                //     ->form([
-                //         TextInput::make('referral_reason')
-                //             ->label('Referral Reason')
-                //             ->required()
-                //             ->maxLength(255),
+                Tables\Actions\EditAction::make()
+                    ->color('warning'),
+                Tables\Actions\Action::make('create_referral')
+                    ->label('Create Referral')
+                    ->icon('heroicon-o-plus')
+                    ->modalHeading(fn ($record) => "Creating a referral for {$record->patient->first_name} {$record->patient->last_name}")
+                    ->color('success')
+                    ->requiresConfirmation(false)
+                    ->modalWidth('md')
+                    ->slideOver()
+                    ->form([
+                        TextInput::make('referral_reason')
+                            ->label('Referral Reason')
+                            ->required()
+                            ->maxLength(255),
                         
-                //         Textarea::make('notes')
-                //             ->label('Additional Notes')
-                //             ->rows(3)
-                //             ->maxLength(1000),
-                //     ])
-                //     ->action(function ($record, array $data) {
-                //         try {
-                //             Notification::make()
-                //                 ->title('Referral created successfully')
-                //                 ->success()
-                //                 ->send();
+                        Textarea::make('notes')
+                            ->label('Additional Notes')
+                            ->rows(3)
+                            ->maxLength(1000),
+                    ])
+                    ->action(function ($record, array $data) {
+                        try {
+                            Notification::make()
+                                ->title('Referral created successfully')
+                                ->success()
+                                ->send();
                             
-                //         } catch (\Exception $e) {
-                //             Notification::make()
-                //                 ->title('Error creating referral')
-                //                 ->danger()
-                //                 ->send();
-                //         }
-                //     })
-                //     ->after(function () {
-                //         // Explicitly prevent any table refresh
-                //         // This ensures the table state remains intact
-                //     }),
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Error creating referral')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->after(function () {
+                        // Explicitly prevent any table refresh
+                        // This ensures the table state remains intact
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ])
+            ->groups([
+                'date',
+                'patient.first_name',
             ]);
     }
 
@@ -162,5 +181,11 @@ class ConsultationResource extends Resource
             'create' => Pages\CreateConsultation::route('/create'),
             'edit' => Pages\EditConsultation::route('/{record}/edit'),
         ];
+    }
+
+    // initialize auth user
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }

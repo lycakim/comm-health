@@ -7,6 +7,7 @@ use App\Models\User;
 use Filament\Tables;
 use App\Models\Purok;
 use App\Enums\SexEnum;
+use App\Enums\RoleEnum;
 use App\Models\Patient;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -14,8 +15,10 @@ use App\Models\Barangay;
 use App\Models\Category;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use App\Traits\HasUserTypeUrls;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Radio;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
@@ -40,6 +43,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PatientResource extends Resource
 {
+    use HasUserTypeUrls;
+
     protected static ?string $model = Patient::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
@@ -50,14 +55,14 @@ class PatientResource extends Resource
 
     public function mount(): void
     {
-        if (auth()->user()->isMHO()) {
+        if (self::currentUser()->isMHO()) {
             $this->redirect(PatientResource::getUrl('all'));
         }
     }
 
     public static function getNavigationSort(): ?int
     {
-        if (auth()->user()->isMHO()) {
+        if (self::currentUser()->isMHO()) {
             return 1;
         }
         return 1;
@@ -65,7 +70,8 @@ class PatientResource extends Resource
 
     public static function getPluralModelLabel(): string
     {
-        if (auth()->user()->isMHO() || auth()->user()->isBHW() || auth()->user()->isMidwife()) {
+        $user = self::currentUser();
+        if ($user->isMHO() || $user->isBHW() || $user->isMidwife()) {
             return 'Patient Records';
         }
         return 'Patients';
@@ -73,7 +79,12 @@ class PatientResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW() || auth()->user()->isMidwife();
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+            RoleEnum::BHW,
+            RoleEnum::MIDWIFE
+        ]);
     }
 
     public static function form(Form $form): Form
@@ -538,10 +549,10 @@ class PatientResource extends Resource
                 ]),
             ]);
             // ->modifyQueryUsing(function (Builder $query) {
-            //     if (auth()->user()->isAdmin() || auth()->user()->isMHO()) {
+            //     if (self::currentUser()->isAdmin() || self::currentUser()->isMHO()) {
             //         return $query->latest();
             //     } else {
-            //         $userBarangayIds = auth()->user()->barangays->pluck('id')->toArray();
+            //         $userBarangayIds = self::currentUser()->barangays->pluck('id')->toArray();
                     
             //         if (Schema::hasColumn('patients', 'barangay_id')) {
             //             return $query->whereIn('barangay_id', $userBarangayIds)->latest();
@@ -594,5 +605,11 @@ class PatientResource extends Resource
         $bmi = $weight / ($heightInMeters * $heightInMeters);
         
         return round($bmi, 2);
+    }
+
+    // initialize auth user
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }

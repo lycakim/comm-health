@@ -2,7 +2,9 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\RoleEnum;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Contracts\Support\Htmlable;
 
 class Settings extends Page
@@ -17,7 +19,11 @@ class Settings extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW();
+        return in_array(Auth::user()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+            RoleEnum::BHW,
+        ]);
     }
 
     public function getSubheading(): string|Htmlable|null

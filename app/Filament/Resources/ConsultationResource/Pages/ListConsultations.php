@@ -17,13 +17,13 @@ class ListConsultations extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        if (auth()->user()->isMHO()) {
+        if (Auth::user()->isMHO()) {
             return [];
         }
         return [
             Actions\CreateAction::make()
                 ->icon('heroicon-o-plus')
-                ->hidden(fn () => auth()->user()->isResident()),
+                ->hidden(fn () => Auth::user()->isResident()),
         ];
     }
 
@@ -45,23 +45,26 @@ class ListConsultations extends ListRecords
     protected function getTableQuery(): Builder
     {
         $query = parent::getTableQuery();
-
+        
         $barangayFromRoute = request()->route('barangay');
-
-        if ($barangayFromRoute === 'all') {
+        
+        if ($barangayFromRoute === 'all' || is_null($barangayFromRoute)) {
             return $query;
         }
 
         return $query
             ->with(['patient.barangay'])
             ->whereHas('patient', function ($patientQuery) use ($barangayFromRoute) {
-                $patientQuery->where('barangay_id', $barangayFromRoute ?? Auth::user()->barangay_id);
+                $barangayFromRoute = $barangayFromRoute ?? Auth::user()->barangay_id;
+                if ($barangayFromRoute) {
+                    $patientQuery->where('barangay_id', $barangayFromRoute);
+                }
             });
     }
 
     // public function getTabs(): array
     // {
-    //     if (auth()->user()->isMHO()) {
+    //     if (Auth::user()->isMHO()) {
     //         $tabs = [
     //             'all' => Tab::make('All')
     //                 ->modifyQueryUsing(function ($query) {

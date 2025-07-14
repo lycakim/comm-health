@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\ReferralResource\Pages;
 
-use App\Filament\Resources\ReferralResource;
 use Filament\Actions;
+use Illuminate\Support\Facades\Auth;
 use Filament\Resources\Pages\ListRecords;
+use App\Filament\Resources\ReferralResource;
 
 class ListReferrals extends ListRecords
 {
@@ -12,12 +13,12 @@ class ListReferrals extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        if (auth()->user()->isMHO()) {
+        if (Auth::user()->isMHO()) {
             return [];
         }
         return [
-            Actions\CreateAction::make()
-                ->icon('heroicon-o-plus'),
+            // Actions\CreateAction::make()
+            //     ->icon('heroicon-o-plus'),
         ];
     }
 }

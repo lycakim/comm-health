@@ -4,13 +4,17 @@ namespace App\Filament\Resources;
 
 use Dom\Text;
 use Filament\Forms;
+use App\Models\User;
 use Filament\Tables;
+use App\Enums\RoleEnum;
 use Filament\Forms\Get;
 use App\Models\Category;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use App\Traits\HasUserTypeUrls;
 use Illuminate\Validation\Rule;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
@@ -23,6 +27,8 @@ use App\Filament\Resources\CategoryResource\RelationManagers;
 
 class CategoryResource extends Resource
 {
+    use HasUserTypeUrls;
+
     protected static ?string $model = Category::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-squares-2x2';
@@ -33,7 +39,10 @@ class CategoryResource extends Resource
     
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO();
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+        ]);
     }
 
     public static function form(Form $form): Form
@@ -100,5 +109,11 @@ class CategoryResource extends Resource
             'create' => Pages\CreateCategory::route('/create'),
             'edit' => Pages\EditCategory::route('/{record}/edit'),
         ];
+    }
+
+    // initialize auth user
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }

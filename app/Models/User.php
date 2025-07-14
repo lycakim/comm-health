@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\RoleEnum;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -40,6 +41,7 @@ class User extends Authenticatable implements CanLoginDirectly
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => RoleEnum::class,  
         ];
     }
 
@@ -52,27 +54,27 @@ class User extends Authenticatable implements CanLoginDirectly
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->role === RoleEnum::ADMIN;
     }
 
     public function isMHO(): bool
     {
-        return $this->role === 'mho';
+        return $this->role === RoleEnum::MHO;
     }
 
     public function isBHW(): bool
     {
-        return $this->role === 'bhw';
+        return $this->role === RoleEnum::BHW;
     }
 
     public function isResident(): bool
     {
-        return $this->role === 'resident';
+        return $this->role === RoleEnum::RESIDENT;
     }
 
     public function isMidwife(): bool
     {
-        return $this->role === 'midwife';
+        return $this->role === RoleEnum::MIDWIFE;
     }
 
     public function sentMessages()
@@ -87,6 +89,18 @@ class User extends Authenticatable implements CanLoginDirectly
 
     public function canLoginDirectly(): bool
     {
-        return false;
+        return $this->role === RoleEnum::ADMIN;
+    }
+
+    // Accessor to convert string to enum
+    public function getRoleAttribute($value): RoleEnum
+    {
+        return RoleEnum::from($value);
+    }
+
+    // Mutator to convert enum to string when saving
+    public function setRoleAttribute($value): void
+    {
+        $this->attributes['role'] = $value instanceof RoleEnum ? $value->value : $value;
     }
 }

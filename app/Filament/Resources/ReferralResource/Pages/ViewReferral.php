@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\ReferralResource\Pages;
 
-use App\Filament\Resources\ReferralResource;
 use Filament\Actions;
+use Illuminate\Support\Facades\Auth;
 use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Resources\ReferralResource;
 
 class ViewReferral extends ViewRecord
 {
@@ -12,7 +13,7 @@ class ViewReferral extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        if (auth()->user()->isBHW() || auth()->user()->isMidwife()) {
+        if (Auth::user()->isBHW() || Auth::user()->isMidwife()) {
             return [
                 Actions\Action::make('print')
                     ->label('Print')

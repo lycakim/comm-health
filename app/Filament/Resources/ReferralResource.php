@@ -4,9 +4,11 @@ namespace App\Filament\Resources;
 
 use Carbon\Carbon;
 use Filament\Forms;
+use App\Models\User;
 use Filament\Tables;
 use App\Models\Purok;
 use App\Enums\SexEnum;
+use App\Enums\RoleEnum;
 use App\Models\Patient;
 use Filament\Forms\Get;
 use App\Models\Referral;
@@ -15,7 +17,9 @@ use App\Enums\UrgencyEnum;
 use Filament\Tables\Table;
 use App\Models\Consultation;
 use App\Enums\CivilStatusEnum;
+use App\Traits\HasUserTypeUrls;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Fieldset;
@@ -28,6 +32,8 @@ use App\Filament\Resources\ReferralResource\RelationManagers;
 
 class ReferralResource extends Resource
 {
+    use HasUserTypeUrls;
+    
     protected static ?string $model = Referral::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
@@ -38,7 +44,11 @@ class ReferralResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW();
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+            RoleEnum::BHW,
+        ]);
     }
 
     public static function form(Form $form): Form
@@ -698,7 +708,7 @@ class ReferralResource extends Resource
                     ->visible(fn (Forms\Get $get) => in_array($get('status'), ['accepted', 'completed'])),
 
                 Forms\Components\Hidden::make('user_id')
-                    ->default(fn () => auth()->id())
+                    ->default(fn () => self::currentUser()->id)
                     ->required(),
             ]);
     }
@@ -835,5 +845,11 @@ class ReferralResource extends Resource
             'edit' => Pages\EditReferral::route('/{record}/edit'),
             'view' => Pages\ViewReferral::route('/{record}/view'),
         ];
+    }
+
+    // initialize auth user
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }

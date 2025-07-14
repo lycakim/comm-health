@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Auth;
 use App\Filament\Widgets\PatientChart;
 use Filament\Forms\Contracts\HasForms;
 use Illuminate\Contracts\Support\Htmlable;
@@ -20,7 +21,7 @@ class HealthRecords extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isResident();
+        return Auth::user()->isResident();
     }
 
     public function getSubheading(): string|Htmlable|null

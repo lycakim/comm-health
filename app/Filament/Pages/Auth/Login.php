@@ -7,6 +7,7 @@ use App\Models\User;
 use Filament\Forms\Form;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\RedirectResponse;
 use Filament\Forms\Components\Fieldset;
@@ -14,6 +15,7 @@ use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Auth\Login as BaseLogin;
+use App\Http\Responses\Auth\CustomLoginResponse;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 
 class Login extends BaseLogin
@@ -77,15 +79,16 @@ class Login extends BaseLogin
             $this->throwFailureValidationException();
         }
 
-        $user = auth()->user();
+        $user = Auth::user();
         
         // Check if user can login directly (bypass OTP)
         if (method_exists($user, 'canLoginDirectly') && $user->canLoginDirectly()) {
-            return app(LoginResponse::class);
+            // return app(LoginResponse::class);
+            return $this->handleSuccessfulLogin($user);
         }
 
         // Logout temporarily and send OTP
-        auth()->logout();
+        Auth::logout();
         $this->userEmail = $data['email'];
         $this->sendOtp($data['email']);
         $this->showOtpForm = true;
@@ -101,7 +104,7 @@ class Login extends BaseLogin
 
     protected function attemptAuthentication(array $data): bool
     {
-        return auth()->attempt([
+        return Auth::attempt([
             'email' => $data['email'],
             'password' => $data['password'],
         ], $data['remember'] ?? false);
@@ -155,7 +158,7 @@ class Login extends BaseLogin
 
         if ($this->validateOtpCode($this->userEmail, $code)) {
             $user = User::where('email', $this->userEmail)->first();
-            auth()->login($user);
+            Auth::login($user);
 
             $this->cleanupOtpCode($this->userEmail);
             session()->regenerate();
@@ -206,5 +209,26 @@ class Login extends BaseLogin
         return array_merge(parent::getViewData(), [
             'showOtpForm' => $this->showOtpForm,
         ]);
+    }
+
+    protected function handleSuccessfulLogin($user): ?LoginResponse
+    {
+        if (!$user || !$user->user_type) {
+            $this->redirect('/commhealth');
+            return null;
+        }
+
+        // Redirect to user-type specific dashboard
+        $redirectUrl = match($user->user_type) {
+            'mho' => '/commhealth/mho/dashboard',
+            'bhw' => '/commhealth/bhw/dashboard',
+            'midwife' => '/commhealth/midwife/dashboard',
+            'resident' => '/commhealth/resident/dashboard',
+            'admin' => '/commhealth/admin/dashboard',
+            default => '/commhealth/dashboard'
+        };
+
+        $this->redirect($redirectUrl);
+        return null;
     }
 }

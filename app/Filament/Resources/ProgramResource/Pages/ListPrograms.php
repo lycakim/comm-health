@@ -3,10 +3,11 @@
 namespace App\Filament\Resources\ProgramResource\Pages;
 
 use Filament\Actions;
+use Illuminate\Support\Facades\Auth;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
-use App\Filament\Resources\ProgramResource;
 use Illuminate\Contracts\Support\Htmlable;
+use App\Filament\Resources\ProgramResource;
 
 class ListPrograms extends ListRecords
 {
@@ -14,7 +15,7 @@ class ListPrograms extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        if (auth()->user()->isBHW() || auth()->user()->isMidwife()) {
+        if (Auth::user()->isBHW() || Auth::user()->isMidwife()) {
             return [];
         }
         return [
