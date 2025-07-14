@@ -7,6 +7,7 @@ use App\Models\Patient;
 use App\Models\Program;
 use App\Models\Referral;
 use App\Models\Consultation;
+use Illuminate\Support\Facades\Auth;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
@@ -29,7 +30,7 @@ class StatsOverview extends BaseWidget
         $barangaysWithHealthWorkers = User::where('role', 'bhw')
             ->count();
 
-        if (auth()->user()->isAdmin() || auth()->user()->isMHO()) {
+        if (Auth::user()->isAdmin() || Auth::user()->isMHO()) {
             return [
                 Stat::make('Total Patients', Patient::count())
                     ->description('+' . $patientIncrease . '% from last month')
@@ -63,7 +64,7 @@ class StatsOverview extends BaseWidget
                     ->color('primary'),
             ];
         }
-        if (auth()->user()->isResident()) {
+        if (Auth::user()->isResident()) {
             return [];
         }
         return [

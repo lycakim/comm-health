@@ -5,17 +5,21 @@ namespace App\Filament\Resources;
 use Filament\Forms;
 use App\Models\User;
 use Filament\Tables;
+use App\Enums\RoleEnum;
 use App\Models\Program;
 use App\Models\Barangay;
 use App\Models\Category;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use App\Traits\HasUserTypeUrls;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Section;
 use Filament\Resources\Components\Tab;
 use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
@@ -23,10 +27,11 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ProgramResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\ProgramResource\RelationManagers;
-use Filament\Tables\Columns\TextColumn;
 
 class ProgramResource extends Resource
 {
+    use HasUserTypeUrls;
+    
     protected static ?string $model = Program::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
@@ -35,7 +40,8 @@ class ProgramResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        if (auth()->user()->isBHW() || auth()->user()->isMidwife()) {
+        $user = self::currentUser();
+        if ($user->isBHW() || $user->isMidwife()) {
             return 'Programs';
         }
         return 'Utility';
@@ -43,10 +49,11 @@ class ProgramResource extends Resource
 
     public static function getNavigationSort(): ?int
     {
-        if (auth()->user()->isMHO()) {
+        $user = self::currentUser();
+        if ($user->isMHO()) {
             return 2;
         }
-        else if (auth()->user()->isBHW() || auth()->user()->isMidwife()) {
+        else if ($user->isBHW() || $user->isMidwife()) {
             return 1;
         }
         
@@ -55,7 +62,7 @@ class ProgramResource extends Resource
 
     public static function getPluralModelLabel(): string
     {
-        if (auth()->user()->isMHO()) {
+        if (self::currentUser()->isMHO()) {
             return 'Health Programs';
         }
         return 'Programs';
@@ -63,7 +70,12 @@ class ProgramResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW() || auth()->user()->isMidwife();
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+            RoleEnum::BHW,
+            RoleEnum::MIDWIFE
+        ]);
     }
 
     public static function form(Form $form): Form
@@ -136,5 +148,11 @@ class ProgramResource extends Resource
             'create' => Pages\CreateProgram::route('/create'),
             'edit' => Pages\EditProgram::route('/{record}/edit'),
         ];
+    }
+
+    // initialize auth user
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }

@@ -2,10 +2,13 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\User;
 use App\Models\Report;
+use App\Enums\RoleEnum;
 use Filament\Pages\Page;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
+use Illuminate\Support\Facades\Auth;
 use Filament\Resources\Components\Tab;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
@@ -29,7 +32,11 @@ class Reports extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO() || auth()->user()->isBHW();
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+            RoleEnum::BHW,
+        ]);
     }
 
     protected function getHeaderActions(): array
@@ -61,5 +68,11 @@ class Reports extends Page implements HasTable
             ->actions([
                 //
             ]);
+    }
+
+    // initialize auth user
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }

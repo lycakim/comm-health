@@ -177,6 +177,14 @@
                     </p>
                 </div>
             </div>
+            <div class="py-12 bg-white">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <h2 class="text-2xl font-bold text-emerald-600 mb-4">Disclaimer</h2>
+                    <p class="max-w-3xl mx-auto text-gray-600">
+                        This system is for authorized health workers only. All patient data is confidential. Unauthorized access is prohibited.
+                    </p>
+                </div>
+            </div>
         </main>
 
         <!-- Footer -->

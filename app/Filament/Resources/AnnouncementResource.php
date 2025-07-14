@@ -2,12 +2,16 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\RoleEnum;
 use Filament\Forms;
+use App\Models\User;
 use Filament\Tables;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\Announcement;
+use App\Traits\HasUserTypeUrls;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
@@ -21,6 +25,8 @@ use App\Filament\Resources\AnnouncementResource\RelationManagers;
 
 class AnnouncementResource extends Resource
 {
+    use HasUserTypeUrls;
+
     protected static ?string $model = Announcement::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-bell-alert';
@@ -31,7 +37,10 @@ class AnnouncementResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO();
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+        ]);
     }
 
     public static function form(Form $form): Form
@@ -92,5 +101,11 @@ class AnnouncementResource extends Resource
             'create' => Pages\CreateAnnouncement::route('/create'),
             'edit' => Pages\EditAnnouncement::route('/{record}/edit'),
         ];
+    }
+
+    // initialize auth user
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }

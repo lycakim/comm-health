@@ -12,6 +12,7 @@ use App\Models\Barangay;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
@@ -35,7 +36,7 @@ class UserResource extends Resource
 
     public static function getNavigationSort(): ?int
     {
-        if (auth()->user()->isMHO()) {
+        if (self::currentUser()->isMHO()) {
             return 1;
         }
         return 1;
@@ -43,7 +44,7 @@ class UserResource extends Resource
 
     public static function getPluralModelLabel(): string
     {
-        if (auth()->user()->isMHO()) {
+        if (self::currentUser()->isMHO()) {
             return 'User Management';
         }
         return 'Users';
@@ -51,12 +52,15 @@ class UserResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO();
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+        ]);
     }
 
     public static function canEdit(Model $request): bool
     {
-        $user = auth()->user();
+        $user = self::currentUser();
         return $user->isAdmin() || $user->isMHO() || $user->isBHW() || $user->isMidwife();
     }
 
@@ -84,7 +88,7 @@ class UserResource extends Resource
                             ->required(fn (string $context): bool => $context === 'create')
                             ->columnSpanFull(),
                         Select::make('role')
-                            ->visible(auth()->user()->isAdmin())
+                            ->visible(self::currentUser()->isAdmin())
                             ->live()
                             ->searchable()
                             ->options([
@@ -199,5 +203,11 @@ class UserResource extends Resource
             'create' => Pages\CreateUser::route('/create'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
+    }
+
+    // initialize auth user
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }

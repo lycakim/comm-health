@@ -6,11 +6,12 @@ use App\Models\Patient;
 use Filament\Actions\Action;
 use Illuminate\Support\HtmlString;
 use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
+use ParagonIE\Sodium\Core\Curve25519\H;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\PatientResource;
-use ParagonIE\Sodium\Core\Curve25519\H;
 
 class CreatePatient extends CreateRecord
 {
@@ -18,7 +19,7 @@ class CreatePatient extends CreateRecord
 
     protected function handleRecordCreation(array $data): Patient
     {
-        $data['user_id'] = auth()->id();
+        $data['user_id'] = Auth::id();
 
         return Patient::create($data);
     }

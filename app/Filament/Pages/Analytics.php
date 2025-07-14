@@ -2,8 +2,11 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\User;
+use App\Enums\RoleEnum;
 use Filament\Pages\Page;
 use Filament\Actions\Action;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use App\Filament\Widgets\PatientChart;
 use Illuminate\Contracts\Support\Htmlable;
@@ -20,7 +23,10 @@ class Analytics extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isMHO();
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+        ]);
     }
 
     protected function getHeaderActions(): array
@@ -56,5 +62,11 @@ class Analytics extends Page
     public function getSubheading(): string|Htmlable|null
     {
         return 'View analytics reports';
+    }
+
+    // initialize auth user
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }

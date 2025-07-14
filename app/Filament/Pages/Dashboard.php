@@ -2,18 +2,20 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\User;
 use App\Models\Barangay;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use App\Filament\Widgets\StatsOverview;
 use App\Filament\Widgets\RecentPatients;
 use App\Filament\Widgets\RecentReferrals;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Widgets\HealthServicesChart;
-use App\Filament\Widgets\PatientCategoryByBarangayChart;
 use App\Filament\Widgets\RecentNotifications;
 use App\Filament\Widgets\PatientCategoryChart;
 use App\Filament\Widgets\UpcomingHealthPrograms;
+use App\Filament\Widgets\PatientCategoryByBarangayChart;
 
 class Dashboard extends Page
 {
@@ -43,7 +45,7 @@ class Dashboard extends Page
     
     protected function getHeaderWidgets(): array
     {
-        $userRole = auth()->user()->role;
+        $userRole = self::currentuser()->role;
         
         $widgets = [
             StatsOverview::class,
@@ -54,7 +56,7 @@ class Dashboard extends Page
     
     protected function getFooterWidgets(): array
     {
-        $userRole = auth()->user()->role;
+        $userRole = self::currentUser()->role;
         $widgets = [];
         
         switch ($userRole) {
@@ -118,7 +120,7 @@ class Dashboard extends Page
     
     protected function getHeaderActions(): array
     {
-        $userRole = auth()->user()->role;
+        $userRole = self::currentUser()->role;
         
         // Only certain roles can use filters
         if (!in_array($userRole, ['superadmin', 'mho', 'midwife'])) {
@@ -180,7 +182,7 @@ class Dashboard extends Page
 
     public function getTitle(): string|Htmlable
     {
-        $userRole = auth()->user()->role;
+        $userRole = self::currentUser()->role;
         
         return match($userRole) {
             'admin' => 'Admin Dashboard',
@@ -194,7 +196,7 @@ class Dashboard extends Page
 
     public function getSubheading(): string|Htmlable|null
     {
-        $userRole = auth()->user()->role;
+        $userRole = self::currentUser()->role;
         
         return match($userRole) {
             'admin' => 'Complete system overview and administration',
@@ -204,5 +206,11 @@ class Dashboard extends Page
             'resident', 'patient' => 'Your health information and available services',
             default => 'Health services overview'
         };
+    }
+
+    // initialize auth user
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }

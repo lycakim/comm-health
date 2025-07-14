@@ -3,11 +3,15 @@
 namespace App\Filament\Resources;
 
 use Filament\Forms;
+use App\Models\User;
 use Filament\Tables;
+use App\Enums\RoleEnum;
 use Filament\Forms\Form;
 use App\Models\PersonType;
 use Filament\Tables\Table;
+use App\Traits\HasUserTypeUrls;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
@@ -20,13 +24,15 @@ use App\Filament\Resources\PersonTypeResource\RelationManagers;
 
 class PersonTypeResource extends Resource
 {
+    use HasUserTypeUrls;
+    
     protected static ?string $model = PersonType::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
     public static function getNavigationGroup(): ?string
     {
-        if (auth()->user()->isBHW() || auth()->user()->isMidwife()) {
+        if (self::currentUser()->isBHW() || self::currentUser()->isMidwife()) {
             return 'Programs';
         }
         return 'Utility';
@@ -34,14 +40,24 @@ class PersonTypeResource extends Resource
 
     public static function getNavigationSort(): ?int
     {
-        if (auth()->user()->isMHO()) {
+        if (self::currentUser()->isMHO()) {
             return 2;
         }
-        else if (auth()->user()->isBHW() || auth()->user()->isMidwife()) {
+        else if (self::currentUser()->isBHW() || self::currentUser()->isMidwife()) {
             return 1;
         }
         
         return 5;
+    }
+
+    public static function canAccess(): bool
+    {
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+            RoleEnum::BHW,
+            RoleEnum::MIDWIFE
+        ]);
     }
 
     public static function form(Form $form): Form
@@ -96,5 +112,11 @@ class PersonTypeResource extends Resource
             'create' => Pages\CreatePersonType::route('/create'),
             'edit' => Pages\EditPersonType::route('/{record}/edit'),
         ];
+    }
+
+    // initialize auth user
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }

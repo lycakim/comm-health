@@ -10,6 +10,7 @@ use Filament\Pages\Dashboard;
 use Filament\Navigation\MenuItem;
 use App\Filament\Pages\Auth\Login;
 use Filament\Support\Colors\Color;
+use Illuminate\Support\Facades\Auth;
 use App\Filament\Pages\Auth\Register;
 use Illuminate\Support\Facades\Route;
 use Filament\Navigation\NavigationItem;
@@ -33,8 +34,8 @@ class AppPanelProvider extends PanelProvider
     {
         return $panel
             ->default()
-            ->id('app')
-            ->path('app')
+            ->id('commhealth')
+            ->path('commhealth')
             // ->login(Login::class)
             ->registration(Register::class)
             ->colors([

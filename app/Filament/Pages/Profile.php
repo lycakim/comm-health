@@ -7,6 +7,7 @@ use App\Models\User;
 use Filament\Forms\Get;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Filament\Widgets\PatientChart;
 use Filament\Forms\Components\Section;
@@ -26,7 +27,7 @@ class Profile extends Page
 
     public function mount(): void
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $this->form->fill([
             'name' => $user->name,
@@ -36,7 +37,7 @@ class Profile extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()->isResident();
+        return Auth::user()->isResident();
     }
 
     public function getSubheading(): string|Htmlable|null
@@ -68,7 +69,7 @@ class Profile extends Page
                             )
                             ->rules([
                                 fn (): Closure => function (string $attribute, $value, Closure $fail) {
-                                    if (! Hash::check($value, auth()->user()->password)) {
+                                    if (! Hash::check($value, Auth::user()->password)) {
                                         $fail('The :attribute is incorrect.');
                                     }
                                 },
@@ -111,7 +112,7 @@ class Profile extends Page
     {
         $data = $this->form->getState();
 
-        $user = User::find(auth()->user()->id);
+        $user = User::find(Auth::user()->id);
 
         $user->name = $data['name'];
 
@@ -124,7 +125,7 @@ class Profile extends Page
         $user->save();
 
         session()->put([
-            'password_hash_'.auth()->getDefaultDriver() => $user->getAuthPassword(),
+            'password_hash_'.Auth::getDefaultDriver() => $user->getAuthPassword(),
         ]);
 
         redirect('/app/account-profile');

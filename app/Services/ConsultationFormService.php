@@ -16,6 +16,7 @@ use App\Enums\CivilStatusEnum;
 use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Radio;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Wizard;
@@ -1067,7 +1068,7 @@ class ConsultationFormService
                                     ->columns(3),
 
                                     Hidden::make('user_id')
-                                        ->default(fn () => auth()->id())
+                                        ->default(fn () => Auth::user())
                                         ->required()
                             ]),
                     ])
