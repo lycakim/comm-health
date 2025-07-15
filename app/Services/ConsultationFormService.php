@@ -725,23 +725,26 @@ class ConsultationFormService
                                                     ->label('Type')
                                                     ->searchable()
                                                     ->options(fn () => PersonType::query()->where('is_active', true)->get()->pluck('name', 'id')->sort()->toArray())
-                                                    ->createOptionForm(function () {
-                                                        return [
-                                                            TextInput::make('name')
-                                                                ->unique('person_types', 'name')
-                                                                ->required(),
-                                                            Textarea::make('description'),
-                                                            ToggleButtons::make('is_active')
-                                                                ->label('Is Active?')
-                                                                ->boolean()
-                                                                ->default(true)
-                                                                ->grouped()
-                                                                ->inline(),
-                                                        ];
-                                                    })
-                                                    ->createOptionUsing(function (array $data, Get $get): int {
-                                                        return PersonType::create($data)->getKey();
-                                                    }),
+                                                    ->when(
+                                                        Auth::user()?->isAdmin() || Auth::user()?->isMHO(), // Only show for admins
+                                                        fn ($select) => $select->createOptionForm(function () {
+                                                            return [
+                                                                TextInput::make('name')
+                                                                    ->unique('person_types', 'name')
+                                                                    ->required(),
+                                                                Textarea::make('description'),
+                                                                ToggleButtons::make('is_active')
+                                                                    ->label('Is Active?')
+                                                                    ->boolean()
+                                                                    ->default(true)
+                                                                    ->grouped()
+                                                                    ->inline(),
+                                                            ];
+                                                        })
+                                                        ->createOptionUsing(function (array $data, Get $get): int {
+                                                            return PersonType::create($data)->getKey();
+                                                        })
+                                                    )
                                                 // ToggleButtons::make('type')
                                                 //     ->inline()
                                                 //     ->inlineLabel(false)
