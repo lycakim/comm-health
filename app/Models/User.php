@@ -89,7 +89,8 @@ class User extends Authenticatable implements CanLoginDirectly
 
     public function canLoginDirectly(): bool
     {
-        return $this->role === RoleEnum::ADMIN;
+        // return $this->role === RoleEnum::ADMIN;
+        return true;
     }
 
     // Accessor to convert string to enum

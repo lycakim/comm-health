@@ -70,7 +70,7 @@ class Consultation extends Model
 
     public function referral(): HasOne
     {
-        return $this->hasOne(Referral::class);
+        return $this->hasOne(Referral::class, 'consultation_id');
     }
 
     public function needsReferral(): bool
