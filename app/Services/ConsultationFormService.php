@@ -698,6 +698,14 @@ class ConsultationFormService
                                     ->schema([
                                         Fieldset::make()
                                             ->schema([
+                                                ToggleButtons::make('make_referral')
+                                                    ->label('Make a referral?')
+                                                    ->boolean()
+                                                    ->inline()
+                                                    ->default(false)
+                                                    ->dehydrated(false)
+                                                    ->reactive()
+                                                    ->live(),
                                                 ToggleButtons::make('disability')
                                                     ->label('With Disability?')
                                                     ->boolean()
@@ -723,6 +731,7 @@ class ConsultationFormService
                                                 Select::make('type')
                                                     ->preload()
                                                     ->label('Type')
+                                                    ->columnSpanFull()
                                                     ->searchable()
                                                     ->options(fn () => PersonType::query()->where('is_active', true)->get()->pluck('name', 'id')->sort()->toArray())
                                                     ->when(
@@ -1074,6 +1083,80 @@ class ConsultationFormService
                                         ->default(fn () => Auth::user())
                                         ->required()
                             ]),
+                        Wizard\Step::make('Consultation Step 3')
+                            ->visible(fn (Get $get) => $get('make_referral'))
+                            ->description('Make a referral')
+                            ->schema([
+                                Select::make('referred_to')
+                                    ->options([
+                                        'Carmen MHO' => 'Carmen MHO',
+                                    ])
+                                    ->default('Carmen MHO')
+                                    ->required(),
+                                    
+                                Radio::make('referral_reason')
+                                    ->options([
+                                        'Hospital Capability' => 'Hospital Capability',
+                                        'Lack of Specialists' => 'Lack of Specialists',
+                                        'Financial Constraint' => 'Financial Constraint',
+                                        'Other' => 'Other',
+                                    ])
+                                    ->columns(2)
+                                    ->live()
+                                    ->required()
+                                    ->gridDirection('row'),
+
+                                Textarea::make('reason_for_referral_other')
+                                    ->label('State your reason for referral')
+                                    ->hidden(fn (Get $get) => ! $get('referral_reason') || $get('referral_reason') !== 'Other')
+                                    ->required(fn (Get $get) => $get('referral_reason') === 'Other')
+                                    ->maxLength(65535),
+                                
+                                ToggleButtons::make('urgency')
+                                    ->required()
+                                    ->options([
+                                        'Emergency' => 'Emergency',
+                                        'Ambulatory' => 'Ambulatory',
+                                        'Medico-Legal' => 'Medico-Legal',
+                                    ])
+                                    ->inline(),
+                                
+                                ToggleButtons::make('surgical_operation')
+                                    ->boolean()
+                                    ->default(false)
+                                    ->live()
+                                    ->inline(),
+                                
+                                TextInput::make('procedure')
+                                    ->label('What Procedure?')
+                                    ->hidden(fn (Get $get) => ! $get('surgical_operation'))
+                                    ->required(fn (Get $get) => $get('surgical_operation')),
+                                
+                                ToggleButtons::make('drug_allergy')
+                                    ->boolean()
+                                    ->default(false)
+                                    ->live()
+                                    ->inline(),
+                                
+                                TextInput::make('drug_allergy_notes')
+                                    ->label('What Allergy?')
+                                    ->hidden(fn (Get $get) => ! $get('drug_allergy'))
+                                    ->required(fn (Get $get) => $get('drug_allergy')),
+                                
+                                Textarea::make('chief_complaint')
+                                    ->maxLength(65535),
+                                Textarea::make('action_taken')
+                                    ->maxLength(65535),
+                                Textarea::make('impression')
+                                    ->maxLength(65535),
+                                Textarea::make('hpi_notes')
+                                    ->maxLength(65535),
+
+                                Textarea::make('notes')
+                                    ->label('Additional Notes')
+                                    ->rows(3)
+                                    ->maxLength(1000),
+                            ])
                     ])
                 ])
         ];

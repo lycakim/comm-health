@@ -47,7 +47,6 @@ class ReferralResource extends Resource
         return in_array(self::currentUser()->role, [
             RoleEnum::ADMIN,
             RoleEnum::MHO,
-            RoleEnum::BHW,
         ]);
     }
 

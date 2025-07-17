@@ -17,14 +17,15 @@ class CreateConsultation extends CreateRecord
 {
     protected static string $resource = ConsultationResource::class;
 
-    // protected function handleRecordCreation(array $data): Consultation
-    // {
-    //     if ($data['status'] === 'completed' && empty($data['follow_up_date'])) {
-    //         $data['follow_up_date'] = now()->addWeeks(2);
-    //     }
+    protected function handleRecordCreation(array $data): Consultation
+    {
+        logger($data);
+        if ($data['status'] === 'completed' && empty($data['follow_up_date'])) {
+            $data['follow_up_date'] = now()->addWeeks(2);
+        }
 
-    //     return Consultation::create($data);
-    // }
+        return Consultation::create($data);
+    }
 
     protected function getCreatedNotification(): ?Notification
     {

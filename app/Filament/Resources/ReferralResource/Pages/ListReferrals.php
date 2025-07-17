@@ -16,9 +16,13 @@ class ListReferrals extends ListRecords
         if (Auth::user()->isMHO()) {
             return [];
         }
-        return [
-            // Actions\CreateAction::make()
-            //     ->icon('heroicon-o-plus'),
-        ];
+
+        if (Auth::user()->isAdmin() ) {
+            return [
+                Actions\CreateAction::make()
+                    ->icon('heroicon-o-plus'),
+            ];
+        }
+        return [];
     }
 }
