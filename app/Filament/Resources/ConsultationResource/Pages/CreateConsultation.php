@@ -1,17 +1,17 @@
 <?php
-
 namespace App\Filament\Resources\ConsultationResource\Pages;
 
-use Filament\Actions;
-use Livewire\Component;
+use App\Filament\Resources\ConsultationResource;
 use App\Models\Consultation;
+use App\Models\Referral;
 use Filament\Actions\Action;
-use Filament\Infolists\Infolist;
-use Illuminate\Support\HtmlString;
-use Filament\Support\Enums\MaxWidth;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use App\Filament\Resources\ConsultationResource;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\HtmlString;
 
 class CreateConsultation extends CreateRecord
 {
@@ -19,12 +19,121 @@ class CreateConsultation extends CreateRecord
 
     protected function handleRecordCreation(array $data): Consultation
     {
-        logger($data);
-        if ($data['status'] === 'completed' && empty($data['follow_up_date'])) {
-            $data['follow_up_date'] = now()->addWeeks(2);
-        }
+        return DB::transaction(function () use ($data) {
+            logger($data);
 
-        return Consultation::create($data);
+            try {
+                // Create consultation with filtered data
+                $consultationData            = $this->prepareConsultationData($data);
+                $consultationData['user_id'] = Auth::id();
+                $consultation                = Consultation::create($consultationData);
+
+                // Create referral if needed
+                if ($this->shouldCreateReferral($data)) {
+                    $this->createReferral($data, $consultation);
+                }
+
+                return $consultation;
+
+            } catch (\Exception $e) {
+                logger("Error creating consultation: " . $e->getMessage(), [
+                    'data'  => $data,
+                    'error' => $e->getTraceAsString(),
+                ]);
+                throw $e;
+            }
+        });
+    }
+
+    private function prepareConsultationData(array $data): array
+    {
+        return Arr::except($data, [
+            'referred_to',
+            'referral_reason',
+            'urgency',
+            'surgical_operation',
+            'reason_for_referral_other',
+            'procedure',
+            'drug_allergy',
+            'drug_allergy_notes',
+            'chief_complaint',
+            'action_taken',
+            'impression',
+            'hpi_notes',
+            'notes',
+        ]);
+    }
+
+    /**
+     * Check if referral should be created based on required fields
+     */
+    private function shouldCreateReferral(array $data): bool
+    {
+        return ! empty($data['referred_to']) &&
+        ! empty($data['referral_reason']) &&
+        ! empty($data['urgency']);
+    }
+
+    /**
+     * Create referral with auto-generated reference ID
+     */
+    private function createReferral(array $data, Consultation $consultation): void
+    {
+        $currentDate = now();
+        $refId       = $this->generateReferralId($currentDate, $consultation->patient->barangay_id);
+
+        $referralData = $this->prepareReferralData($data, $consultation, $refId, $currentDate);
+
+        Referral::create($referralData);
+    }
+
+    /**
+     * Generate unique referral ID with race condition protection
+     */
+    private function generateReferralId($currentDate, $brgyId): string
+    {
+        $dateFormat = $currentDate->format('Ymd');
+        $prefix     = 'REF';
+
+        // Use database transaction with lock to prevent race conditions
+        $sequenceNumber = DB::transaction(function () use ($currentDate) {
+            $todaysCount = \App\Models\Referral::whereDate('created_at', $currentDate->toDateString())
+                ->lockForUpdate()
+                ->count();
+
+            return $todaysCount + 1;
+        });
+
+        $autoIncrement = str_pad($sequenceNumber, 3, '0', STR_PAD_LEFT);
+
+        return "{$prefix}-{$dateFormat}-{$autoIncrement}-{$brgyId}";
+    }
+
+    /**
+     * Prepare referral data array
+     */
+    private function prepareReferralData(array $data, Consultation $consultation, string $refId, $currentDate): array
+    {
+        return [
+            'ref_id'                    => $refId,
+            'consultation_id'           => $consultation->id,
+            'patient_id'                => $data['patient_id'],
+            'referred_to'               => $data['referred_to'],
+            'referral_reason'           => $data['referral_reason'],
+            'reason_for_referral_other' => $data['reason_for_referral_other'] ?? null,
+            'urgency'                   => $data['urgency'],
+            'surgical_operation'        => $data['surgical_operation'] ?? false,
+            'procedure'                 => $data['procedure'] ?? null,
+            'drug_allergy'              => $data['drug_allergy'] ?? false,
+            'drug_allergy_notes'        => $data['drug_allergy_notes'] ?? null,
+            'chief_complaint'           => $data['chief_complaint'] ?? null,
+            'action_taken'              => $data['action_taken'] ?? null,
+            'impression'                => $data['impression'] ?? null,
+            'hpi_notes'                 => $data['hpi_notes'] ?? null,
+            'receiving_provider_notes'  => $data['notes'] ?? null,
+            'user_id'                   => Auth::id(),
+            'created_at'                => $currentDate,
+        ];
     }
 
     protected function getCreatedNotification(): ?Notification
@@ -38,113 +147,144 @@ class CreateConsultation extends CreateRecord
     protected function getCreateFormAction(): Action
     {
         return Action::make('create')
-                ->before(function () {  
-                    try {
-                        $this->form->validate();
-                        
-                        $formData = $this->form->getState();
-                        if (empty(array_filter($formData))) {
-                            throw new \Exception('Please fill in all required fields before proceeding.');
-                        }
-                        
-                    } catch (\Exception $e) {
-                        Notification::make()
-                            ->title('Form Incomplete')
-                            ->body($e->getMessage()) 
-                            ->warning()
-                            ->send();
-                        
-                        $this->halt();
+            ->before(function () {
+                try {
+                    $this->form->validate();
+
+                    $formData = $this->form->getState();
+                    if (empty(array_filter($formData))) {
+                        throw new \Exception('Please fill in all required fields before proceeding.');
                     }
-                })
-                ->requiresConfirmation()
-                ->modalHeading(function (){
-                    try {
-                        $this->form->validate();
 
-                        $formData = $this->form->getState();
-                        if (empty(array_filter($formData))) {
-                            throw new \Exception('Please fill in all required fields before proceeding.');
-                        }
-                    } catch (\Illuminate\Validation\ValidationException $e) {
-                        return 'Fill in all required fields before proceeding.';
-                    } catch (\Exception $e) {
-                        return 'Fill in all required fields before proceeding.';
+                } catch (\Exception $e) {
+                    Notification::make()
+                        ->title('Form Incomplete')
+                        ->body($e->getMessage())
+                        ->warning()
+                        ->send();
+
+                    $this->halt();
+                }
+            })
+            ->requiresConfirmation()
+            ->modalHeading(function () {
+                try {
+                    $this->form->validate();
+
+                    $formData = $this->form->getState();
+                    if (empty(array_filter($formData))) {
+                        throw new \Exception('Please fill in all required fields before proceeding.');
                     }
-                })
-                ->modalWidth(MaxWidth::FiveExtraLarge)
-                ->modalDescription(function () {
-                    try {
-                        $this->form->validate();
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    return 'Fill in all required fields before proceeding.';
+                } catch (\Exception $e) {
+                    return 'Fill in all required fields before proceeding.';
+                }
+            })
+            ->modalWidth(MaxWidth::FiveExtraLarge)
+            ->modalDescription(function () {
+                try {
+                    $this->form->validate();
 
-                        $formData = $this->form->getState();
-                        logger($formData);
-                        if (empty(array_filter($formData))) {
-                            throw new \Exception('Please fill in all required fields before proceeding.');
-                        }
+                    $formData = $this->form->getState();
+                    // dd($formData);
+                    if (empty(array_filter($formData))) {
+                        throw new \Exception('Please fill in all required fields before proceeding.');
+                    }
 
-                        return new HtmlString(
-                            view('filament.create-preview', compact('formData'))->render()
-                        );
-                    } catch (\Illuminate\Validation\ValidationException $e) {
-                        $html = '<div  class="flex flex-col w-full h-full overflow-auto gap-3">';
+                    return new HtmlString(
+                        view('filament.create-preview', compact('formData'))->render()
+                    );
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    $html = '<div  class="flex flex-col w-full h-full overflow-auto gap-3">';
 
-                        foreach ($e->errors() as $fieldErrors) {
-                            $html .= "<div class=\"flex items-center gap-2 p-3 rounded bg-red-100";
-                            foreach ($fieldErrors as $message) {
-                                $html .=  "
+                    foreach ($e->errors() as $fieldErrors) {
+                        $html .= "<div class=\"flex items-center gap-2 p-3 rounded bg-red-100";
+                        foreach ($fieldErrors as $message) {
+                            $html .= "
                                             <x-heroicon-o-exclamation-circle class=\"w-5 h-5\" />
                                             <span>{$message}</span>
                                         ";
-                            }
-                            $html .= '</div>';
                         }
-
                         $html .= '</div>';
+                    }
 
-                        return new HtmlString($html);
-                    } catch (\Exception $e) {
-                        // Fallback for general exceptions
-                        $html = '<div class="flex items-center gap-2 p-3 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                    $html .= '</div>';
+
+                    return new HtmlString($html);
+                } catch (\Exception $e) {
+                    // Fallback for general exceptions
+                    $html = '<div class="flex items-center gap-2 p-3 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
                                 <x-heroicon-o-exclamation-circle class="w-5 h-5" />
                                 <span>{$e->getMessage()}</span>
                             </div>';
 
-                        return new HtmlString($html);
-                    }
-                })
-                ->action(function () {
-                    $this->create();
-                })
-                ->keyBindings(['mod+s']);
+                    return new HtmlString($html);
+                }
+            })
+            ->action(function () {
+                $this->create();
+            })
+            ->keyBindings(['mod+s']);
     }
 
-    protected function getRelationshipDisplayName($key, $value)
+    /**
+     * Get display name for relationship fields
+     */
+    protected function getRelationshipDisplayName(string $key, $value): ?string
     {
         try {
-            // Get the form schema to find the relationship
-            $schema = $this->form->getSchema();
-            
-            foreach ($schema as $component) {
-                if ($component->getName() === $key && method_exists($component, 'getRelationship')) {
-                    $relationship = $component->getRelationship();
-                    $relatedModel = $component->getRelationship()->getRelated();
-                    $record = $relatedModel::find($value);
-                    
-                    if ($record) {
-                        // Try common display fields
-                        return $record->name ?? 
-                            $record->title ?? 
-                            $record->label ?? 
-                            $record->display_name ?? 
-                            "ID: {$value}";
-                    }
+            // Map common relationship fields to their models
+            $relationshipMap = [
+                'patient_id'     => \App\Models\Patient::class,
+                'user_id'        => \App\Models\User::class,
+                'barangay_id'    => \App\Models\Barangay::class,
+                'person_type_id' => \App\Models\PersonType::class,
+                'type'           => \App\Models\PersonType::class,
+                // Add more mappings as needed
+            ];
+
+            if (! isset($relationshipMap[$key])) {
+                return null;
+            }
+
+            $modelClass = $relationshipMap[$key];
+            $model      = $modelClass::find($value);
+
+            if (! $model) {
+                return null;
+            }
+
+            // Try common name fields
+            $nameFields = ['name', 'full_name', 'title', 'label', 'description'];
+
+            foreach ($nameFields as $field) {
+                if (isset($model->$field)) {
+                    return $model->$field;
                 }
             }
-            
-            return "ID: {$value}";
+
+            // For User model, try combining first_name and last_name
+            if ($model instanceof \App\Models\User) {
+                if (isset($model->first_name) && isset($model->last_name)) {
+                    return trim($model->first_name . ' ' . $model->last_name);
+                }
+                if (isset($model->email)) {
+                    return $model->email;
+                }
+            }
+
+            // For Patient model, similar logic
+            if ($model instanceof \App\Models\Patient) {
+                if (isset($model->first_name) && isset($model->last_name)) {
+                    return trim($model->first_name . ' ' . $model->last_name);
+                }
+            }
+
+            return null;
         } catch (\Exception $e) {
-            return "ID: {$value}";
+            logger('Error getting relationship display name: ' . $e->getMessage());
+            return null;
         }
     }
 
@@ -153,20 +293,20 @@ class CreateConsultation extends CreateRecord
         try {
             // Get the form schema to find the relationship
             $schema = $this->form->getSchema();
-            
+
             foreach ($schema as $component) {
                 if ($component->getName() === 'type') {
                     $relationship = $component->getRelationship();
                     $relatedModel = $component->getRelationship()->getRelated();
-                    $record = $relatedModel::find($value);
-                    
+                    $record       = $relatedModel::find($value);
+
                     if ($record) {
                         return $record->name ??
                             "ID: {$value}";
                     }
                 }
             }
-            
+
             return "ID: {$value}";
         } catch (\Exception $e) {
             return "ID: {$value}";

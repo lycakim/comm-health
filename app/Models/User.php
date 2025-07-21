@@ -1,13 +1,12 @@
 <?php
-
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Afsakar\FilamentOtpLogin\Models\Contracts\CanLoginDirectly;
 use App\Enums\RoleEnum;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Afsakar\FilamentOtpLogin\Models\Contracts\CanLoginDirectly;
+use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements CanLoginDirectly
 {
@@ -40,8 +39,8 @@ class User extends Authenticatable implements CanLoginDirectly
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'role' => RoleEnum::class,  
+            'password'          => 'hashed',
+            'role'              => RoleEnum::class,
         ];
     }
 
@@ -94,14 +93,14 @@ class User extends Authenticatable implements CanLoginDirectly
     }
 
     // Accessor to convert string to enum
-    public function getRoleAttribute($value): RoleEnum
-    {
-        return RoleEnum::from($value);
-    }
+    // public function getRoleAttribute($value): RoleEnum
+    // {
+    //     return RoleEnum::from($value);
+    // }
 
     // Mutator to convert enum to string when saving
-    public function setRoleAttribute($value): void
-    {
-        $this->attributes['role'] = $value instanceof RoleEnum ? $value->value : $value;
-    }
+    // public function setRoleAttribute($value): void
+    // {
+    //     $this->attributes['role'] = $value instanceof RoleEnum ? $value->value : $value;
+    // }
 }
