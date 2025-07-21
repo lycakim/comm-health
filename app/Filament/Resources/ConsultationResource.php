@@ -125,6 +125,10 @@ class ConsultationResource extends Resource
                     ->requiresConfirmation(false)
                     ->modalWidth('md')
                     ->slideOver()
+                    ->visible(fn() => in_array(self::currentUser()->role, [
+                        RoleEnum::ADMIN,
+                        RoleEnum::BHW,
+                    ]))
                     ->form(function ($record) {
                         // If referral exists, show details (read-only)
                         if ($record->referral) {
