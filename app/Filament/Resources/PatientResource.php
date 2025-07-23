@@ -133,13 +133,14 @@ class PatientResource extends Resource
                     ->schema([
                         Fieldset::make('Personal Information')
                             ->schema([
-                                TextInput::make('first_name')->required()->unique('patients', 'first_name', ignoreRecord: true),
-                                TextInput::make('last_name')->required()->unique('patients', 'last_name', ignoreRecord: true),
                                 // Select::make('resident_id')
                                 //     ->label('Resident')
                                 //     ->options(User::query()->get()->pluck('name', 'id')->toArray())
                                 //     ->columnSpanFull(),
+                                TextInput::make('first_name')->required()->unique('patients', 'first_name', ignoreRecord: true),
                                 TextInput::make('middle_name')->unique('patients', 'middle_name', ignoreRecord: true),
+                                TextInput::make('last_name')->required()->unique('patients', 'last_name', ignoreRecord: true),
+                                TextInput::make('suffix')->hint('Jr., Sr., II, III, etc.'),
                                 Select::make('relationship_to_head_of_family')
                                     ->label('Relationship to the Head of the Family')
                                     // ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'other' ? 2 : 'full')
@@ -149,8 +150,12 @@ class PatientResource extends Resource
                                     ->preload()
                                     ->searchable()
                                     ->required(fn (Get $get) => $get('relationship_to_head_of_family') !== 'other'),
-                                TextInput::make('suffix')
-                                    ->hint('Jr., Sr., II, III, etc.'),
+                                Select::make('category_id')
+                                    ->label('Category')
+                                    ->searchable()
+                                    ->columnSpan(2)
+                                    ->options(Category::query()->get()->pluck('name', 'id')->toArray())
+                                    ->preload(),
                                 TextInput::make('relationship_to_head_of_family_other')
                                     ->label('Please specify relationship')
                                     ->columnSpan(1)
@@ -250,13 +255,8 @@ class PatientResource extends Resource
                                         
                                         return Purok::create($data)->getKey();
                                     }),
-                                Select::make('category_id')
-                                    ->label('Category')
-                                    ->searchable()
-                                    ->options(Category::query()->get()->pluck('name', 'id')->toArray())
-                                    ->preload(),
                             ])
-                            ->columns(3),
+                            ->columns(4),
                         Fieldset::make('Women of Reproductive Age (15-49 yrs old)')
                             ->schema([
                                 ToggleButtons::make('pregnant')
@@ -547,7 +547,10 @@ class PatientResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(function (Builder $query) {
+                $query->latest();
+            });
             // ->modifyQueryUsing(function (Builder $query) {
             //     if (self::currentUser()->isAdmin() || self::currentUser()->isMHO()) {
             //         return $query->latest();

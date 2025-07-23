@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Consultation extends Model
 {
@@ -68,9 +69,9 @@ class Consultation extends Model
         return $this->belongsTo(Purok::class);
     }
 
-    public function referral(): HasOne
+    public function referral(): HasMany
     {
-        return $this->hasOne(Referral::class, 'consultation_id');
+        return $this->hasMany(Referral::class);
     }
 
     public function needsReferral(): bool

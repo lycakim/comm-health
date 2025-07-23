@@ -717,7 +717,7 @@ class ConsultationFormService
                                                     ->boolean()
                                                     ->inline(),
                                                 ToggleButtons::make('member_of_4ps')
-                                                    ->label('4ps member?')
+                                                    ->label('4Ps member?')
                                                     ->boolean()
                                                     ->inline(),
                                                 ToggleButtons::make('nhts_member')

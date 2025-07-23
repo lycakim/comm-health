@@ -87,12 +87,42 @@ class ConsultationResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                Tables\Filters\SelectFilter::make('referral.status')
+                    ->label('Referral Status')
                     ->options([
-                        'completed'      => 'Completed',
+                        'pending'        => 'Pending',
                         'needs_referral' => 'Needs Referral',
-                        'referred'       => 'Referred',
-                    ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (! $data['value']) {
+                            return $query;
+                        }
+                        
+                        return $query->whereHas('referral', function (Builder $query) use ($data) {
+                            $query->where('status', $data['value']);
+                        });
+                    }),
+                Tables\Filters\SelectFilter::make('has_referral')
+                    ->label('Referral Existence')
+                    ->options([
+                        'referred'     => 'Referred',
+                        'not_referred' => 'Not Referred',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (! $data['value']) {
+                            return $query;
+                        }
+                        
+                        if ($data['value'] === 'referred') {
+                            return $query->whereHas('referral');
+                        }
+                        
+                        if ($data['value'] === 'not_referred') {
+                            return $query->whereDoesntHave('referral');
+                        }
+                        
+                        return $query;
+                    }),
                 Tables\Filters\Filter::make('date')
                     ->form([
                         Forms\Components\DatePicker::make('created_from'),
@@ -393,15 +423,27 @@ class ConsultationResource extends Resource
             ->groups([
                 'date',
                 'patient.first_name',
+                
                 Tables\Grouping\Group::make('referral_status')
                     ->label('Referral Status')
+                    ->getTitleFromRecordUsing(function ($record) {
+                        return $record->referral ? 'Referred' : 'Not Referred';
+                    })
                     ->getDescriptionFromRecordUsing(function ($record) {
                         return $record->referral ? 'Referred' : 'Not Referred';
                     })
                     ->orderQueryUsing(function (Builder $query, string $direction) {
-                        return $query->orderByRaw('(SELECT COUNT(*) FROM referrals WHERE referrals.consultation_id = consultations.id) ' . $direction);
+                        return $query->orderByRaw('
+                            EXISTS (
+                                SELECT 1 FROM referrals 
+                                WHERE referrals.consultation_id = consultations.id
+                            ) ' . $direction
+                        );
                     }),
-            ]);
+            ])
+            ->modifyQueryUsing(function (Builder $query) {
+                $query->latest();
+            });
     }
 
     public static function getRelations(): array
