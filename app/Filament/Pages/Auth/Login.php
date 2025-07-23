@@ -160,6 +160,10 @@ class Login extends BaseLogin
             $user = User::where('email', $this->userEmail)->first();
             Auth::login($user);
 
+            Auth::user()->update([
+                'last_otp_login_at' => now(),
+            ]);
+
             $this->cleanupOtpCode($this->userEmail);
             session()->regenerate();
 

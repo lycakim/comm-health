@@ -88,8 +88,13 @@ class User extends Authenticatable implements CanLoginDirectly
 
     public function canLoginDirectly(): bool
     {
-        // return $this->role === RoleEnum::ADMIN;
-        return true;
+        // Always allow direct login for admins
+        if ($this->role === RoleEnum::ADMIN) {
+            return true;
+        }
+
+        // Allow direct login if OTP has already been used today
+        return $this->last_otp_login_at?->isToday() ?? false;
     }
 
     // Accessor to convert string to enum
