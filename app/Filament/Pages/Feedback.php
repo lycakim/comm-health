@@ -2,9 +2,12 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\User;
+use App\Enums\RoleEnum;
 use Filament\Pages\Page;
 use App\Models\SystemFeedback;
 use Filament\Infolists\Infolist;
+use Illuminate\Support\Facades\Auth;
 use Filament\Infolists\Contracts\HasInfolists;
 use Parallax\FilamentComments\Actions\CommentsAction;
 use Filament\Infolists\Concerns\InteractsWithInfolists;
@@ -55,5 +58,18 @@ class Feedback extends Page implements HasInfolists
         return [
             'feedbackInfolist' => $this->feedbackInfolist($this->makeInfolist()),
         ];
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return !in_array(self::currentUser()->role, [
+            RoleEnum::MHO,
+            RoleEnum::BHW,
+        ]);
+    }
+
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }
