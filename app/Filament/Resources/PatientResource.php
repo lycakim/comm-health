@@ -137,9 +137,9 @@ class PatientResource extends Resource
                                 //     ->label('Resident')
                                 //     ->options(User::query()->get()->pluck('name', 'id')->toArray())
                                 //     ->columnSpanFull(),
-                                TextInput::make('first_name')->required()->unique('patients', 'first_name', ignoreRecord: true),
-                                TextInput::make('middle_name')->unique('patients', 'middle_name', ignoreRecord: true),
-                                TextInput::make('last_name')->required()->unique('patients', 'last_name', ignoreRecord: true),
+                                TextInput::make('first_name')->required()->unique(ignoreRecord: true),
+                                TextInput::make('middle_name')->unique(ignoreRecord: true),
+                                TextInput::make('last_name')->required()->unique(ignoreRecord: true),
                                 TextInput::make('suffix')->hint('Jr., Sr., II, III, etc.'),
                                 Select::make('relationship_to_head_of_family')
                                     ->label('Relationship to the Head of the Family')
