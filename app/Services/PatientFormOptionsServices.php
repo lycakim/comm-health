@@ -97,6 +97,7 @@ class PatientFormOptionsServices
     public static function getPatientRelationships()
     {
         return [
+            'Self' =>  'Self',
             'Spouse' => 'Spouse',
             'Child' => 'Child',
             'Co-Wife' => 'Co-wife',

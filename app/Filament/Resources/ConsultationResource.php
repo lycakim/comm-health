@@ -394,6 +394,15 @@ class ConsultationResource extends Resource
                                 ->body("Referral #{$referral->id} has been created for {$record->patient->first_name} {$record->patient->last_name}")
                                 ->success()
                                 ->send();
+                            
+                            $recipient = User::find($record->user_id);
+
+                            $recipient->notify(
+                                Notification::make()
+                                ->title('New Referral Created')
+                                ->body("Referral #{$referral->id} has been created for {$record->patient->first_name} {$record->patient->last_name}")
+                                ->toDatabase(),
+                            );
 
                             // redirect to consultatation current page
                             redirect()->back();
@@ -441,6 +450,8 @@ class ConsultationResource extends Resource
                         );
                     }),
             ])
+            ->poll('10s')
+            ->deferLoading()
             ->modifyQueryUsing(function (Builder $query) {
                 $query->latest();
             });

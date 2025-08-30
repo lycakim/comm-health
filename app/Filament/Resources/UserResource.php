@@ -12,6 +12,7 @@ use App\Models\Barangay;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
@@ -19,6 +20,7 @@ use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\SelectColumn;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\UserResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -166,14 +168,21 @@ class UserResource extends Resource
                     ->sortable(),
                 TextColumn::make('email')
                     ->searchable(),
-                TextColumn::make('barangays.name')
+                SelectColumn::make('assigned_barangay_id')
                     ->label('Assigned Barangay')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->disabled(fn ($record) => $record->isAdmin() || $record->isMHO())
+                    ->options(Barangay::query()->get()->pluck('name', 'id')->sort()->toArray())
+                    ->getStateUsing(fn ($record) => $record->assignedBarangay->first()?->id)
+                    ->updateStateUsing(function ($record, $state) {
+                        $record->assignedBarangay()->sync($state ? [$state] : []);
+                        return $state;
+                    }),
                 TextColumn::make('role')
-                    ->formatStateUsing(fn ($state) => RoleEnum::tryFrom($state)?->getLabel() ?? ucfirst($state))
+                    ->formatStateUsing(fn (RoleEnum $state) => $state->getLabel())
                     ->badge()
-                    ->color(fn (string $state): string => RoleEnum::tryFrom($state)?->getColor() ?? 'gray'),
+                    ->color(fn (RoleEnum $state): string => $state->getColor()),
                 
             ])
             ->filters([

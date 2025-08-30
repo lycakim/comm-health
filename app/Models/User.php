@@ -51,6 +51,12 @@ class User extends Authenticatable implements CanLoginDirectly
             ->withTimestamps();
     }
 
+    public function assignedBarangay()
+    {
+        return $this->belongsToMany(Barangay::class, 'barangay_users', 'user_id', 'barangay_id')
+                    ->limit(1);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === RoleEnum::ADMIN;
@@ -89,12 +95,14 @@ class User extends Authenticatable implements CanLoginDirectly
     public function canLoginDirectly(): bool
     {
         // Always allow direct login for admins
-        if ($this->role === RoleEnum::ADMIN) {
-            return true;
-        }
+        // if ($this->role === RoleEnum::ADMIN) {
+        //     return true;
+        // }
 
         // Allow direct login if OTP has already been used today
-        return $this->last_otp_login_at?->isToday() ?? false;
+        // return $this->last_otp_login_at?->isToday() ?? false;
+
+        return true;
     }
 
     // Accessor to convert string to enum

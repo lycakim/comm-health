@@ -137,9 +137,9 @@ class PatientResource extends Resource
                                 //     ->label('Resident')
                                 //     ->options(User::query()->get()->pluck('name', 'id')->toArray())
                                 //     ->columnSpanFull(),
-                                TextInput::make('first_name')->required()->unique(ignoreRecord: true),
-                                TextInput::make('middle_name')->unique(ignoreRecord: true),
-                                TextInput::make('last_name')->required()->unique(ignoreRecord: true),
+                                TextInput::make('first_name')->required(),
+                                TextInput::make('middle_name'),
+                                TextInput::make('last_name')->required(),
                                 TextInput::make('suffix')->hint('Jr., Sr., II, III, etc.'),
                                 Select::make('relationship_to_head_of_family')
                                     ->label('Relationship to the Head of the Family')
@@ -168,6 +168,7 @@ class PatientResource extends Resource
                                     ->label('Date of Birth')
                                     ->required()
                                     ->reactive()
+                                    ->debounce(500)
                                     ->afterStateUpdated(function (callable $set, $state) {
                                         $set('age', $state ? Carbon::parse($state)->age : null);
                                     }),
@@ -262,6 +263,7 @@ class PatientResource extends Resource
                                 ToggleButtons::make('pregnant')
                                     ->label('Pregnant?')
                                     ->boolean()
+                                    ->default(false)
                                     ->live()
                                     ->inline(),
                                 TextInput::make('weeks_pregnant')
@@ -296,7 +298,8 @@ class PatientResource extends Resource
                         Fieldset::make('Religion')
                             ->schema([
                                 ToggleButtons::make('ip')
-                                    ->label('IP?')
+                                    ->label('Indigenous People?')
+                                    ->default(false)
                                     ->boolean()
                                     ->live()
                                     ->inline(),
@@ -313,6 +316,7 @@ class PatientResource extends Resource
                                 ToggleButtons::make('with_fence')
                                     ->label('With Fence?')
                                     ->boolean()
+                                    ->default(false)
                                     ->live()
                                     ->inline(),
                                 Radio::make('house_type')
@@ -436,9 +440,9 @@ class PatientResource extends Resource
             ->columns([
                 TextColumn::make('full_name')
                     ->label('Full Name')
-                    ->searchable(['first_name', 'last_name'])
+                    ->searchable(['first_name', 'last_name', 'middle_name', 'suffix'])
                     ->getStateUsing(function ($record) {
-                        return $record->first_name . ' ' . $record->last_name;
+                        return $record->first_name . ' ' . $record->middle_name . ' ' . $record->last_name . ' ' . $record->suffix;
                     })
                     ->sortable(),
                 TextColumn::make('sex')
@@ -548,34 +552,11 @@ class PatientResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
+            ->poll('10s')
+            ->deferLoading()
             ->modifyQueryUsing(function (Builder $query) {
                 $query->latest();
             });
-            // ->modifyQueryUsing(function (Builder $query) {
-            //     if (self::currentUser()->isAdmin() || self::currentUser()->isMHO()) {
-            //         return $query->latest();
-            //     } else {
-            //         $userBarangayIds = self::currentUser()->barangays->pluck('id')->toArray();
-                    
-            //         if (Schema::hasColumn('patients', 'barangay_id')) {
-            //             return $query->whereIn('barangay_id', $userBarangayIds)->latest();
-            //         }
-
-            //         return $query
-            //             ->where(function($query) use ($userBarangayIds) {
-            //                 $query->whereHas('user', function ($subquery) use ($userBarangayIds) {
-            //                     $subquery->whereHas('barangays', function ($barangayQuery) use ($userBarangayIds) {
-            //                         $barangayQuery->whereIn('barangays.id', $userBarangayIds);
-            //                     });
-            //                 });
-
-            //                 if (Schema::hasColumn('patients', 'barangay_id')) {
-            //                     $query->orWhereIn('barangay_id', $userBarangayIds);
-            //                 }
-            //             })
-            //             ->latest();
-            //     }
-            // });
     }
 
     public static function getRelations(): array

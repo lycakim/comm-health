@@ -58,11 +58,7 @@ class ListPatients extends ListRecords
 
     public function getSubheading(): string|Htmlable|null
     {
-        // Try to get barangay from multiple sources to handle refresh scenarios
-        $barangayFromRoute = request()->route('barangay') ?? 
-                            request()->get('barangay') ?? 
-                            session('current_barangay') ??
-                            $this->getRecord()?->barangay_id;
+        $barangayFromRoute = request()->route('barangay');
 
         if ($barangayFromRoute) {
             $barangay = Barangay::where('id', $barangayFromRoute)->first();
@@ -70,9 +66,6 @@ class ListPatients extends ListRecords
             if (!$barangay) {
                 return 'View and manage patient records across all barangays';
             }
-            
-            // Store in session to persist across refreshes
-            session(['current_barangay' => $barangay->id]);
             
             return 'View and manage patient records across barangay ' . $barangay->name;
         }
@@ -84,15 +77,12 @@ class ListPatients extends ListRecords
     {
         $query = parent::getTableQuery();
         
-        $barangayFromRoute = request()->route('barangay') ?? 
-                            request()->get('barangay') ?? 
-                            session('current_barangay') ??
-                            $this->getRecord()?->barangay_id;
+        $barangayFromRoute = request()->route('barangay');
         
-        if ($barangayFromRoute) {
-            return $query->where('barangay_id', $barangayFromRoute);
-        } else {
-            return $query->where('barangay_id', Auth::user()->barangay_id);
+        if ($barangayFromRoute === 'all' || is_null($barangayFromRoute)) {
+            return $query;
         }
+
+        return $query->where('barangay_id', $barangayFromRoute);
     }
 }

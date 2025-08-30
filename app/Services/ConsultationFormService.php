@@ -768,6 +768,8 @@ class ConsultationFormService
                                                     ->label('Last Name'),
                                                 TextInput::make('mother_middle_name')
                                                     ->label('Middle Name'),
+                                                Textarea::make('maternal_notes')
+                                                    ->columnSpanFull(),
                                             ])
                                             ->visible(function (Get $get) {
                                                 $patientId = $get('patient_id');

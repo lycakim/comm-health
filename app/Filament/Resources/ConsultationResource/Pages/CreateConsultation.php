@@ -147,6 +147,7 @@ class CreateConsultation extends CreateRecord
     protected function getCreateFormAction(): Action
     {
         return Action::make('create')
+            ->label('Submit')
             ->before(function () {
                 try {
                     $this->form->validate();

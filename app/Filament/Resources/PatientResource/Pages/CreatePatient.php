@@ -35,6 +35,7 @@ class CreatePatient extends CreateRecord
     protected function getCreateFormAction(): Action
     {
         return Action::make('create')
+                ->label('Submit')
                 ->before(function () {  
                     try {
                         $this->form->validate();
@@ -69,7 +70,7 @@ class CreatePatient extends CreateRecord
                         return 'Fill in all required fields before proceeding.';
                     }
                 })
-                ->modalWidth(MaxWidth::FiveExtraLarge)
+                ->modalWidth(MaxWidth::TwoExtraLarge)
                 ->modalDescription(function () {
                     try {
                         $this->form->validate();
@@ -79,6 +80,18 @@ class CreatePatient extends CreateRecord
                             throw new \Exception('Please fill in all required fields before proceeding.');
                         }
 
+                        if (!empty($formData['category_id'])) {
+                            $formData['category_name'] = \App\Models\Category::find($formData['category_id'])->name;
+                        }
+
+                        if (!empty($formData['barangay_id']) && !empty($formData['purok_id'])) {
+                            $formData['barangay_name'] = \App\Models\Barangay::find($formData['barangay_id'])->name;
+                            $formData['purok_name'] = \App\Models\Purok::find($formData['purok_id'])->name;
+                        }
+
+                        // Remove dd() for production - uncomment for debugging
+                        // dd($formData);
+
                         return new HtmlString(
                             view('filament.create-preview', compact('formData'))->render()
                         );
@@ -86,13 +99,17 @@ class CreatePatient extends CreateRecord
                         $html = '<div id="Outer" class="flex flex-col w-full h-full overflow-auto gap-3">';
 
                         foreach ($e->errors() as $fieldErrors) {
-                            $html .= "<div class=\"flex items-center gap-2 p-3 rounded bg-red-100";
+                            $html .= '<div class="flex items-center gap-2 p-3 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">';
+                            
                             foreach ($fieldErrors as $message) {
-                                $html .=  "
-                                            <x-heroicon-o-exclamation-circle class=\"w-5 h-5\" />
-                                            <span>{$message}</span>
-                                        ";
+                                $html .= '
+                                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                    <span>' . htmlspecialchars($message) . '</span>
+                                ';
                             }
+                            
                             $html .= '</div>';
                         }
 
@@ -102,14 +119,34 @@ class CreatePatient extends CreateRecord
                     } catch (\Exception $e) {
                         // Fallback for general exceptions
                         $html = '<div class="flex items-center gap-2 p-3 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
-                                <x-heroicon-o-exclamation-circle class="w-5 h-5" />
-                                <span>{$e->getMessage()}</span>
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                <span>' . htmlspecialchars($e->getMessage()) . '</span>
                             </div>';
 
                         return new HtmlString($html);
                     }
                 })
                 ->action(function () {
+                    // check if the full name is already exists in the database 
+                    // if first name and last name are the same then check the middle name and suffix
+                    
+                    $patient = Patient::where('first_name', $this->form->getState()['first_name'])
+                        ->where('last_name', $this->form->getState()['last_name'])
+                        ->where('middle_name', $this->form->getState()['middle_name'])
+                        ->where('suffix', $this->form->getState()['suffix'])
+                        ->first();
+
+                    if ($patient) {
+                        Notification::make()
+                            ->title('Patient already exists')
+                            ->body('The patient with the same name already exists in the database.')
+                            ->warning()
+                            ->send();
+
+                        $this->halt();
+                    }
                     $this->create();
                 })
                 ->keyBindings(['mod+s']);
