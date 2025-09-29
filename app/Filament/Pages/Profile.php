@@ -45,7 +45,7 @@ class Profile extends Page
         return 'View your profile information';
     }
 
-     public function form(Form $form): Form
+    public function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -116,8 +116,6 @@ class Profile extends Page
 
         $user->name = $data['name'];
 
-        $user->is_notify = $data['is_notify'];
-
         if (filled($data['new_password'] ?? null)) {
             $user->password = $data['new_password'];
         }
@@ -128,7 +126,7 @@ class Profile extends Page
             'password_hash_'.Auth::getDefaultDriver() => $user->getAuthPassword(),
         ]);
 
-        redirect('/app/account-profile');
+        redirect('/commhealth/profile');
 
         Notification::make()
             ->title('Saved successfully')
