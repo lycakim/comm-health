@@ -114,7 +114,7 @@ class ProgramResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')->searchable(),
-                TextColumn::make('barangays.name')
+                TextColumn::make('barangay.name')
                     ->label('Assigned Barangay')
                     ->searchable(),
                 TextColumn::make('category.name')
@@ -126,6 +126,7 @@ class ProgramResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
