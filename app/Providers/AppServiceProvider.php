@@ -31,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
     {
         FilamentView::registerRenderHook(
             PanelsRenderHook::PAGE_START,
-            fn (): View => view('filament.forms.components.sampleHook'),
+            fn (): View => view('filament.hooks.chat-widget'),
         );
 
         FilamentView::registerRenderHook(
