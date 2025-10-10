@@ -80,7 +80,7 @@
                                         {{ $message['message'] }}
                                     </div>
                                     <div class="message-time text-xs text-gray-500 dark:text-gray-400 mt-1 mr-2">
-                                        {{ $message['sender_name'] }} • {{ $message['created_at'] }}
+                                        You • {{ $message['created_at'] }}
                                     </div>
                                 </div>
                             </div>
