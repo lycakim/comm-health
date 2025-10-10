@@ -129,12 +129,20 @@
         </div>
         
         <!-- Chat Bubble -->
-        <button @click="isChatOpen = !isChatOpen"
-                class="cursor-pointer hover:scale-105 transition-transform duration-200 hover:bg-[#008f5a]"
+        <button @click="$wire.toggleChat()"
+                class="relative cursor-pointer hover:scale-105 transition-transform duration-200 hover:bg-[#008f5a]"
                 style="width: 50px; height: 50px;
-                       background: #00a86b; color: white; border: none;
-                       border-radius: 50%; display: flex; align-items: center; justify-content: center;
-                       box-shadow: 0 4px 12px rgba(0, 168, 107, 0.3);">
+                    background: #00a86b; color: white; border: none;
+                    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                    box-shadow: 0 4px 12px rgba(0, 168, 107, 0.3);">
+            
+            <!-- Unread Message Badge -->
+            @if($hasUnreadMessages && !$isChatOpen)
+                <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
+                    !
+                </span>
+            @endif
+            
             <!-- Chat Icon (when closed) -->
             <svg x-show="!isChatOpen" width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M20 2H4C2.9 2 2 2.9 2 4V16C2 17.1 2.9 18 4 18H18L22 22V4C22 2.9 21.1 2 20 2ZM20 17.17L18.83 16H4V4H20V17.17Z" fill="white"/>
@@ -237,6 +245,39 @@
                 if (conversationId) {
                     subscribeToConversation(conversationId);
                 }
+            });
+
+            // Request notification permission
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+
+            Livewire.on('play-notification-sound', () => {
+                // Show browser notification
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification("New Message", {
+                        body: "You have a new message!",
+                        icon: "/favicon.ico",
+                        badge: "/favicon.ico"
+                    });
+                }
+                
+                // Play sound
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
             });
         });
     </script>

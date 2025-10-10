@@ -15,6 +15,7 @@ class ChatWidget extends Component
     public ?int $selectedUserId = null;
     public string $message = '';
     public bool $isChatOpen = false;
+    public bool $hasUnreadMessages = false;
 
     public function mount(): void
     {
@@ -46,8 +47,27 @@ class ChatWidget extends Component
         // Reload messages when receiving a broadcast
         $this->loadMessages();
         
+         // Open chat window if it's closed
+        if (!$this->isChatOpen) {
+            $this->isChatOpen = true;
+            $this->hasUnreadMessages = true;
+        }
+        
         // Dispatch browser event to scroll to bottom
         $this->dispatch('scroll-to-bottom');
+        
+        // Optional: Play notification sound
+        $this->dispatch('play-notification-sound');
+    }
+
+    public function toggleChat(): void
+    {
+        $this->isChatOpen = !$this->isChatOpen;
+        
+        // Mark as read when opening
+        if ($this->isChatOpen) {
+            $this->hasUnreadMessages = false;
+        }
     }
 
     public function selectUser(int $userId): void
@@ -60,6 +80,7 @@ class ChatWidget extends Component
         $this->selectedUserId = $userId;
         $this->loadMessages();
         $this->isChatOpen = true;
+        $this->hasUnreadMessages = false; // Mark as read when user opens chat
         
         // Dispatch event with the conversation ID
         $this->dispatch('conversation-changed', conversationId: $this->getConversationId());
