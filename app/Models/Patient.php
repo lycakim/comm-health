@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Carbon\Carbon;
 
 class Patient extends Model
 {
-    use HasFactory;
+    use HasFactory, Notifiable, LogsActivity;
 
     protected $guarded = [];
 
@@ -97,5 +100,11 @@ class Patient extends Model
                 $patient->age = Carbon::parse($patient->birth_date)->age;
             }
         });
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->setDescriptionForEvent(fn(string $eventName) => "Patient {$this->name} has been {$eventName}");
     }
 }

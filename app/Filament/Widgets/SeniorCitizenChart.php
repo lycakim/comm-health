@@ -2,13 +2,13 @@
 
 namespace App\Filament\Widgets;
 
-use App\Services\PatientChartService;
 use Filament\Widgets\ChartWidget;
+use App\Services\SeniorCitizenChartService;
 
-class PatientChart extends ChartWidget
+class SeniorCitizenChart extends ChartWidget
 {
-    protected static ?string $heading = 'Patient Statistics';
-    
+    protected static ?string $heading = 'Senior Citizen Patients Chart';
+
     public ?string $filter = 'gender_breakdown';
     public int $fiscalYear;
 
@@ -26,14 +26,14 @@ class PatientChart extends ChartWidget
 
     protected function getData(): array
     {
-        $service = new PatientChartService();
+        $service = new SeniorCitizenChartService();
 
         return match($this->filter) {
-            'gender_breakdown' => $service->getPatientsWithGenderBreakdown($this->fiscalYear),
-            'comparison' => $service->getPatientYearComparison($this->fiscalYear),
-            'gender' => $service->getPatientsByGender($this->fiscalYear),
-            'age_group' => $service->getPatientsByAgeGroup($this->fiscalYear),
-            default => $service->getPatientsByMonth($this->fiscalYear),
+            'gender_breakdown' => $service->getSeniorCitizenPatientsWithGenderBreakdown($this->fiscalYear),
+            'monthly' => $service->getSeniorCitizenPatientsByMonth($this->fiscalYear),
+            'comparison' => $service->getSeniorCitizenYearComparison($this->fiscalYear),
+            'age_group' => $service->getSeniorCitizenPatientsByAgeGroup($this->fiscalYear),
+            default => $service->getSeniorCitizenPatientsWithGenderBreakdown($this->fiscalYear),
         };
     }
 
@@ -45,12 +45,16 @@ class PatientChart extends ChartWidget
     protected function getFilters(): ?array
     {
         return [
-            'gender_breakdown' => 'Gender Breakdown (Male/Female/Total)',
+            'gender_breakdown' => 'Gender Breakdown',
             'monthly' => 'Monthly Total',
             'comparison' => 'Year Comparison',
-            'gender' => 'By Gender Only',
             'age_group' => 'By Age Group',
         ];
+    }
+
+    public function getDescription(): ?string
+    {
+        return 'Senior Citizens in the system.';
     }
 
     protected function getOptions(): array
@@ -61,17 +65,19 @@ class PatientChart extends ChartWidget
                     'display' => true,
                     'position' => 'top',
                 ],
+                'title' => [
+                    'display' => true,
+                    'text' => 'Maternal Health Statistics - ' . $this->fiscalYear,
+                ],
             ],
             'scales' => [
                 'y' => [
                     'beginAtZero' => true,
+                    'ticks' => [
+                        'stepSize' => 1,
+                    ],
                 ],
             ],
         ];
-    }
-
-    public function getDescription(): ?string
-    {
-        return 'Patients Overview based on Gender Breakdown.';
     }
 }

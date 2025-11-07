@@ -10,22 +10,44 @@
                     
                     <x-filament::tabs.item 
                         @click="tab = 'tab2'" :alpine-active="'tab === \'tab2\''">
-                        Maternal
+                        Maternal Care
                     </x-filament::tabs.item>
 
                     <x-filament::tabs.item 
                         @click="tab = 'tab3'" :alpine-active="'tab === \'tab3\''">
-                        Disease
+                        Children/Adolescents
+                    </x-filament::tabs.item>
+
+                    <x-filament::tabs.item 
+                        @click="tab = 'tab4'" :alpine-active="'tab === \'tab4\''">
+                        Senior Citizens
                     </x-filament::tabs.item>
                 </div>
             </x-filament::tabs>
         </div>
     </div>
     
-    {{-- <div x-show="tab === 'tab1'">
+    {{-- Tab Content --}}
         
+    {{-- Overview Tab --}}
+    <div x-show="tab === 'tab1'" x-cloak>
+        <div class="grid grid-cols-1 gap-6">
+            @livewire(\App\Filament\Widgets\PatientChart::class)
+        </div>
     </div>
     <div x-show="tab === 'tab2'" x-cloak>
-
-    </div> --}}
+        <div class="grid grid-cols-1 gap-6">
+            @livewire(\App\Filament\Widgets\MaternalChart::class)
+        </div>
+    </div>
+    <div x-show="tab === 'tab3'" x-cloak>
+        <div class="grid grid-cols-1 gap-6">
+            @livewire(\App\Filament\Widgets\ChildrenChart::class)
+        </div>
+    </div>
+    <div x-show="tab === 'tab4'" x-cloak>
+        <div class="grid grid-cols-1 gap-6">
+            @livewire(\App\Filament\Widgets\SeniorCitizenChart::class)
+        </div>
+    </div>
 </x-filament-panels::page>

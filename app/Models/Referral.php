@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class Referral extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $guarded = [];
 
@@ -36,13 +38,14 @@ class Referral extends Model
         return $this->belongsTo(Patient::class);
     }
 
-    public function barangay(): BelongsTo
-    {
-        return $this->belongsTo(Barangay::class);
-    }
-
     public function getResolvedPatientAttribute(): ?Patient
     {
         return $this->patient ?? $this->consultation?->patient;
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->setDescriptionForEvent(fn(string $eventName) => "User {$this->name} has been {$eventName}");
     }
 }

@@ -5,11 +5,13 @@ namespace App\Filament\Resources\PatientResource\Pages;
 use App\Models\Patient;
 use Filament\Actions\Action;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Bus;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 use ParagonIE\Sodium\Core\Curve25519\H;
 use Filament\Notifications\Notification;
+use App\Jobs\NotificationEmailPatientJob;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\PatientResource;
 
@@ -132,13 +134,14 @@ class CreatePatient extends CreateRecord
                     // check if the full name is already exists in the database 
                     // if first name and last name are the same then check the middle name and suffix
                     
-                    $patient = Patient::where('first_name', $this->form->getState()['first_name'])
+                    // Check if the patient already exists
+                    $existingPatient = Patient::where('first_name', $this->form->getState()['first_name'])
                         ->where('last_name', $this->form->getState()['last_name'])
                         ->where('middle_name', $this->form->getState()['middle_name'])
                         ->where('suffix', $this->form->getState()['suffix'])
                         ->first();
 
-                    if ($patient) {
+                    if ($existingPatient) {
                         Notification::make()
                             ->title('Patient already exists')
                             ->body('The patient with the same name already exists in the database.')
@@ -148,6 +151,11 @@ class CreatePatient extends CreateRecord
                         $this->halt();
                     }
                     $this->create();
+                    // Get the newly created patient record
+                    $newPatient = $this->getRecord();
+                    
+                    // Now dispatch the job with the actual patient
+                    // Bus::dispatch(new NotificationEmailPatientJob($newPatient));
                 })
                 ->keyBindings(['mod+s']);
     }

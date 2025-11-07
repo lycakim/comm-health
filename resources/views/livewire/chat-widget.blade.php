@@ -69,37 +69,48 @@
                     $nextTick(() => $refs.chatBody.scrollTop = $refs.chatBody.scrollHeight)
                 })"
                 class="space-y-4 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900"
-                style="height: 350px; max-height: 350px;">
-                @forelse($messages as $message)
-                    @if($message['is_mine'])
-                        <!-- Outgoing Message -->
-                        <div class="message outgoing" wire:key="message-{{ $message['id'] }}">
-                            <div class="flex items-start space-x-2 justify-end">
-                                <div class="flex-1 text-right">
-                                    <div class="message-content bg-gray-200 dark:bg-gray-800 dark:text-white p-3 rounded shadow-sm inline-block max-w-xs text-left">
-                                        {{ $message['message'] }}
-                                    </div>
-                                    <div class="message-time text-xs text-gray-500 dark:text-gray-400 mt-1 mr-2">
-                                        You • {{ $message['created_at'] }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @else
-                        <!-- Incoming Message -->
-                        <div class="message incoming" wire:key="message-{{ $message['id'] }}">
-                            <div class="flex items-start space-x-2">
-                                <div class="flex-1">
-                                    <div class="message-content bg-white dark:bg-gray-700 p-3 rounded shadow-sm border border-gray-200 dark:border-gray-600 inline-block max-w-xs">
-                                        {{ $message['message'] }}
-                                    </div>
-                                    <div class="message-time text-xs text-gray-500 dark:text-gray-400 mt-1 ml-2">
-                                        {{ $message['sender_name'] }} • {{ $message['created_at'] }}
+                style="height: 350px; max-height: 350px; width: 350px; max-width: 350px;">
+                @forelse($messages as $messageKey => $messageGroup)
+                    <div class="flex items-center justify-center">
+                        <span class="text-center text-xs text-gray-500 dark:text-gray-400 mb-2">{{ $messageKey }}</span>
+                    </div>
+                    @foreach($messageGroup as $message)
+                        @if($message['is_mine'])
+                            <!-- Outgoing Message -->
+                            <div class="message outgoing" wire:key="message-{{ $message['id'] }}">
+                                <div class="flex items-start space-x-2 justify-end">
+                                    <div class="flex-1 text-right">
+                                        <span class="text-center text-xs text-gray-500 dark:text-gray-400">
+                                            {{ $message['created_at'] }}
+                                        </span>
+                                        <div class="message-content bg-gray-200 dark:bg-gray-800 dark:text-white p-3 rounded shadow-sm inline-block max-w-xs text-left">
+                                            {{ $message['message'] }}
+                                        </div>
+                                        {{-- <div class="message-time text-xs text-gray-500 dark:text-gray-400 mt-1 mr-2">
+                                            You • {{ $message['created_at'] }}
+                                        </div> --}}
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    @endif
+                        @else
+                            <!-- Incoming Message -->
+                            <div class="message incoming" wire:key="message-{{ $message['id'] }}">
+                                <div class="flex items-start space-x-2">
+                                    <div class="flex-1">
+                                        <div class="message-content bg-white dark:bg-gray-700 p-3 rounded shadow-sm border border-gray-200 dark:border-gray-600 inline-block max-w-xs">
+                                            {{ $message['message'] }}
+                                        </div>
+                                        <span class="text-center text-xs text-gray-500 dark:text-gray-400">
+                                            {{ $message['created_at'] }}
+                                        <span>
+                                        {{-- <div class="message-time text-xs text-gray-500 dark:text-gray-400 mt-1 ml-2">
+                                            {{ $message['sender_name'] }} • {{ $message['created_at'] }}
+                                        </div> --}}
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
                 @empty
                     <div class="text-center text-gray-500 dark:text-gray-400 py-8">
                         No messages yet. Start the conversation!

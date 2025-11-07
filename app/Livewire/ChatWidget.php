@@ -136,11 +136,11 @@ class ChatWidget extends Component
 
         $this->messages = Chat::where(function ($query) {
                 $query->where('sender_id', Auth::id())
-                      ->where('receiver_id', $this->selectedUserId);
+                    ->where('receiver_id', $this->selectedUserId);
             })
             ->orWhere(function ($query) {
                 $query->where('sender_id', $this->selectedUserId)
-                      ->where('receiver_id', Auth::id());
+                    ->where('receiver_id', Auth::id());
             })
             ->with(['sender:id,name', 'receiver:id,name'])
             ->orderBy('created_at', 'asc')
@@ -151,12 +151,17 @@ class ChatWidget extends Component
                 'sender_id' => $chat->sender_id,
                 'sender_name' => $chat->sender->name,
                 'receiver_id' => $chat->receiver_id,
+                'is_mine' => $chat->sender_id === Auth::id(),
                 'created_at' => $chat->created_at
                     ->timezone('Asia/Manila')
-                    ->format('M j, Y g:i A'),
-                'is_mine' => $chat->sender_id === Auth::id(),
+                    ->format('g:i A'),
+                'date' => $chat->created_at
+                    ->timezone('Asia/Manila')
+                    ->format('F j, Y'),
             ])
+            ->groupBy('date')
             ->toArray();
+        // logger($this->messages);
     }
 
     public function getConversationId(): string

@@ -2,16 +2,18 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Afsakar\FilamentOtpLogin\Models\Contracts\CanLoginDirectly;
 use App\Enums\RoleEnum;
+use Spatie\Activitylog\LogOptions;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Afsakar\FilamentOtpLogin\Models\Contracts\CanLoginDirectly;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable implements CanLoginDirectly
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -116,4 +118,10 @@ class User extends Authenticatable implements CanLoginDirectly
     // {
     //     $this->attributes['role'] = $value instanceof RoleEnum ? $value->value : $value;
     // }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->setDescriptionForEvent(fn(string $eventName) => "User {$this->name} has been {$eventName}");
+    }
 }

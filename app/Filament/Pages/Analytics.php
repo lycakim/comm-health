@@ -13,7 +13,7 @@ use Illuminate\Contracts\Support\Htmlable;
 
 class Analytics extends Page
 {    
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
     protected static string $view = 'filament.pages.analytics';
 
@@ -21,12 +21,19 @@ class Analytics extends Page
 
     protected static ?int $navigationSort = 2;
 
+    public $fiscalYear;
+
     public static function canAccess(): bool
     {
         return in_array(self::currentUser()->role, [
             RoleEnum::ADMIN,
             RoleEnum::MHO,
         ]);
+    }
+
+    public function mount(): void
+    {
+        $this->fiscalYear = date('Y');
     }
 
     protected function getHeaderActions(): array
@@ -43,21 +50,25 @@ class Analytics extends Page
                             '2023' => '2023',
                             '2022' => '2022',
                         ])
-                        ->default(date('Y'))
-                ]),
+                        ->default($this->fiscalYear)
+                ])
+                ->action(function (array $data): void {
+                    $this->fiscalYear = $data['fiscal_year'];
+                    $this->dispatch('fiscalYearChanged', fiscalYear: $this->fiscalYear);
+                }),
             Action::make('export')
                 ->label('Export')
                 ->icon('heroicon-o-arrow-down-tray')
-                ->disabled(),
+                ->action(fn () => $this->exportData()),
         ];
     }
 
-    protected function getFooterWidgets(): array
-    {
-        return [
-            PatientChart::class,
-        ];
-    }
+    // protected function getFooterWidgets(): array
+    // {
+    //     return [
+    //         PatientChart::class,
+    //     ];
+    // }
 
     public function getSubheading(): string|Htmlable|null
     {

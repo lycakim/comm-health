@@ -794,8 +794,10 @@ class ReferralResource extends Resource
                         'cancelled' => 'Cancelled',
                     ]),
                 Tables\Filters\SelectFilter::make('barangay_id')
-                    ->relationship('barangay', 'name')
-                    ->label('Barangay'),
+                    ->relationship('patient.barangay', 'name')
+                    ->label('Barangay')
+                    ->searchable()
+                    ->preload(),
                 Tables\Filters\Filter::make('date')
                     ->form([
                         Forms\Components\DatePicker::make('created_from'),
@@ -813,6 +815,8 @@ class ReferralResource extends Resource
                             );
                     }),
             ])
+            ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
