@@ -24,7 +24,7 @@ class ActivityLogs extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return Auth::user()->isAdmin();
+        return Auth::user()->isAdmin() || Auth::user()->isMHO();
     }
 
     public function table(Table $table): Table
