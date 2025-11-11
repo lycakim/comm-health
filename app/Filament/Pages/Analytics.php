@@ -28,6 +28,8 @@ class Analytics extends Page
         return in_array(self::currentUser()->role, [
             RoleEnum::ADMIN,
             RoleEnum::MHO,
+            RoleEnum::BHW,
+            RoleEnum::MIDWIFE,
         ]);
     }
 
