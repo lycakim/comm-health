@@ -15,20 +15,32 @@ class PDFGenerationService
      * Generate PDF report based on type and location
      *
      * @param string $reportType
-     * @param int $barangayId
+     * @param int|null $barangayId
+     * @param int|null $purokId
      * @return \Barryvdh\DomPDF\PDF
      * @throws \Exception
      */
-    public function generateReport(string $reportType, int $barangayId, int $purokId): \Barryvdh\DomPDF\PDF
+    public function generateReport(string $reportType, ?int $barangayId = null, ?int $purokId = null): \Barryvdh\DomPDF\PDF
     {
+        // NCD report doesn't require location
+        if ($reportType === 'non_communicable_disease_masterlist_senior_citizen_pwds') {
+            $reportData = $this->getReportData($reportType, null, null);
+            return $this->generatePdf($reportType, $reportData, null, null);
+        }
+
+        // Other reports require barangay
+        if (!$barangayId) {
+            throw new \Exception('Barangay ID is required for this report type');
+        }
+
         $barangay = $this->getBarangayWithRelations($barangayId);
-        $purok = $this->getPurokWithRelations($purokId);
+        $purok = $purokId ? $this->getPurokWithRelations($purokId) : null;
 
         if (!$barangay) {
             throw new \Exception('Barangay not found');
         }
 
-        if (!$purok) {
+        if ($purokId && !$purok) {
             throw new \Exception('Purok not found');
         }
 
@@ -76,12 +88,12 @@ class PDFGenerationService
     /**
      * Get report data based on report type
      */
-    private function getReportData(string $reportType, int $barangayId, int $purokId): mixed
+    private function getReportData(string $reportType, ?int $barangayId, ?int $purokId): mixed
     {
         return match ($reportType) {
             '2022_family_household_profile_report' => $this->getFamilyHouseholdData($barangayId),
             'masterlist_of_person_with_disability' => $this->getPwdData($barangayId),
-            'non_communicable_disease_masterlist_senior_citizen_pwds' => $this->getNcdData($barangayId),
+            'non_communicable_disease_masterlist_senior_citizen_pwds' => $this->getNcdData(),
             'expanded_program_immunization' => $this->getEpiData($barangayId),
             'immunization' => $this->getImmunizationData($barangayId),
             default => throw new \Exception("Invalid report type: {$reportType}")
@@ -91,12 +103,12 @@ class PDFGenerationService
     /**
      * Generate PDF based on report type
      */
-    private function generatePdf(string $reportType, mixed $reportData, Location $barangay, Location $purok): \Barryvdh\DomPDF\PDF
+    private function generatePdf(string $reportType, mixed $reportData, ?Location $barangay, ?Location $purok): \Barryvdh\DomPDF\PDF
     {
         return match ($reportType) {
             '2022_family_household_profile_report' => $this->generateFamilyHouseholdPdf($reportData, $barangay, $purok),
             'masterlist_of_person_with_disability' => $this->generatePwdPdf($reportData, $barangay, $purok),
-            'non_communicable_disease_masterlist_senior_citizen_pwds' => $this->generateNcdPdf($reportData, $barangay, $purok),
+            'non_communicable_disease_masterlist_senior_citizen_pwds' => $this->generateNcdPdf($reportData),
             'expanded_program_immunization' => $this->generateEpiPdf($reportData, $barangay),
             'immunization' => $this->generateImmunizationPdf($reportData, $barangay),
             default => throw new \Exception("Invalid report type for PDF generation: {$reportType}")
@@ -118,8 +130,9 @@ class PDFGenerationService
         return collect();
     }
 
-    private function getNcdData(int $barangayId)
+    private function getNcdData()
     {
+        // NCD data retrieval without location filter
         return collect();
     }
 
@@ -176,14 +189,12 @@ class PDFGenerationService
             ]);
     }
 
-    private function generateNcdPdf($persons, Location $barangay, Location $purok): \Barryvdh\DomPDF\PDF
+    private function generateNcdPdf($persons): \Barryvdh\DomPDF\PDF
     {
         $html = view('pdf.nc-disease-masterlist', [
             'persons' => $persons,
-            'purok' => $purok,
-            'barangay' => $barangay,
-            'city' => $barangay->parent?->name,
-            'province' => $barangay->parent?->parent?->name,
+            'barangay' => null,
+            'purok' => null,
             'date' => now()->format('F d, Y'),
         ])->render();
 
@@ -234,7 +245,7 @@ class PDFGenerationService
     /* ==============================
        LOGGING
        ============================== */
-    public function logReportGeneration(string $reportType, int $barangayId, bool $success): void
+    public function logReportGeneration(string $reportType, ?int $barangayId, bool $success): void
     {
         $status = $success ? 'success' : 'failed';
 

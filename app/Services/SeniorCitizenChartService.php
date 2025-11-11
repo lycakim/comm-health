@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\RoleEnum;
 use App\Models\Patient;
+use App\Models\Barangay;
 use App\Models\Category;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -18,6 +20,133 @@ class SeniorCitizenChartService
             ->orWhere('name', 'Senior')
             ->orWhere('name', 'senior')
             ->first()?->id;
+    }
+
+    /**
+     * Get senior citizen patients by barangay or purok for a specific month and year
+     * Based on user role: BHW = Purok, MHW = Barangay
+     */
+    public function getSeniorCitizenPatientsByBarangay(int $year, int $month, ?string $userRole = null): array
+    {
+        if (!$this->seniorCitizenCategoryId) {
+            return $this->emptyBarangayDataset();
+        }
+
+        $user = auth()->user();
+        $role = $userRole ?? $user?->role;
+        
+        if ($user->isBHW()) {
+            return $this->getSeniorCitizenPatientsByPurok($year, $month, $user);
+        }
+        
+        return $this->getSeniorCitizenPatientsByBarangayData($year, $month, $user, $role);
+    }
+
+    /**
+     * Get senior citizen patients by purok (for BHW users)
+     */
+    private function getSeniorCitizenPatientsByPurok(int $year, int $month, $user): array
+    {
+        $puroks = \App\Models\Purok::when($user?->barangay_id, function($query) use ($user) {
+            return $query->where('barangay_id', $user->barangay_id);
+        })->orderBy('name')->get();
+        
+        $maleData = [];
+        $femaleData = [];
+        
+        foreach ($puroks as $purok) {
+            $maleCount = Patient::where('purok_id', $purok->id)
+                ->where('category_id', $this->seniorCitizenCategoryId)
+                ->where('sex', 'male')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $femaleCount = Patient::where('purok_id', $purok->id)
+                ->where('category_id', $this->seniorCitizenCategoryId)
+                ->where('sex', 'female')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $maleData[] = $maleCount;
+            $femaleData[] = $femaleCount;
+        }
+        
+        return [
+            'datasets' => [
+                [
+                    'label' => 'Male',
+                    'data' => $maleData,
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
+                    'borderColor' => 'rgb(59, 130, 246)',
+                    'borderWidth' => 1,
+                ],
+                [
+                    'label' => 'Female',
+                    'data' => $femaleData,
+                    'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
+                    'borderColor' => 'rgb(236, 72, 153)',
+                    'borderWidth' => 1,
+                ],
+            ],
+            'labels' => $puroks->pluck('name')->toArray(),
+        ];
+    }
+
+    /**
+     * Get senior citizen patients by barangay (for MHW users and admins)
+     */
+    private function getSeniorCitizenPatientsByBarangayData(int $year, int $month, $user, ?RoleEnum $role): array
+    {
+        $barangays = Barangay::when(
+            $role === RoleEnum::MHO && $user?->barangay_id,
+            function($query) use ($user) {
+                return $query->where('id', $user->barangay_id);
+            }
+        )->orderBy('name')->get();
+        
+        $maleData = [];
+        $femaleData = [];
+        
+        foreach ($barangays as $barangay) {
+            $maleCount = Patient::where('barangay_id', $barangay->id)
+                ->where('category_id', $this->seniorCitizenCategoryId)
+                ->where('sex', 'male')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $femaleCount = Patient::where('barangay_id', $barangay->id)
+                ->where('category_id', $this->seniorCitizenCategoryId)
+                ->where('sex', 'female')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $maleData[] = $maleCount;
+            $femaleData[] = $femaleCount;
+        }
+        
+        return [
+            'datasets' => [
+                [
+                    'label' => 'Male',
+                    'data' => $maleData,
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
+                    'borderColor' => 'rgb(59, 130, 246)',
+                    'borderWidth' => 1,
+                ],
+                [
+                    'label' => 'Female',
+                    'data' => $femaleData,
+                    'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
+                    'borderColor' => 'rgb(236, 72, 153)',
+                    'borderWidth' => 1,
+                ],
+            ],
+            'labels' => $barangays->pluck('name')->toArray(),
+        ];
     }
 
     /**
@@ -165,29 +294,29 @@ class SeniorCitizenChartService
             ->get();
 
         $ageGroups = [
-            '15-19' => 0,
-            '20-24' => 0,
-            '25-29' => 0,
-            '30-34' => 0,
-            '35-39' => 0,
-            '40+' => 0,
+            '60-64' => 0,
+            '65-69' => 0,
+            '70-74' => 0,
+            '75-79' => 0,
+            '80-84' => 0,
+            '85+' => 0,
         ];
 
         foreach ($patients as $patient) {
             $age = Carbon::parse($patient->date_of_birth)->age;
             
-            if ($age >= 15 && $age <= 19) {
-                $ageGroups['15-19']++;
-            } elseif ($age <= 24) {
-                $ageGroups['20-24']++;
-            } elseif ($age <= 29) {
-                $ageGroups['25-29']++;
-            } elseif ($age <= 34) {
-                $ageGroups['30-34']++;
-            } elseif ($age <= 39) {
-                $ageGroups['35-39']++;
+            if ($age >= 60 && $age <= 64) {
+                $ageGroups['60-64']++;
+            } elseif ($age <= 69) {
+                $ageGroups['65-69']++;
+            } elseif ($age <= 74) {
+                $ageGroups['70-74']++;
+            } elseif ($age <= 79) {
+                $ageGroups['75-79']++;
+            } elseif ($age <= 84) {
+                $ageGroups['80-84']++;
             } else {
-                $ageGroups['40+']++;
+                $ageGroups['85+']++;
             }
         }
 
@@ -197,20 +326,20 @@ class SeniorCitizenChartService
                     'label' => 'Senior Citizen Patients by Age',
                     'data' => array_values($ageGroups),
                     'backgroundColor' => [
-                        'rgba(236, 72, 153, 0.6)',
-                        'rgba(219, 39, 119, 0.6)',
-                        'rgba(190, 24, 93, 0.6)',
-                        'rgba(157, 23, 77, 0.6)',
-                        'rgba(131, 24, 67, 0.6)',
-                        'rgba(104, 20, 54, 0.6)',
+                        'rgba(139, 92, 246, 0.6)',
+                        'rgba(124, 58, 237, 0.6)',
+                        'rgba(109, 40, 217, 0.6)',
+                        'rgba(91, 33, 182, 0.6)',
+                        'rgba(76, 29, 149, 0.6)',
+                        'rgba(59, 7, 100, 0.6)',
                     ],
                     'borderColor' => [
-                        'rgb(236, 72, 153)',
-                        'rgb(219, 39, 119)',
-                        'rgb(190, 24, 93)',
-                        'rgb(157, 23, 77)',
-                        'rgb(131, 24, 67)',
-                        'rgb(104, 20, 54)',
+                        'rgb(139, 92, 246)',
+                        'rgb(124, 58, 237)',
+                        'rgb(109, 40, 217)',
+                        'rgb(91, 33, 182)',
+                        'rgb(76, 29, 149)',
+                        'rgb(59, 7, 100)',
                     ],
                     'borderWidth' => 1,
                 ],
@@ -332,6 +461,26 @@ class SeniorCitizenChartService
                 ],
             ],
             'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        ];
+    }
+
+    /**
+     * Return empty barangay dataset when category not found
+     */
+    private function emptyBarangayDataset(): array
+    {
+        $barangays = Barangay::orderBy('name')->get();
+        
+        return [
+            'datasets' => [
+                [
+                    'label' => 'No Data',
+                    'data' => array_fill(0, $barangays->count(), 0),
+                    'backgroundColor' => 'rgba(156, 163, 175, 0.5)',
+                    'borderColor' => 'rgb(156, 163, 175)',
+                ],
+            ],
+            'labels' => $barangays->pluck('name')->toArray(),
         ];
     }
 }

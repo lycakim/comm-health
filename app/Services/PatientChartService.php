@@ -2,12 +2,227 @@
 
 namespace App\Services;
 
+use App\Enums\RoleEnum;
 use App\Models\Patient;
+use App\Models\Barangay;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class PatientChartService
 {
+    /**
+     * Get patient count by barangay or purok for a specific month and year
+     * Based on user role: BHW = Purok, MHW = Barangay
+     */
+    public function getPatientsByBarangay(int $year, int $month, ?string $userRole = null): array
+    {
+        $user = auth()->user();
+        $role = $userRole ?? $user?->role;
+        
+        // Determine if we're filtering by purok (BHW) or barangay (MHW)
+        if ($user->isBHW()) {
+            return $this->getPatientsByPurok($year, $month, $user);
+        }
+        
+        // Default: MHW or admin - show by barangay
+        return $this->getPatientsByBarangayData($year, $month, $user, $role);
+    }
+
+    /**
+     * Get patients by purok (for BHW users)
+     */
+    private function getPatientsByPurok(int $year, int $month, $user): array
+    {
+        // Get puroks - adjust the model name and relationship as needed
+        // Assuming you have a Purok model or puroks within user's barangay
+        $puroks = \App\Models\Purok::when($user?->barangay_id, function($query) use ($user) {
+            return $query->where('barangay_id', $user->barangay_id);
+        })->orderBy('name')->get();
+        
+        $maleData = [];
+        $femaleData = [];
+        $childrenData = [];
+        
+        foreach ($puroks as $purok) {
+            // Get male count
+            $maleCount = Patient::where('purok_id', $purok->id)
+                ->where('sex', 'male')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            // Get female count
+            $femaleCount = Patient::where('purok_id', $purok->id)
+                ->where('sex', 'female')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            // Get children count
+            $childrenCount = Patient::where('purok_id', $purok->id)
+                ->whereHas('category', function($query) {
+                    $query->where('name', 'LIKE', '%child%')
+                          ->orWhere('name', 'LIKE', '%pediatric%');
+                })
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $maleData[] = $maleCount;
+            $femaleData[] = $femaleCount;
+            $childrenData[] = $childrenCount;
+        }
+        
+        return [
+            'datasets' => [
+                [
+                    'label' => 'Male',
+                    'data' => $maleData,
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
+                    'borderColor' => 'rgb(59, 130, 246)',
+                    'borderWidth' => 1,
+                ],
+                [
+                    'label' => 'Female',
+                    'data' => $femaleData,
+                    'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
+                    'borderColor' => 'rgb(236, 72, 153)',
+                    'borderWidth' => 1,
+                ],
+                [
+                    'label' => 'Children',
+                    'data' => $childrenData,
+                    'backgroundColor' => 'rgba(16, 185, 129, 0.5)',
+                    'borderColor' => 'rgb(16, 185, 129)',
+                    'borderWidth' => 1,
+                ],
+            ],
+            'labels' => $puroks->pluck('name')->toArray(),
+        ];
+    }
+
+    /**
+     * Get patients by barangay (for MHW users and admins)
+     */
+    private function getPatientsByBarangayData(int $year, int $month, $user, ?RoleEnum $role): array
+    {
+        $barangays = Barangay::when(
+            $role === RoleEnum::MHO && $user?->barangay_id,
+            function($query) use ($user) {
+                return $query->where('id', $user->barangay_id);
+            }
+        )->orderBy('name')->get();
+        
+        $maleData = [];
+        $femaleData = [];
+        $childrenData = [];
+        
+        foreach ($barangays as $barangay) {
+            // Get male count
+            $maleCount = Patient::where('barangay_id', $barangay->id)
+                ->where('sex', 'male')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            // Get female count
+            $femaleCount = Patient::where('barangay_id', $barangay->id)
+                ->where('sex', 'female')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            // Get children count
+            $childrenCount = Patient::where('barangay_id', $barangay->id)
+                ->whereHas('category', function($query) {
+                    $query->where('name', 'LIKE', '%child%')
+                          ->orWhere('name', 'LIKE', '%pediatric%');
+                })
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $maleData[] = $maleCount;
+            $femaleData[] = $femaleCount;
+            $childrenData[] = $childrenCount;
+        }
+        
+        return [
+            'datasets' => [
+                [
+                    'label' => 'Male',
+                    'data' => $maleData,
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
+                    'borderColor' => 'rgb(59, 130, 246)',
+                    'borderWidth' => 1,
+                ],
+                [
+                    'label' => 'Female',
+                    'data' => $femaleData,
+                    'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
+                    'borderColor' => 'rgb(236, 72, 153)',
+                    'borderWidth' => 1,
+                ],
+                [
+                    'label' => 'Children',
+                    'data' => $childrenData,
+                    'backgroundColor' => 'rgba(16, 185, 129, 0.5)',
+                    'borderColor' => 'rgb(16, 185, 129)',
+                    'borderWidth' => 1,
+                ],
+            ],
+            'labels' => $barangays->pluck('name')->toArray(),
+        ];
+    }
+
+    /**
+     * Get patient count by barangay with gender breakdown
+     */
+    public function getPatientsByBarangayWithGender(int $year, int $month): array
+    {
+        $barangays = Barangay::orderBy('name')->get();
+        
+        $maleData = [];
+        $femaleData = [];
+        
+        foreach ($barangays as $barangay) {
+            $maleCount = Patient::where('barangay_id', $barangay->id)
+                ->where('sex', 'male')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $femaleCount = Patient::where('barangay_id', $barangay->id)
+                ->where('sex', 'female')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $maleData[] = $maleCount;
+            $femaleData[] = $femaleCount;
+        }
+        
+        return [
+            'datasets' => [
+                [
+                    'label' => 'Male',
+                    'data' => $maleData,
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
+                    'borderColor' => 'rgb(59, 130, 246)',
+                    'borderWidth' => 1,
+                ],
+                [
+                    'label' => 'Female',
+                    'data' => $femaleData,
+                    'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
+                    'borderColor' => 'rgb(236, 72, 153)',
+                    'borderWidth' => 1,
+                ],
+            ],
+            'labels' => $barangays->pluck('name')->toArray(),
+        ];
+    }
+
     /**
      * Get patient count with male, female, and total combined
      */

@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\RoleEnum;
 use App\Models\Patient;
 use App\Models\Category;
+use App\Models\Barangay;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -16,6 +18,133 @@ class MaternalChartService
         $this->maternalCategoryId = Category::where('name', 'maternal')
             ->orWhere('name', 'Maternal')
             ->first()?->id;
+    }
+
+    /**
+     * Get maternal patients by barangay or purok for a specific month and year
+     * Based on user role: BHW = Purok, MHW = Barangay
+     */
+    public function getMaternalPatientsByBarangay(int $year, int $month, ?string $userRole = null): array
+    {
+        if (!$this->maternalCategoryId) {
+            return $this->emptyBarangayDataset();
+        }
+
+        $user = auth()->user();
+        $role = $userRole ?? $user?->role;
+        
+        if ($user->isBHW()) {
+            return $this->getMaternalPatientsByPurok($year, $month, $user);
+        }
+        
+        return $this->getMaternalPatientsByBarangayData($year, $month, $user, $role);
+    }
+
+    /**
+     * Get maternal patients by purok (for BHW users)
+     */
+    private function getMaternalPatientsByPurok(int $year, int $month, $user): array
+    {
+        $puroks = \App\Models\Purok::when($user?->barangay_id, function($query) use ($user) {
+            return $query->where('barangay_id', $user->barangay_id);
+        })->orderBy('name')->get();
+        
+        $maleData = [];
+        $femaleData = [];
+        
+        foreach ($puroks as $purok) {
+            $maleCount = Patient::where('purok_id', $purok->id)
+                ->where('category_id', $this->maternalCategoryId)
+                ->where('sex', 'male')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $femaleCount = Patient::where('purok_id', $purok->id)
+                ->where('category_id', $this->maternalCategoryId)
+                ->where('sex', 'female')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $maleData[] = $maleCount;
+            $femaleData[] = $femaleCount;
+        }
+        
+        return [
+            'datasets' => [
+                [
+                    'label' => 'Male',
+                    'data' => $maleData,
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
+                    'borderColor' => 'rgb(59, 130, 246)',
+                    'borderWidth' => 1,
+                ],
+                [
+                    'label' => 'Female',
+                    'data' => $femaleData,
+                    'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
+                    'borderColor' => 'rgb(236, 72, 153)',
+                    'borderWidth' => 1,
+                ],
+            ],
+            'labels' => $puroks->pluck('name')->toArray(),
+        ];
+    }
+
+    /**
+     * Get maternal patients by barangay (for MHW users and admins)
+     */
+    private function getMaternalPatientsByBarangayData(int $year, int $month, $user, ?RoleEnum $role): array
+    {
+        $barangays = Barangay::when(
+            $role === RoleEnum::MHO && $user?->barangay_id,
+            function($query) use ($user) {
+                return $query->where('id', $user->barangay_id);
+            }
+        )->orderBy('name')->get();
+        
+        $maleData = [];
+        $femaleData = [];
+        
+        foreach ($barangays as $barangay) {
+            $maleCount = Patient::where('barangay_id', $barangay->id)
+                ->where('category_id', $this->maternalCategoryId)
+                ->where('sex', 'male')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $femaleCount = Patient::where('barangay_id', $barangay->id)
+                ->where('category_id', $this->maternalCategoryId)
+                ->where('sex', 'female')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->count();
+            
+            $maleData[] = $maleCount;
+            $femaleData[] = $femaleCount;
+        }
+        
+        return [
+            'datasets' => [
+                [
+                    'label' => 'Male',
+                    'data' => $maleData,
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
+                    'borderColor' => 'rgb(59, 130, 246)',
+                    'borderWidth' => 1,
+                ],
+                [
+                    'label' => 'Female',
+                    'data' => $femaleData,
+                    'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
+                    'borderColor' => 'rgb(236, 72, 153)',
+                    'borderWidth' => 1,
+                ],
+            ],
+            'labels' => $barangays->pluck('name')->toArray(),
+        ];
     }
 
     /**
@@ -330,6 +459,26 @@ class MaternalChartService
                 ],
             ],
             'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        ];
+    }
+
+    /**
+     * Return empty barangay dataset when category not found
+     */
+    private function emptyBarangayDataset(): array
+    {
+        $barangays = Barangay::orderBy('name')->get();
+        
+        return [
+            'datasets' => [
+                [
+                    'label' => 'No Data',
+                    'data' => array_fill(0, $barangays->count(), 0),
+                    'backgroundColor' => 'rgba(156, 163, 175, 0.5)',
+                    'borderColor' => 'rgb(156, 163, 175)',
+                ],
+            ],
+            'labels' => $barangays->pluck('name')->toArray(),
         ];
     }
 }
