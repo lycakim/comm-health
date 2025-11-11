@@ -73,7 +73,6 @@ class Reports extends Page implements HasTable
                 ])
                 ->action(function (array $data, PDFGenerationService $pdfService) {
                     try {
-                        logger($data);
                         $reportType = $data['report_type'];
                         $barangayId = $data['barangay_id'];
                         $purokId = $data['purok_id'];

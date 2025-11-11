@@ -69,9 +69,9 @@ class Consultation extends Model
         return $this->belongsTo(Purok::class);
     }
 
-    public function referral(): HasMany
+    public function referral(): HasOne
     {
-        return $this->hasMany(Referral::class);
+        return $this->hasOne(Referral::class);
     }
 
     public function needsReferral(): bool

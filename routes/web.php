@@ -76,3 +76,9 @@ Route::get('/commhealth/{userType}/{path?}', function ($userType) {
     
     return redirect("/commhealth/{$userType}/dashboard");
 })->where('userType', 'mho|bhw|rhu|admin')->where('path', '.*');
+
+Route::get('/test-sms', function () {
+    $semaphore = new \App\Services\SemaphoreService();
+    $result = $semaphore->sendSMS('09171234567', 'Test message from Laravel');
+    return $result;
+});

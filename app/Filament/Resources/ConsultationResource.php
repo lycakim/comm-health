@@ -1,27 +1,30 @@
 <?php
 namespace App\Filament\Resources;
 
-use App\Enums\RoleEnum;
-use App\Filament\Resources\ConsultationResource\Pages;
-use App\Models\Consultation;
-use App\Models\Patient;
-use App\Models\User;
-use App\Services\ConsultationFormService;
-use App\Traits\HasUserTypeUrls;
 use Filament\Forms;
+use App\Models\User;
+use Filament\Tables;
+use App\Enums\RoleEnum;
+use App\Models\Patient;
+use Barryvdh\DomPDF\PDF;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use App\Models\Consultation;
+use App\Traits\HasUserTypeUrls;
+use Filament\Resources\Resource;
+use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\Radio;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
+use App\Services\PDFGenerationService;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Table;
+use App\Services\ConsultationFormService;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\ToggleButtons;
+use App\Filament\Resources\ConsultationResource\Pages;
+use App\Filament\Resources\ConsultationResource\RelationManagers\ReferralsRelationManager;
 
 class ConsultationResource extends Resource
 {
@@ -422,7 +425,25 @@ class ConsultationResource extends Resource
                         // This ensures the table state remains intact
                     })
                     ->modalSubmitAction(fn($record) => $record->referral ? false : null)
-                    ->modalCancelActionLabel(fn($record) => $record->referral ? 'Close' : 'Cancel'),
+                    ->modalCancelActionLabel(fn($record) => $record->referral ? 'Close' : 'Cancel')
+                    ->extraModalFooterActions(fn($record) => [
+                        $record->referral 
+                            ? Tables\Actions\Action::make('print')
+                                ->label('Print')
+                                ->icon('heroicon-o-printer')
+                                ->color('primary')
+                                ->action(function ($record) {
+                                    $referral = $record->referral;
+                                    $pdfService = new PDFGenerationService();
+                                    
+                                    $pdf = $pdfService->generateReferralPdf($referral, $record->patient, $record);
+                                    
+                                    return response()->streamDownload(function () use ($pdf) {
+                                        echo $pdf->output();
+                                    }, "referral-{$referral->ref_id}.pdf");
+                                })
+                            : null,
+                    ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -460,7 +481,7 @@ class ConsultationResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ReferralsRelationManager::class
         ];
     }
 

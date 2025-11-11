@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Patient;
 use App\Models\Location;
+use App\Models\Consultation;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -242,5 +244,21 @@ class PDFGenerationService
             'generated_at' => now()->toDateTimeString(),
             'user_id' => Auth::id(),
         ]);
+    }
+
+    public function generateReferralPdf(array $referral, array $patient, array $consultation): \Barryvdh\DomPDF\PDF
+    {
+        $html = view('pdf.referral-form', [
+            'referral' => $referral,
+            'patient' => $patient,
+            'consultation' => $consultation,
+        ])->render();
+
+        return Pdf::loadHTML($html)
+            ->setPaper('legal', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
     }
 }
