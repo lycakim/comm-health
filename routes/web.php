@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DynamicDashboardController;
 
@@ -81,4 +82,17 @@ Route::get('/test-sms', function () {
     $semaphore = new \App\Services\SemaphoreService();
     $result = $semaphore->sendSMS('09171234567', 'Test message from Laravel');
     return $result;
+});
+
+Route::get('/test-gmail-direct', function () {
+    try {
+        Mail::raw('Direct test from Laravel', function ($message) {
+            $message->to('your-test-email@gmail.com')
+                    ->subject('Direct Gmail Test');
+        });
+        
+        return 'Email sent! Check your inbox and spam folder.';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
 });
