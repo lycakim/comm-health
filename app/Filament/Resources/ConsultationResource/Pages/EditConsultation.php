@@ -217,7 +217,7 @@ class EditConsultation extends EditRecord
                 ->icon('heroicon-o-eye')
                 ->label('View Previous Referrals')
                 ->color('gray')
-                ->visible(fn($record) => $record->referral && $record->referral->isNotEmpty()) // assumes `referrals` relation
+                ->visible(fn($record) => $record->referral) // assumes `referrals` relation
                 ->slideOver()
                 ->modalHeading(fn($record) => "All Referrals for {$record->patient->first_name} {$record->patient->last_name}")
                 ->form(function ($record) {
