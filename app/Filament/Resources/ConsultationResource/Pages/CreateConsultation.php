@@ -313,4 +313,10 @@ class CreateConsultation extends CreateRecord
             return "ID: {$value}";
         }
     }
+
+    protected function getCreateAnotherFormAction(): \Filament\Actions\Action
+    {
+        return parent::getCreateAnotherFormAction()
+            ->label('Create Another');
+    }
 }
