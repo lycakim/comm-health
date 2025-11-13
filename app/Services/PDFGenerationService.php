@@ -3,8 +3,6 @@
 namespace App\Services;
 
 use App\Models\Patient;
-use App\Models\Location;
-use App\Models\Consultation;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +18,7 @@ class PDFGenerationService
      * @return \Barryvdh\DomPDF\PDF
      * @throws \Exception
      */
-    public function generateReport(string $reportType, ?int $barangayId = null, ?int $purokId = null): \Barryvdh\DomPDF\PDF
+    public function generateReport(string $reportType): \Barryvdh\DomPDF\PDF
     {
         // NCD report doesn't require location
         if ($reportType === 'non_communicable_disease_masterlist_senior_citizen_pwds') {
@@ -28,25 +26,9 @@ class PDFGenerationService
             return $this->generatePdf($reportType, $reportData, null, null);
         }
 
-        // Other reports require barangay
-        if (!$barangayId) {
-            throw new \Exception('Barangay ID is required for this report type');
-        }
+        $reportData = $this->getReportData($reportType);
 
-        $barangay = $this->getBarangayWithRelations($barangayId);
-        $purok = $purokId ? $this->getPurokWithRelations($purokId) : null;
-
-        if (!$barangay) {
-            throw new \Exception('Barangay not found');
-        }
-
-        if ($purokId && !$purok) {
-            throw new \Exception('Purok not found');
-        }
-
-        $reportData = $this->getReportData($reportType, $barangayId, $purokId);
-
-        return $this->generatePdf($reportType, $reportData, $barangay, $purok);
+        return $this->generatePdf($reportType, $reportData);
     }
 
     /**
@@ -61,41 +43,41 @@ class PDFGenerationService
     /**
      * Get barangay location (with hierarchy)
      */
-    private function getBarangayWithRelations(int $barangayId): ?Location
-    {
-        return Location::with([
-            'parent',              // city/municipality
-            'parent.parent'        // province
-        ])
-        ->where('type', 'barangay')
-        ->find($barangayId);
-    }
+    // private function getBarangayWithRelations(int $barangayId): ?Location
+    // {
+    //     return Location::with([
+    //         'parent',              // city/municipality
+    //         'parent.parent'        // province
+    //     ])
+    //     ->where('type', 'barangay')
+    //     ->find($barangayId);
+    // }
     
     /**
      * Get purok location (with hierarchy)
      */
-    private function getPurokWithRelations(int $purokId): ?Location
-    {
-        return Location::with([
-            'parent',              // barangay
-            'parent.parent',        // city/municipality
-            'parent.parent.parent' // province
-        ])
-        ->where('type', 'purok')
-        ->find($purokId);
-    }
+    // private function getPurokWithRelations(int $purokId): ?Location
+    // {
+    //     return Location::with([
+    //         'parent',              // barangay
+    //         'parent.parent',        // city/municipality
+    //         'parent.parent.parent' // province
+    //     ])
+    //     ->where('type', 'purok')
+    //     ->find($purokId);
+    // }
 
     /**
      * Get report data based on report type
      */
-    private function getReportData(string $reportType, ?int $barangayId, ?int $purokId): mixed
+    private function getReportData(string $reportType): mixed
     {
         return match ($reportType) {
-            '2022_family_household_profile_report' => $this->getFamilyHouseholdData($barangayId),
-            'masterlist_of_person_with_disability' => $this->getPwdData($barangayId),
+            '2022_family_household_profile_report' => $this->getFamilyHouseholdData(),
+            'masterlist_of_person_with_disability' => $this->getPwdData(),
             'non_communicable_disease_masterlist_senior_citizen_pwds' => $this->getNcdData(),
-            'expanded_program_immunization' => $this->getEpiData($barangayId),
-            'immunization' => $this->getImmunizationData($barangayId),
+            'expanded_program_immunization' => $this->getEpiData(),
+            'immunization' => $this->getImmunizationData(),
             default => throw new \Exception("Invalid report type: {$reportType}")
         };
     }
@@ -103,14 +85,14 @@ class PDFGenerationService
     /**
      * Generate PDF based on report type
      */
-    private function generatePdf(string $reportType, mixed $reportData, ?Location $barangay, ?Location $purok): \Barryvdh\DomPDF\PDF
+    private function generatePdf(string $reportType, mixed $reportData): \Barryvdh\DomPDF\PDF
     {
         return match ($reportType) {
-            '2022_family_household_profile_report' => $this->generateFamilyHouseholdPdf($reportData, $barangay, $purok),
-            'masterlist_of_person_with_disability' => $this->generatePwdPdf($reportData, $barangay, $purok),
+            '2022_family_household_profile_report' => $this->generateFamilyHouseholdPdf($reportData),
+            'masterlist_of_person_with_disability' => $this->generatePwdPdf($reportData),
             'non_communicable_disease_masterlist_senior_citizen_pwds' => $this->generateNcdPdf($reportData),
-            'expanded_program_immunization' => $this->generateEpiPdf($reportData, $barangay),
-            'immunization' => $this->generateImmunizationPdf($reportData, $barangay),
+            'expanded_program_immunization' => $this->generateEpiPdf($reportData),
+            'immunization' => $this->generateImmunizationPdf($reportData),
             default => throw new \Exception("Invalid report type for PDF generation: {$reportType}")
         };
     }
@@ -119,13 +101,13 @@ class PDFGenerationService
        SAMPLE DATA RETRIEVAL METHODS
        ============================== */
 
-    private function getFamilyHouseholdData(int $barangayId)
+    private function getFamilyHouseholdData()
     {
         // Replace with actual query once models are ready
         return collect();
     }
 
-    private function getPwdData(int $barangayId)
+    private function getPwdData()
     {
         return collect();
     }
@@ -136,12 +118,12 @@ class PDFGenerationService
         return collect();
     }
 
-    private function getEpiData(int $barangayId)
+    private function getEpiData()
     {
         return collect();
     }
 
-    private function getImmunizationData(int $barangayId)
+    private function getImmunizationData()
     {
         return collect();
     }
@@ -150,15 +132,14 @@ class PDFGenerationService
        PDF GENERATION METHODS
        ============================== */
 
-    private function generateFamilyHouseholdPdf($households, Location $barangay, Location $purok): \Barryvdh\DomPDF\PDF
+    private function generateFamilyHouseholdPdf($households): \Barryvdh\DomPDF\PDF
     {
-        logger($barangay);
         $html = view('pdf.family-household-profile', [
             'households' => $households,
-            'barangay' => $barangay,
-            'purok' => $purok,
-            'city' => $barangay->parent?->name,
-            'province' => $barangay->parent?->parent?->name,
+            'barangay' => null,
+            'purok' => null,
+            'city' => null,
+            'province' => null,
             'date' => now()->format('F d, Y'),
         ])->render();
 
@@ -170,14 +151,14 @@ class PDFGenerationService
             ]);
     }
 
-    private function generatePwdPdf($persons, Location $barangay, Location $purok): \Barryvdh\DomPDF\PDF
+    private function generatePwdPdf($persons): \Barryvdh\DomPDF\PDF
     {
         $html = view('pdf.masterlist-of-pwd', [
             'records' => $persons,
-            'barangay' => $barangay,
-            'purok' => $purok,
-            'city' => $barangay->parent?->name,
-            'province' => $barangay->parent?->parent?->name,
+            'barangay' => null,
+            'purok' => null,
+            'city' => null,
+            'province' => null,
             'date' => now()->format('F d, Y'),
         ])->render();
 
@@ -206,13 +187,13 @@ class PDFGenerationService
             ]);
     }
 
-    private function generateEpiPdf($persons, Location $barangay): \Barryvdh\DomPDF\PDF
+    private function generateEpiPdf($persons): \Barryvdh\DomPDF\PDF
     {
         $html = view('pdf.expanded-program-immunization', [
             'persons' => $persons,
-            'barangay' => $barangay,
-            'city' => $barangay->parent?->name,
-            'province' => $barangay->parent?->parent?->name,
+            'barangay' => null,
+            'city' => null,
+            'province' => null,
             'date' => now()->format('F d, Y'),
         ])->render();
 
@@ -224,13 +205,13 @@ class PDFGenerationService
             ]);
     }
 
-    private function generateImmunizationPdf($immunizations, Location $barangay): \Barryvdh\DomPDF\PDF
+    private function generateImmunizationPdf($immunizations): \Barryvdh\DomPDF\PDF
     {
         $html = view('pdf.immunization', [
             'immunizations' => $immunizations,
-            'barangay' => $barangay,
-            'city' => $barangay->parent?->name,
-            'province' => $barangay->parent?->parent?->name,
+            'barangay' => null,
+            'city' => null,
+            'province' => null,
             'date' => now()->format('F d, Y'),
         ])->render();
 
@@ -245,13 +226,13 @@ class PDFGenerationService
     /* ==============================
        LOGGING
        ============================== */
-    public function logReportGeneration(string $reportType, ?int $barangayId, bool $success): void
+    public function logReportGeneration(string $reportType, bool $success): void
     {
         $status = $success ? 'success' : 'failed';
 
         Log::info("PDF Report Generation [{$status}]", [
             'report_type' => $reportType,
-            'barangay_id' => $barangayId,
+            'barangay_id' => null,
             'generated_at' => now()->toDateTimeString(),
             'user_id' => Auth::id(),
         ]);

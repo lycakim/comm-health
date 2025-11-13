@@ -100,7 +100,7 @@ class UserResource extends Resource
                                 'midwife' => 'Midwife',
                                 'admin' => 'Admin',
                             ])
-                            ->default('admin')
+                            ->default('resident')
                             ->in(['mho', 'bhw', 'resident', 'midwife', 'admin'])
                             ->required()
                             ->columnSpanFull(),

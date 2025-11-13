@@ -159,9 +159,9 @@
         <table>
             <tr>
                 <td style="width: 7%; text-align: left;"><strong>BARANGAY:</strong></td>
-                <td style="width: 15%; text-align: left;">{{ strtoupper($barangay->name) }}</td>
+                <td style="width: 15%; text-align: left;">_________________</td>
                 <td style="width: 6%; text-align: left;"><strong>PUROK:</strong></td>
-                <td style="width: 15%; text-align: left;">{{  strtoupper($purok->name) ?? '______________' }}</td>
+                <td style="width: 15%; text-align: left;">_________________</td>
                 <td style="width: 6%; text-align: left;"><strong>NHTS:</strong></td>
                 <td style="width: 15%; text-align: left;">YES NO</td>
                 <td style="width: 6%; text-align: left;"><strong>CCT:</strong></td>

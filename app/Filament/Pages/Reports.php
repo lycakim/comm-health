@@ -5,7 +5,6 @@ namespace App\Filament\Pages;
 use App\Models\User;
 use App\Models\Report;
 use App\Enums\RoleEnum;
-use App\Models\Location;
 use Filament\Pages\Page;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
@@ -16,7 +15,6 @@ use Filament\Forms\Components\Textarea;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
-use App\Forms\Components\LocationSelect;
 use App\Services\PDFGenerationService;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -67,24 +65,19 @@ class Reports extends Page implements HasTable
                         ->searchable()
                         ->live()
                         ->helperText('Select the type of report you want to generate'),
-                    
-                    LocationSelect::make(), // Province → City/Municipality → Brgy → Purok
-                    
                 ])
                 ->action(function (array $data, PDFGenerationService $pdfService) {
                     try {
                         $reportType = $data['report_type'];
-                        $barangayId = $data['barangay_id'];
-                        $purokId = $data['purok_id'];
 
                         // Generate the PDF
-                        $pdf = $pdfService->generateReport($reportType, $barangayId, $purokId);
+                        $pdf = $pdfService->generateReport($reportType);
                         
                         // Get the filename
                         $filename = $pdfService->getReportFilename($reportType);
                         
                         // Log the report generation
-                        $pdfService->logReportGeneration($reportType, $barangayId, true);
+                        $pdfService->logReportGeneration($reportType, true);
                         
                         // Show success notification
                         Notification::make()
@@ -101,8 +94,8 @@ class Reports extends Page implements HasTable
                         );
                     } catch (\Exception $e) {
                         // Log the failed attempt
-                        if (isset($pdfService, $reportType, $barangayId)) {
-                            $pdfService->logReportGeneration($reportType, $barangayId, false);
+                        if (isset($pdfService, $reportType)) {
+                            $pdfService->logReportGeneration($reportType, false);
                         }
                         
                         // Show error notification
