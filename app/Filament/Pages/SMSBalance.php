@@ -17,7 +17,9 @@ class SMSBalance extends Page
 
     protected static ?string $title = 'SMS Balance';
 
-    public ?int $balance = 0;
+    protected static ?string $slug = 'sms-balance';
+
+    public ?array $balanceData = [];
 
     public function mount(): void
     {
@@ -26,11 +28,19 @@ class SMSBalance extends Page
 
     public function checkBalance()
     {
-        $semaphore = new SemaphoreService();
-        $result = $semaphore->getBalance();
+        try {
+            $semaphore = new SemaphoreService();
+            $result = $semaphore->getBalance();
+            
+            if ($result['success'] && $result['data']['credit_balance'] > 0) {
+                $this->balanceData = $result['data'];
+            }
 
-        if ($result['success']) {
-            $this->balance = $result['data'];
+            logger($this->balanceData);
+            logger($result);
+        } catch (\Exception $e) {
+            logger()->error('Error retrieving SMS balance: ' . $e->getMessage());
+            $this->balanceData = [];
         }
     }
 }

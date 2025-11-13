@@ -14,6 +14,7 @@ class SemaphoreService
     {
         $this->apiKey = config('services.semaphore.api_key');
         $this->senderName = config('services.semaphore.sender_name');
+        $this->baseUrl = config('services.semaphore.base_url');
     }
 
     /**
