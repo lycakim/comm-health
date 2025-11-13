@@ -43,7 +43,23 @@ class User extends Authenticatable implements CanLoginDirectly
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
             'role'              => RoleEnum::class,
+            'privacy_accepted_at' => 'datetime',
         ];
+    }
+
+    public function hasAcceptedPrivacy(): bool
+    {
+        return !is_null($this->privacy_accepted_at);
+    }
+
+    public function needsPrivacyAcceptance(): bool
+    {
+        // Admin users don't need to accept privacy policy
+        if ($this->isAdmin()) {
+            return false;
+        }
+
+        return !$this->hasAcceptedPrivacy();
     }
 
     public function barangays()

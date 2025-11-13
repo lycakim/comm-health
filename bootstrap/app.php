@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'check.user.type' => CheckUserType::class,
         ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsurePrivacyAccepted::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -76,6 +76,10 @@ class AppPanelProvider extends PanelProvider
             ->plugins([
                 FilamentOtpLoginPlugin::make()
                     ->loginPage(Login::class),
-            ]);
+            ])
+            ->renderHook(
+                'panels::body.end',
+                fn () => view('components.privacy-modal-hook')
+            );
     }
 }
