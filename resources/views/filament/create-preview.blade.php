@@ -276,6 +276,238 @@
                 @endif
             </div>
             @endif
+
+            {{-- consultation preview --}}
+            <div class="space-y-3 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h4 class="font-medium text-sm text-gray-700 dark:text-gray-400">Consultation Details</h4>
+                
+                @if(!empty($formData['disability']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Disability:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['disability'] ? 'Yes' : 'No' }}</span>
+                    </div>
+                @endif
+
+                @if(isset($formData['disabilities']) && count($formData['disabilities']) > 0)
+                    <div class="flex justify-between items-center">
+                        <div class="flex">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500 text-center" style="margin-left: 0.2rem;">Medicine Maintenance</span>
+                        </div>
+                        <span class="text-sm">
+                            {{ collect($formData['disabilities'] ?? [])->filter()->implode(', ') }}
+                        </span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['philhealth']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">PhilHealth:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['philhealth'] ? 'Yes' : 'No' }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['member_of_4ps']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">4Ps member:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['member_of_4ps'] ? 'Yes' : 'No' }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['nhts_member']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">NHTS Member:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['nhts_member'] ? 'Yes' : 'No' }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['birth_plan']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Birth Plan:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['birth_plan'] ? 'Yes' : 'No' }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['notes']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Consultation Notes:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['notes'] }}</span>
+                    </div>
+                @endif
+            </div>
+
+            {{-- referral preview --}}
+            <div class="space-y-3 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h4 class="font-medium text-sm text-gray-700 dark:text-gray-400">Referral Details</h4>
+                
+                @if(!empty($formData['referral_id']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Referral ID:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['referral_id'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['referral_date']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-calendar class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Referral Date:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['referral_date'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['referred_to']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Referred To:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['referred_to'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['referral_reason']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Referral Reason:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['referral_reason'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['reason_for_referral_other']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Other Reason:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['reason_for_referral_other'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['urgency']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Urgency:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['urgency'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['surgical_operation']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Surgical Operation:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['surgical_operation'] ? 'Yes' : 'No' }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['procedure']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Procedure:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['procedure'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['drug_allergy']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Drug Allergy:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['drug_allergy'] ? 'Yes' : 'No' }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['drug_allergy_notes']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Drug Allergy Notes:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['drug_allergy_notes'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['chief_complaint']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Chief Complaint:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['chief_complaint'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['action_taken']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Action Taken:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['action_taken'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['impression']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Impression:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['impression'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['hpi_notes']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">HPI Notes:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['hpi_notes'] }}</span>
+                    </div>
+                @endif
+
+                @if(!empty($formData['notes']))
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <x-heroicon-o-user class="w-4 h-4 text-gray-500 mr-4" />
+                            <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Additional Notes:</span>
+                        </div>
+                        <span class="text-sm">{{ $formData['notes'] }}</span>
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
 </div>

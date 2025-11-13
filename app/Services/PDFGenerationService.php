@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Consultation;
 use App\Models\Patient;
+use App\Models\Referral;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -238,7 +240,7 @@ class PDFGenerationService
         ]);
     }
 
-    public function generateReferralPdf(array $referral, array $patient, array $consultation): \Barryvdh\DomPDF\PDF
+    public function generateReferralPdf(Referral $referral, Patient $patient, Consultation $consultation): \Barryvdh\DomPDF\PDF
     {
         $html = view('pdf.referral-form', [
             'referral' => $referral,

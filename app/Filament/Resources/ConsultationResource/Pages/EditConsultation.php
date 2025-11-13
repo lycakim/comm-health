@@ -217,11 +217,14 @@ class EditConsultation extends EditRecord
                 ->icon('heroicon-o-eye')
                 ->label('View Previous Referrals')
                 ->color('gray')
-                ->visible(fn($record) => $record->referral) // assumes `referrals` relation
+                ->visible(fn($record) => $record->referral()->exists()) // Check if referrals exist
                 ->slideOver()
                 ->modalHeading(fn($record) => "All Referrals for {$record->patient->first_name} {$record->patient->last_name}")
                 ->form(function ($record) {
-                    return $record->referral->map(function ($referral, $index) {
+                    // Get all referrals as a collection
+                    $referrals = $record->referral()->get();
+                    
+                    return $referrals->map(function ($referral, $index) {
                         return Section::make('Referral #' . ($index + 1) . ' (' . $referral->created_at->format('M d, Y h:i A') . ')')
                             ->schema([
                                 TextInput::make("ref_id_{$referral->id}")

@@ -1,17 +1,18 @@
 <?php
 namespace App\Filament\Resources\ConsultationResource\Pages;
 
-use App\Filament\Resources\ConsultationResource;
-use App\Models\Consultation;
+use App\Models\Patient;
 use App\Models\Referral;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
-use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Consultation;
+use Filament\Actions\Action;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Facades\Auth;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\ConsultationResource;
 
 class CreateConsultation extends CreateRecord
 {
@@ -188,10 +189,30 @@ class CreateConsultation extends CreateRecord
                     $this->form->validate();
 
                     $formData = $this->form->getState();
-                    // dd($formData);
+
                     if (empty(array_filter($formData))) {
                         throw new \Exception('Please fill in all required fields before proceeding.');
                     }
+
+                    if (!empty($formData['patient_id'])) {
+                        $patientData = \App\Models\Patient::find($formData['patient_id']);
+                        $formData['first_name'] = $patientData->first_name;
+                        $formData['middle_name'] = $patientData->middle_name;
+                        $formData['last_name'] = $patientData->last_name;
+                        $formData['suffix'] = $patientData->suffix;
+                        $formData['birth_date'] = $patientData->birth_date;
+                        $formData['age'] = $patientData->age;
+                        $formData['sex'] = $patientData->sex;
+                        $formData['civil_status'] = $patientData->civil_status;
+                        $formData['educational_attainment'] = $patientData->educational_attainment;
+                        $formData['occupation'] = $patientData->occupation;
+                        $formData['family_monthly_income'] = $patientData->family_monthly_income;
+                        $formData['no_of_house'] = $patientData->no_of_house;
+                        $formData['house_type'] = $patientData->house_type;
+                    }
+
+                    // Remove dd() for production - uncomment for debugging
+                    // dd($formData);
 
                     return new HtmlString(
                         view('filament.create-preview', compact('formData'))->render()

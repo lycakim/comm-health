@@ -144,7 +144,25 @@ class ConsultationResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->extraModalFooterActions(fn($record) => [
+                        $record->referral 
+                            ? Tables\Actions\Action::make('print')
+                                ->label('Print')
+                                ->icon('heroicon-o-printer')
+                                ->color('primary')
+                                ->action(function ($record) {
+                                    $referral = $record->referral;
+                                    $pdfService = new PDFGenerationService();
+                                    
+                                    $pdf = $pdfService->generateReferralPdf($referral, $record->patient, $record);
+                                    
+                                    return response()->streamDownload(function () use ($pdf) {
+                                        echo $pdf->output();
+                                    }, "referral-{$referral->ref_id}.pdf");
+                                })
+                            : null,
+                    ]),
                 Tables\Actions\EditAction::make()
                     ->color('warning'),
                 Tables\Actions\Action::make('create_referral')

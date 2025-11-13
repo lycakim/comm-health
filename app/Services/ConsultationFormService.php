@@ -145,7 +145,7 @@ class ConsultationFormService
                                                         if (!$patientId) return false;
                                                         
                                                         $patient = Patient::with('category')->find($patientId);
-                                                        return $patient && !$patient->category->is_maternal ? $patient->educational_attainment : false;
+                                                        return $patient ? $patient->educational_attainment : false;
                                                     })
                                                     ->label('Educational Attainment')
                                                     ->content(function (Get $get) {
@@ -448,7 +448,7 @@ class ConsultationFormService
                                                         if (!$patientId) return false;
                                                         
                                                         $patient = Patient::with('category')->find($patientId);
-                                                        return $patient && !$patient->category->is_maternal ? $patient->educational_attainment : false;
+                                                        return $patient ? $patient->educational_attainment : false;
                                                     })
                                                     ->label('Educational Attainment')
                                                     ->content(function (Get $get) {
@@ -996,7 +996,8 @@ class ConsultationFormService
                                             ->schema([
                                                 TextInput::make('child_weight')
                                                     ->label('Child Weight')
-                                                    ->numeric() 
+                                                    ->numeric()
+                                                    ->hint('kg')
                                                     ->columnSpan(2),
                                                 TextInput::make('child_order')
                                                     ->label('Child Order')
