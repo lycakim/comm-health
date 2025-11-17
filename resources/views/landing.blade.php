@@ -48,9 +48,6 @@
                         <a href="#" class="px-6 py-3 border border-emerald-600 text-emerald-600 font-medium rounded-md hover:bg-emerald-50 transition-colors">
                             Health Worker Portal
                         </a>
-                        <a href="#" class="px-6 py-3 border border-emerald-600 text-emerald-600 font-medium rounded-md hover:bg-emerald-50 transition-colors">
-                            Resident Portal
-                        </a>
                     </div>
                 </div>
             </div>
@@ -58,7 +55,7 @@
             <!-- Features Section -->
             <div class="py-12 bg-gray-50">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                    <div class="flex items-center justify-center gap-8">
                         <!-- MHO Administrators -->
                         <div class="bg-white p-6 rounded-lg shadow-sm">
                             <h2 class="text-xl font-semibold text-emerald-600 mb-4">For MHO Administrators</h2>
@@ -126,41 +123,6 @@
                             </ul>
                             <a href="#" class="w-full block text-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-colors">
                                 Access Health Worker Portal
-                            </a>
-                        </div>
-
-                        <!-- Residents -->
-                        <div class="bg-white p-6 rounded-lg shadow-sm">
-                            <h2 class="text-xl font-semibold text-emerald-600 mb-4">For Residents</h2>
-                            <p class="text-gray-600 mb-4">Your health information at your fingertips</p>
-                            <ul class="space-y-2 mb-6">
-                                <li class="flex items-start">
-                                    <svg class="h-5 w-5 text-emerald-500 mr-2 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                    </svg>
-                                    <span class="text-gray-600">View personal health records</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="h-5 w-5 text-emerald-500 mr-2 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                    </svg>
-                                    <span class="text-gray-600">Check upcoming health programs</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="h-5 w-5 text-emerald-500 mr-2 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                    </svg>
-                                    <span class="text-gray-600">Receive health reminders</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="h-5 w-5 text-emerald-500 mr-2 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                    </svg>
-                                    <span class="text-gray-600">Track consultation history</span>
-                                </li>
-                            </ul>
-                            <a href="#" class="w-full block text-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-colors">
-                                Access Resident Portal
                             </a>
                         </div>
                     </div>
