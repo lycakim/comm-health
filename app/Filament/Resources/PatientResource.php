@@ -164,6 +164,10 @@ class PatientResource extends Resource
                                 Textarea::make('place_of_birth')
                                     ->required()
                                     ->columnSpanFull(),
+                                TextInput::make('contact_number')
+                                    ->label('Contact Number')
+                                    ->columnSpanFull()
+                                    ->required(),
                                 DatePicker::make('birth_date')
                                     ->label('Date of Birth')
                                     ->required()

@@ -92,7 +92,7 @@ class CreatePatient extends CreateRecord
                         }
 
                         // Remove dd() for production - uncomment for debugging
-                        dd($formData);
+                        // dd($formData);
 
                         return new HtmlString(
                             view('filament.create-preview', compact('formData'))->render()
