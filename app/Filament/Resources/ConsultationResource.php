@@ -499,7 +499,7 @@ class ConsultationResource extends Resource
     public static function getRelations(): array
     {
         return [
-            ReferralsRelationManager::class
+            //
         ];
     }
 

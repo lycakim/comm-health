@@ -24,9 +24,13 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use App\Filament\Resources\ProgramResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\ProgramResource\RelationManagers;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Section as InfolistSection;
 
 class ProgramResource extends Resource
 {
@@ -68,7 +72,19 @@ class ProgramResource extends Resource
         return 'Programs';
     }
 
+    // Full access to the resource (all roles that can see it)
     public static function canAccess(): bool
+    {
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+            RoleEnum::BHW,      // Can access but read-only
+            RoleEnum::MIDWIFE   // Can access and edit
+        ]);
+    }
+
+    // Can view individual records
+    public static function canView(Model $record): bool
     {
         return in_array(self::currentUser()->role, [
             RoleEnum::ADMIN,
@@ -78,32 +94,108 @@ class ProgramResource extends Resource
         ]);
     }
 
+    // Can edit (excludes BHW)
+    public static function canEdit(Model $record): bool
+    {
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+            RoleEnum::MIDWIFE
+        ]);
+    }
+
+    // Can delete (excludes BHW)
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+            RoleEnum::MIDWIFE
+        ]);
+    }
+
+    // Can create (excludes BHW)
+    public static function canCreate(): bool
+    {
+        return in_array(self::currentUser()->role, [
+            RoleEnum::ADMIN,
+            RoleEnum::MHO,
+            RoleEnum::MIDWIFE
+        ]);
+    }
+
     public static function form(Form $form): Form
     {
+        $isReadOnly = self::currentUser()->role === RoleEnum::BHW;
+        
         return $form
             ->schema([
                 Section::make()
                     ->schema([
-                        TextInput::make('name')->label('Program Name')->required(),
+                        TextInput::make('name')
+                            ->label('Program Name')
+                            ->required()
+                            ->disabled($isReadOnly),
                         Select::make('category_id')
                             ->label('Category')
                             ->searchable()
                             ->options(Category::query()->get()->pluck('name', 'id')->toArray())
-                            ->required(),
+                            ->required()
+                            ->disabled($isReadOnly),
                         Select::make('barangay_id')
                             ->label('Barangay')
                             ->searchable()
                             ->options(Barangay::query()->get()->pluck('name', 'id')->toArray())
-                            ->required(),
+                            ->required()
+                            ->disabled($isReadOnly),
                         Textarea::make('description')
-                            ->columnSpanFull(),
-                        DatePicker::make('program_date')->required(),
-                        TimePicker::make('program_start_time')->required(),
-                        TimePicker::make('program_end_time')->required(),
+                            ->columnSpanFull()
+                            ->disabled($isReadOnly),
+                        DatePicker::make('program_date')
+                            ->required()
+                            ->disabled($isReadOnly),
+                        TimePicker::make('program_start_time')
+                            ->required()
+                            ->disabled($isReadOnly),
+                        TimePicker::make('program_end_time')
+                            ->required()
+                            ->disabled($isReadOnly),
                         
                         Select::make('coordinator')
                             ->label('Coordinator')
-                            ->options(User::query()->get()->pluck('name', 'id')->toArray()),
+                            ->options(User::query()->get()->pluck('name', 'id')->toArray())
+                            ->disabled($isReadOnly),
+                    ])
+                    ->columns(3),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfolistSection::make('Program Information')
+                    ->schema([
+                        TextEntry::make('name')
+                            ->label('Program Name'),
+                        TextEntry::make('category.name')
+                            ->label('Category'),
+                        TextEntry::make('barangay.name')
+                            ->label('Barangay'),
+                        TextEntry::make('description')
+                            ->label('Description')
+                            ->columnSpanFull(),
+                        TextEntry::make('program_date')
+                            ->label('Program Date')
+                            ->date(),
+                        TextEntry::make('program_start_time')
+                            ->label('Start Time')
+                            ->time(),
+                        TextEntry::make('program_end_time')
+                            ->label('End Time')
+                            ->time(),
+                        TextEntry::make('coordinatorUser.name')
+                            ->label('Coordinator'),
                     ])
                     ->columns(3),
             ]);
@@ -111,6 +203,8 @@ class ProgramResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $isBHWOrMidwife = in_array(self::currentUser()->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]);
+        
         return $table
             ->columns([
                 TextColumn::make('name')->searchable(),
@@ -125,7 +219,12 @@ class ProgramResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                // Show View action for BHW and Midwife
+                Tables\Actions\ViewAction::make()
+                    ->visible(fn () => $isBHWOrMidwife),
+                // Show Edit action for those who can edit
+                Tables\Actions\EditAction::make()
+                    ->visible(fn () => !$isBHWOrMidwife),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
@@ -150,6 +249,7 @@ class ProgramResource extends Resource
         return [
             'index' => Pages\ListPrograms::route('/'),
             'create' => Pages\CreateProgram::route('/create'),
+            'view' => Pages\ViewProgram::route('/{record}'),
             'edit' => Pages\EditProgram::route('/{record}/edit'),
         ];
     }
