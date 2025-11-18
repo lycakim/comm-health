@@ -104,23 +104,21 @@ class ProgramResource extends Resource
         ]);
     }
 
-    // Can delete (excludes BHW)
+    // Can delete (excludes BHW & MIDWIFE)
     public static function canDelete(Model $record): bool
     {
         return in_array(self::currentUser()->role, [
             RoleEnum::ADMIN,
-            RoleEnum::MHO,
-            RoleEnum::MIDWIFE
+            RoleEnum::MHO
         ]);
     }
 
-    // Can create (excludes BHW)
+    // Can create (excludes BHW & MIDWIFE)
     public static function canCreate(): bool
     {
         return in_array(self::currentUser()->role, [
             RoleEnum::ADMIN,
-            RoleEnum::MHO,
-            RoleEnum::MIDWIFE
+            RoleEnum::MHO
         ]);
     }
 
@@ -163,8 +161,15 @@ class ProgramResource extends Resource
                         
                         Select::make('coordinator')
                             ->label('Coordinator')
-                            ->options(User::query()->get()->pluck('name', 'id')->toArray())
-                            ->disabled($isReadOnly),
+                            ->options(function () {
+                                return User::where('role', RoleEnum::MHO)->pluck('name', 'id')->toArray();
+                            })
+                            ->default(function () {
+                                return User::where('role', RoleEnum::MHO)->value('id');
+                            })
+                            ->selectablePlaceholder(false) // This will auto-select first option
+                            ->disabled(true)
+                            ->required(),
                     ])
                     ->columns(3),
             ]);
