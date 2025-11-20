@@ -13,7 +13,15 @@ class PrivacyModal extends Component
     public function mount()
     {
         $user = Auth::user();
-        $this->showModal = $user && $user->needsPrivacyAcceptance();
+        
+        if (!$user || $user->isAdmin()) {
+            $this->showModal = false;
+            return;
+        }
+        
+        // Show modal if user hasn't accepted privacy today
+        $hasAcceptedToday = $user->privacy_accepted_at && $user->privacy_accepted_at->isToday();
+        $this->showModal = !$hasAcceptedToday;
     }
 
     public function acceptPrivacy()

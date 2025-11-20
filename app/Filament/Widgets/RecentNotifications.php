@@ -7,21 +7,43 @@ use Filament\Tables\Table;
 use App\Models\Announcement;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Support\Facades\Auth;
+use App\Filament\Resources\AnnouncementResource;
 
 class RecentNotifications extends BaseWidget
 {
-    protected static ?string $heading = 'Recent Notifications';
+    protected static ?string $heading = 'Recent Announcements';
 
     protected static ?string $description = 'Latest updates and announcements from MHO';
 
     protected static ?int $sort = 4;
 
+    public function getColumnSpan(): int | string | array
+    {
+        $user = Auth::user();
+        // Make columnSpanFull when user is NOT MHO
+        if ($user && !$user->isMHO()) {
+            return 'full';
+        }
+        
+        return parent::getColumnSpan();
+    }
+
     public function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                Tables\Actions\Action::make('viewAll')
+                    ->label('View All')
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->action(function () {
+                        return AnnouncementResource::getUrl('index');
+                    }),
+            ])
             ->query(
                 Announcement::latest()
-                    ->limit(10)
+                    ->limit(5)
             )
             ->columns([
                 Tables\Columns\Layout\Stack::make([

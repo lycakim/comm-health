@@ -2,11 +2,36 @@
 
 namespace App\Filament\Resources\ProgramResource\Pages;
 
-use App\Filament\Resources\ProgramResource;
+use App\Models\User;
 use Filament\Actions;
+use App\Enums\RoleEnum;
+use App\Models\Patient;
+use App\Services\SemaphoreService;
+use Illuminate\Support\Facades\Auth;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\ProgramResource;
+use App\Notifications\AnnouncementNotification;
 
 class CreateProgram extends CreateRecord
 {
     protected static string $resource = ProgramResource::class;
+    
+    protected function afterCreate(): void
+    {
+        $recipients = User::whereIn('role', [
+            RoleEnum::BHW->value, 
+            RoleEnum::MIDWIFE->value
+        ])->get();
+
+        foreach ($recipients as $recipient) {
+            $recipient->notify(new AnnouncementNotification([
+                'type' => 'program',
+                'title' => 'New Program Created',
+                'message' => 'A new program "' . $this->program->name . '" has been added.',
+                'icon' => 'heroicon-o-cube',
+                'status' => 'info',
+            ]));
+        }
+    }
 }

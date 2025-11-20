@@ -15,6 +15,7 @@ use App\Filament\Widgets\HealthServicesChart;
 use App\Filament\Widgets\RecentNotifications;
 use App\Filament\Widgets\PatientCategoryChart;
 use App\Filament\Widgets\UpcomingHealthPrograms;
+use App\Filament\Widgets\ActivityLogsWidget;
 use App\Filament\Widgets\PatientCategoryByBarangayChart;
 
 class Dashboard extends Page
@@ -79,7 +80,8 @@ class Dashboard extends Page
                     RecentPatients::class,
                     UpcomingHealthPrograms::class,
                     RecentNotifications::class,
-                    PatientCategoryByBarangayChart::class
+                    PatientCategoryByBarangayChart::class,
+                    ActivityLogsWidget::class,
                 ];
                 break;
                 

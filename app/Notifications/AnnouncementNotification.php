@@ -3,15 +3,23 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;  // ← This is the correct one
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
-class AnnouncementNotification extends Notification  // ← Extending Notification, not DatabaseNotification
+class AnnouncementNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public $announcement)
+    /**
+     * $data accepts:
+     * [
+     *   'type' => 'announcement' | 'program' | 'custom',
+     *   'title' => 'New Announcement',
+     *   'message' => 'A new announcement has been posted.',
+     *   'icon' => 'heroicon-o-bell',
+     *   'status' => 'success' | 'info' | 'warning' | 'danger',
+     * ]
+     */
+    public function __construct(public array $data)
     {
     }
 
@@ -22,11 +30,16 @@ class AnnouncementNotification extends Notification  // ← Extending Notificati
 
     public function toDatabase(object $notifiable): array
     {
-        return \Filament\Notifications\Notification::make()
-            ->title('New Announcement')
-            ->body($this->announcement->title ?? 'A new announcement has been posted.')
-            ->icon('heroicon-o-megaphone')
-            ->success()
-            ->getDatabaseMessage();
+        $notification = \Filament\Notifications\Notification::make()
+            ->title($this->data['title'] ?? 'System Update')
+            ->body($this->data['message'] ?? '')
+            ->icon($this->data['icon'] ?? 'heroicon-o-information-circle');
+
+        // Apply status (success, warning, danger, info)
+        if (!empty($this->data['status'])) {
+            $notification->{$this->data['status']}();
+        }
+
+        return $notification->getDatabaseMessage();
     }
 }

@@ -35,10 +35,11 @@ return [
         ],
     ],
 
-    'semaphore' => [
-        'api_key' => env('SEMAPHORE_API_KEY'),
-        'sender_name' => env('SEMAPHORE_SENDER_NAME'),
-        'base_url' => env('SEMAPHORE_BASE_URL', 'https://api.semaphore.cloud'),
-    ],
+    // config/services.php
+'semaphore' => [
+    'api_key' => env('SEMAPHORE_API_KEY'),
+    'sender_name' => env('SEMAPHORE_SENDER_NAME', 'SEMAPHORE'), // or leave empty
+    'base_url' => env('SEMAPHORE_BASE_URL', 'https://api.semaphore.co/api/v4'),
+],
 
 ];

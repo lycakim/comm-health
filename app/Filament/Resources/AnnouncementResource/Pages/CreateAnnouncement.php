@@ -23,7 +23,13 @@ class CreateAnnouncement extends CreateRecord
         ])->get();
 
         foreach ($recipients as $recipient) {
-            $recipient->notify(new AnnouncementNotification($this->record));
+            $recipient->notify(new AnnouncementNotification([
+                'type' => 'announcement',
+                'title' => 'New Announcement',
+                'message' => $this->record->title ?? 'A new announcement has been posted.',
+                'icon' => 'heroicon-o-megaphone',
+                'status' => 'success',
+            ]));
         }
     }
 }

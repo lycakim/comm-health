@@ -35,4 +35,9 @@ class SMSBalance extends Model
             ->orderBy('retrieved_at', 'desc')
             ->get();
     }
+
+    public function patient(): BelongsTo
+    {
+        return $this->belongsTo(Patient::class);
+    }
 }

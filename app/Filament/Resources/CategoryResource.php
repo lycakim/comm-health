@@ -59,18 +59,29 @@ class CategoryResource extends Resource
                                 ];
                             }),
                         Textarea::make('description'),
-                        ToggleButtons::make('is_child')
-                            ->label('Is Child Category?')
-                            ->live()
-                            ->disabled(fn (Get $get) => $get('is_maternal'))
-                            ->grouped()
-                            ->boolean(),
-                        ToggleButtons::make('is_maternal')
-                            ->live()
-                            ->disabled(fn (Get $get) => $get('is_child'))
-                            ->label('Is Maternal Category?')
-                            ->grouped()
-                            ->boolean()
+                        Section::make()
+                            ->schema([
+                                ToggleButtons::make('is_child')
+                                    ->label('Is Child Category?')
+                                    ->live()
+                                    ->default(false)
+                                    ->disabled(fn (Get $get) => $get('is_maternal'))
+                                    ->grouped()
+                                    ->boolean(),
+                                ToggleButtons::make('is_maternal')
+                                    ->live()
+                                    ->default(false)
+                                    ->disabled(fn (Get $get) => $get('is_child'))
+                                    ->label('Is Maternal Category?')
+                                    ->grouped()
+                                    ->boolean(),
+                                ToggleButtons::make('is_active')
+                                    ->label('Is Active?')
+                                    ->default(true)
+                                    ->grouped()
+                                    ->boolean(),
+                            ])
+                            ->columns(3),
                     ])
             ]);
     }
@@ -87,6 +98,7 @@ class CategoryResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
+                    ->visible(fn (Category $record) => !$record->is_active),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

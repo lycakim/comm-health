@@ -18,6 +18,7 @@ use Filament\Tables\Table;
 use App\Traits\HasUserTypeUrls;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Radio;
+use Filament\Tables\Actions\Action as TablesAction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
@@ -145,6 +146,7 @@ class PatientResource extends Resource
                                     ->label('Relationship to the Head of the Family')
                                     // ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'other' ? 2 : 'full')
                                     ->columnSpan(2)
+                                    ->default('Self')
                                     ->options(fn () => collect(PatientFormOptionsServices::getPatientRelationships())->sort()->toArray())
                                     ->live()
                                     ->preload()
@@ -441,6 +443,89 @@ class PatientResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                TablesAction::make('exportToCSV')
+                    ->label('Export to CSV')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->form([
+                        Select::make('category')
+                            ->label('Export Category')
+                            ->options([
+                                'patient_profiling' => 'Patients Profiling',
+                                'maternal_child' => 'Maternal and Child Report',
+                                'children_adolescent' => 'Children and Adolescent Reports',
+                                'senior_citizens' => 'Senior Citizens Reports',
+                                'maintenance' => 'Person with Maintenance Reports',
+                                'pwds' => 'Person with Disabilities Reports',
+                            ])
+                            ->required()
+                            ->default('patient_profiling')
+                    ])
+                    ->action(function ($data) {
+                        $query = Patient::query();
+                        $reportTitle = '';
+
+                        switch ($data['category']) {
+                            case 'patient_profiling':
+                                $reportTitle = 'patient_profiling';
+                                break;
+                            case 'maternal_child':
+                                $query->where('category_id', Category::where('name', 'LIKE', '%maternal and child%')->value('id'));
+                                $reportTitle = 'maternal_and_child_report';
+                                break;
+                            case 'children_adolescent':
+                                $query->where('category_id', Category::where('name', 'LIKE', '%children and adolescent%')->value('id'));
+                                $reportTitle = 'children_and_adolescent_report';
+                                break;
+                            case 'senior_citizens':
+                                $query->where('category_id', Category::where('name', 'LIKE', '%senior citizen%')->value('id'));
+                                $reportTitle = 'senior_citizens_report';
+                                break;
+                            case 'maintenance':
+                                $query->where('category_id', Category::where('name', 'LIKE', '%person with maintenance%')->value('id'));
+                                $reportTitle = 'person_with_maintenance_report';
+                                break;
+                            case 'pwds':
+                                $query->where('category_id', Category::where('name', 'LIKE', '%person with disabilities%')->value('id'));
+                                $reportTitle = 'person_with_disabilities_report';
+                                break;
+                            case 'all':
+                            default:
+                                $reportTitle = 'all_patients';
+                                break;
+                        }
+
+                        $patients = $query->get();
+
+                        if ($patients->isEmpty()) {
+                            Notification::make()
+                                ->title('No patients found for ' . $title)
+                                ->body('Please select a different category')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        return response()->streamDownload(function () use ($patients, $data) {
+                            $csv = fopen('php://output', 'w');
+                            // Add CSV headers, can be extended per report type if needed
+                            fputcsv($csv, ['Full Name', 'Sex', 'Age', 'Barangay', 'Category']);
+                            
+                            foreach ($patients as $patient) {
+                                fputcsv($csv, [
+                                    $patient->full_name,
+                                    $patient->sex,
+                                    $patient->age,
+                                    $patient->barangay->name ?? 'N/A',
+                                    $patient->category->name ?? 'N/A',
+                                ]);
+                            }
+                            
+                            fclose($csv);
+                        }, $reportTitle . '_' . date('Y-m-d_His') . '.csv');
+                    })
+            ])
             ->columns([
                 TextColumn::make('full_name')
                     ->label('Full Name')
@@ -460,6 +545,11 @@ class PatientResource extends Resource
                     ->label('Age'),
                 TextColumn::make('barangay.name')
                     ->label('Assigned Barangay')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('category.name')
+                    ->label('Category')
+                    ->default('N/A')
                     ->searchable()
                     ->sortable(),
             ])
