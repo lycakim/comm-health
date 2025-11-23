@@ -231,7 +231,7 @@ class SMSBalance extends Page implements HasTable
             ->emptyStateIcon('heroicon-o-chat-bubble-left-right');
     }
 
-    public static function fetchMessages()
+    public function fetchMessages()  // Remove 'static'
     {
         try {
             $semaphore = new SemaphoreService();
@@ -268,8 +268,8 @@ class SMSBalance extends Page implements HasTable
                     }
                 }
 
-                $this->loadMessagesLastRetrievedAt();
-                $this->resetTable();
+                $this->loadMessagesLastRetrievedAt();  // ✅ Now works
+                $this->resetTable();                    // ✅ Now works
 
                 Notification::make()
                     ->title("Fetched {$savedCount} new messages successfully!")
