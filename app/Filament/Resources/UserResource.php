@@ -90,17 +90,14 @@ class UserResource extends Resource
                             ->required(fn (string $context): bool => $context === 'create')
                             ->columnSpanFull(),
                         Select::make('role')
-                            ->visible(self::currentUser()->isAdmin())
                             ->live()
                             ->searchable()
                             ->options([
                                 'bhw' => 'Barangay Health Worker',
                                 'mho' => 'Municipal Health Officer',
-                                'resident' => 'Resident',
                                 'midwife' => 'Midwife',
-                                'admin' => 'Admin',
                             ])
-                            ->default('resident')
+                            ->default('bhw')
                             ->in(['mho', 'bhw', 'resident', 'midwife', 'admin'])
                             ->required()
                             ->columnSpanFull(),
