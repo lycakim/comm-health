@@ -82,8 +82,6 @@ class ProgramResource extends Resource
         return in_array(self::currentUser()->role, [
             RoleEnum::ADMIN,
             RoleEnum::MHO,
-            RoleEnum::BHW,      // Can access but read-only
-            RoleEnum::MIDWIFE   // Can access and edit
         ]);
     }
 
@@ -93,8 +91,6 @@ class ProgramResource extends Resource
         return in_array(self::currentUser()->role, [
             RoleEnum::ADMIN,
             RoleEnum::MHO,
-            RoleEnum::BHW,
-            RoleEnum::MIDWIFE
         ]);
     }
 

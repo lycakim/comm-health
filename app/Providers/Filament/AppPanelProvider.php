@@ -26,6 +26,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 
 class AppPanelProvider extends PanelProvider
@@ -76,7 +77,9 @@ class AppPanelProvider extends PanelProvider
             ->plugins([
                 FilamentOtpLoginPlugin::make()
                     ->loginPage(Login::class),
+                FilamentFullCalendarPlugin::make()
             ])
+            ->sidebarCollapsibleOnDesktop()
             ->renderHook(
                 'panels::body.end',
                 fn () => view('components.privacy-modal-hook')

@@ -15,6 +15,7 @@
         "laravel/reverb": "*",
         "laravel/tinker": "^2.10.1",
         "parallax/filament-comments": "^1.5",
+        "saade/filament-fullcalendar": "*",
         "spatie/laravel-activitylog": "*"
     },
     "require-dev": {

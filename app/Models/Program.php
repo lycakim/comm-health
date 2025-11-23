@@ -15,6 +15,11 @@ class Program extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'program_start_date' => 'datetime',
+        'program_end_date' => 'datetime',
+    ];
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
