@@ -61,12 +61,12 @@
 <body>
     <div class="header">
         <div>
-            <img src="{{ public_path('comm-health-logo.png') }}" alt="Logo Left">
+            {{-- <img src="{{ public_path('comm-health-logo.png') }}" alt="Logo Left"> --}}
             <span style="font-weight:bold; font-size:14px;">Republic of the Philippines<br>
             Province of Davao del Norte<br>
             <span style="color:#004aad;">DCaPS CLUSTER III</span></span><br>
             <small>Email: dcapsspdnc3@gmail.com | Tel No: (084) 628-6592</small>
-            <img src="{{ public_path('comm-health-logo.png') }}" alt="Logo Right">
+            {{-- <img src="{{ public_path('comm-health-logo.png') }}" alt="Logo Right"> --}}
         </div>
     </div>
 
@@ -76,74 +76,74 @@
         <tr>
             <td class="label">Referred to:</td>
             <td>{{ $data['referred_to'] ?? 'CARMEN MHO' }}</td>
-            <td class="label">Address:</td>
+            <td class="label">Referred Address:</td>
             <td>{{ $data['referred_address'] ?? 'ISING CARMEN' }}</td>
         </tr>
         <tr>
             <td class="label">Date:</td>
-            <td>{{ $data['date'] ?? '' }}</td>
+            <td>{{ $data['date'] ?? Carbon\Carbon::now()->format('M d, Y') }}</td>
             <td class="label">Time:</td>
-            <td>{{ $data['time'] ?? '' }}</td>
+            <td>{{ $data['time'] ?? Carbon\Carbon::now()->format('H:i A') }}</td>
         </tr>
         <tr>
             <td class="label">Name:</td>
-            <td colspan="3">{{ $data['name'] ?? '' }}</td>
+            <td colspan="3">{{ $patient->first_name ?? '' }} {{ $patient->last_name ?? '' }}</td>
         </tr>
         <tr>
             <td class="label">Address:</td>
-            <td colspan="3">{{ $data['address'] ?? 'PUROK MAGSAYSAY CARMEN DDN' }}</td>
+            <td colspan="3">{{ $patient->baragay->name ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="label">Chief Complaints:</td>
-            <td colspan="3">{{ $data['chief_complaints'] ?? '' }}</td>
+            <td colspan="3">{{ $data['chief_complaints'] ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="label">Medical History:</td>
-            <td colspan="3">{{ $data['medical_history'] ?? '' }}</td>
+            <td colspan="3">{{ $data['medical_history'] ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="label">HPI:</td>
-            <td colspan="3">{{ $data['hpi'] ?? '' }}</td>
+            <td colspan="3">{{ $consultation->hpi_notes ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="label">Surgical Operation:</td>
-            <td>{{ $data['surgical_operation'] ?? 'No' }}</td>
+            <td>{{ $consultation->surgical_operation ? 'Yes' : 'No' }}</td>
             <td class="label">If yes, what procedure:</td>
-            <td>{{ $data['surgical_procedure'] ?? '' }}</td>
+            <td>{{ $consultation->surgical_procedure ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="label">Drug Allergy:</td>
-            <td>{{ $data['drug_allergy'] ?? 'No' }}</td>
+            <td>{{ $consultation->drug_allergy ? 'Yes' : 'No' }}</td>
             <td class="label">If yes, what:</td>
-            <td>{{ $data['allergy_details'] ?? '' }}</td>
+            <td>{{ $consultation->drug_allergy_notes ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="label">Physical Examination:</td>
             <td colspan="3">
-                BP: {{ $data['bp'] ?? '' }} |
-                HR: {{ $data['hr'] ?? '' }} |
-                WT: {{ $data['wt'] ?? '' }} |
-                RR: {{ $data['rr'] ?? '' }}
+                BP: {{ $patient->blood_pressure ?? 'N/A' }} |
+                HR: {{ $patient->sugar_level ?? 'N/A' }} |
+                WT: {{ $patient->weight ?? 'N/A' }} |
+                RR: {{ $patient->respiratory_rate ?? 'N/A' }}
             </td>
         </tr>
         <tr>
             <td class="label">Impression:</td>
-            <td colspan="3">{{ $data['impression'] ?? '' }}</td>
+            <td colspan="3">{{ $consultation->impression ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="label">Action Taken:</td>
-            <td colspan="3">{{ $data['action_taken'] ?? '' }}</td>
+            <td colspan="3">{{ $consultation->action_taken ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="label">Reason for Referral:</td>
             <td colspan="3">
-                {{ $data['reason_for_referral'] ?? '' }}
+                {{ $consultation->reason_for_referral ?? 'N/A' }}
             </td>
         </tr>
         <tr>
             <td colspan="4" style="padding-top:15px;">
                 <b>Referral by:</b> {{ $data['referral_by'] ?? 'JACLYN ROSE ZAPPHRIE S. SABLAS RHM II' }}<br>
-                License #: {{ $data['license_no'] ?? '' }}
+                License #: {{ $data['license_no'] ?? '-' }}
             </td>
         </tr>
     </table>
