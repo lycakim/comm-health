@@ -48,7 +48,6 @@ class SMSBalance extends Page implements HasTable
 
     public function loadLatestBalance()
     {
-        // Load from database
         $latestBalance = SMSBalanceModel::getLatest();
 
         if ($latestBalance) {
@@ -70,7 +69,6 @@ class SMSBalance extends Page implements HasTable
             $result = $semaphore->getBalance();
             
             if ($result['success'] && isset($result['data']['credit_balance'])) {
-                // Save to database
                 $balance = SMSBalanceModel::create([
                     'account_name' => $result['data']['account_name'] ?? 'Unknown',
                     'credit_balance' => $result['data']['credit_balance'],
@@ -120,7 +118,6 @@ class SMSBalance extends Page implements HasTable
         return $table
             ->heading('Outgoing Messages')
             ->description(function () {
-                // Message status labels and corresponding status keys
                 $statuses = [
                     'Sent' => 'Sent',
                     'Queued' => 'Queued',
@@ -231,7 +228,7 @@ class SMSBalance extends Page implements HasTable
             ->emptyStateIcon('heroicon-o-chat-bubble-left-right');
     }
 
-    public function fetchMessages()  // Remove 'static'
+    public function fetchMessages()
     {
         try {
             $semaphore = new SemaphoreService();
@@ -239,8 +236,7 @@ class SMSBalance extends Page implements HasTable
             
             if ($result['success'] && isset($result['data'])) {
                 $messagesData = $result['data'];
-                
-                // Handle different response formats
+
                 $messagesArray = [];
                 if (isset($messagesData['data']) && is_array($messagesData['data'])) {
                     $messagesArray = $messagesData['data'];
@@ -250,7 +246,6 @@ class SMSBalance extends Page implements HasTable
 
                 $savedCount = 0;
                 foreach ($messagesArray as $messageData) {
-                    // Check if message already exists
                     $messageId = $messageData['message_id'] ?? $messageData['id'] ?? null;
                     
                     if ($messageId) {
@@ -268,8 +263,8 @@ class SMSBalance extends Page implements HasTable
                     }
                 }
 
-                $this->loadMessagesLastRetrievedAt();  // ✅ Now works
-                $this->resetTable();                    // ✅ Now works
+                $this->loadMessagesLastRetrievedAt();
+                $this->resetTable();
 
                 Notification::make()
                     ->title("Fetched {$savedCount} new messages successfully!")
