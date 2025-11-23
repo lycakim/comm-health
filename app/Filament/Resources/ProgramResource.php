@@ -149,7 +149,10 @@ class ProgramResource extends Resource
                         Textarea::make('description')
                             ->columnSpanFull()
                             ->disabled($isReadOnly),
-                        DatePicker::make('program_date')
+                        DatePicker::make('program_start_date')
+                            ->required()
+                            ->disabled($isReadOnly),
+                        DatePicker::make('program_end_date')
                             ->required()
                             ->disabled($isReadOnly),
                         TimePicker::make('program_start_time')
@@ -190,8 +193,11 @@ class ProgramResource extends Resource
                         TextEntry::make('description')
                             ->label('Description')
                             ->columnSpanFull(),
-                        TextEntry::make('program_date')
-                            ->label('Program Date')
+                        TextEntry::make('program_start_date')
+                            ->label('Program Start Date')
+                            ->date(),
+                        TextEntry::make('program_end_date')
+                            ->label('Program End Date')
                             ->date(),
                         TextEntry::make('program_start_time')
                             ->label('Start Time')
