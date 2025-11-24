@@ -20,15 +20,17 @@ class CreateProgram extends CreateRecord
     protected function afterCreate(): void
     {
         $recipients = User::whereIn('role', [
-            RoleEnum::BHW->value, 
-            RoleEnum::MIDWIFE->value
+            RoleEnum::BHW->value,
+            RoleEnum::MIDWIFE->value,
         ])->get();
+
+        $record = $this->getRecord();
 
         foreach ($recipients as $recipient) {
             $recipient->notify(new AnnouncementNotification([
                 'type' => 'program',
                 'title' => 'New Program Created',
-                'message' => 'A new program "' . $this->program->name . '" has been added.',
+                'message' => 'A new program "' . $record->name . '" has been added.',
                 'icon' => 'heroicon-o-cube',
                 'status' => 'info',
             ]));

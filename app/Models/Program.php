@@ -18,6 +18,7 @@ class Program extends Model
     protected $casts = [
         'program_start_date' => 'datetime',
         'program_end_date' => 'datetime',
+        'report_field' => 'array',
     ];
 
     public function category(): BelongsTo

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use Carbon\Carbon;
 use Filament\Forms;
 use App\Models\User;
 use Filament\Tables;
@@ -10,18 +11,20 @@ use App\Models\Patient;
 use App\Models\Program;
 use App\Models\Barangay;
 use App\Models\Category;
-use Carbon\Carbon;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Traits\HasUserTypeUrls;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use App\Services\SemaphoreService;
+use Filament\Forms\Components\Grid;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Section;
 use Filament\Resources\Components\Tab;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +34,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Forms\Components\Actions\Action;
 use App\Filament\Resources\ProgramResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\ProgramResource\RelationManagers;
@@ -142,6 +146,7 @@ class ProgramResource extends Resource
                             ->disabled($isReadOnly),
                         Select::make('barangay_id')
                             ->label('Barangay')
+                            ->columnSpanFull()
                             ->searchable()
                             ->options(Barangay::query()->get()->pluck('name', 'id')->toArray())
                             ->required()
@@ -164,6 +169,7 @@ class ProgramResource extends Resource
                         
                         Select::make('coordinator')
                             ->label('Coordinator')
+                            ->columnSpanFull()
                             ->options(function () {
                                 return User::where('role', RoleEnum::MHO)->pluck('name', 'id')->toArray();
                             })
@@ -174,7 +180,91 @@ class ProgramResource extends Resource
                             ->disabled(true)
                             ->required(),
                     ])
-                    ->columns(3),
+                    ->columns(2),
+                Section::make('Reporting Fields')
+                    ->description('Define custom fields that will appear in the consultation form')
+                    ->schema([
+                        Repeater::make('report_field')
+                            ->label('Fields')
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('Field Name')
+                                    ->helperText('Internal identifier (use snake_case, e.g., patient_experience)')
+                                    ->required()
+                                    ->regex('/^[a-z_]+$/')
+                                    ->validationMessages([
+                                        'regex' => 'Field name must be lowercase letters and underscores only',
+                                    ])
+                                    ->columnSpan(1),
+                                
+                                TextInput::make('label')
+                                    ->label('Field Label')
+                                    ->helperText('Label shown to users')
+                                    ->required()
+                                    ->columnSpan(1),
+                                
+                                Select::make('type')
+                                    ->label('Field Type')
+                                    ->options([
+                                        'text' => 'Text',
+                                        'textarea' => 'Textarea',
+                                        'number' => 'Number',
+                                        'date' => 'Date',
+                                        'time' => 'Time',
+                                        'datetime' => 'Date & Time',
+                                        'select' => 'Select Dropdown',
+                                        'checkbox' => 'Checkbox',
+                                        'radio' => 'Radio Buttons',
+                                        'toggle' => 'Toggle',
+                                    ])
+                                    ->required()
+                                    ->reactive()
+                                    ->columnSpan(1),
+                                
+                                // Show options field only for select and radio types
+                                KeyValue::make('options')
+                                    ->label('Options')
+                                    ->helperText('Key-value pairs for dropdown/radio options')
+                                    ->keyLabel('Value')
+                                    ->valueLabel('Label')
+                                    ->visible(fn (callable $get) => in_array($get('type'), ['select', 'radio']))
+                                    ->required(fn (callable $get) => in_array($get('type'), ['select', 'radio']))
+                                    ->columnSpanFull(),
+                                
+                                Textarea::make('helper_text')
+                                    ->label('Helper Text')
+                                    ->helperText('Optional help text shown below the field')
+                                    ->rows(2)
+                                    ->columnSpanFull(),
+                                
+                                Grid::make(3)
+                                    ->schema([
+                                        Toggle::make('required')
+                                            ->label('Required Field')
+                                            ->default(false),
+                                        
+                                        TextInput::make('placeholder')
+                                            ->label('Placeholder')
+                                            ->visible(fn (callable $get) => in_array($get('type'), ['text', 'textarea', 'number'])),
+                                        
+                                        TextInput::make('rows')
+                                            ->label('Rows')
+                                            ->numeric()
+                                            ->default(4)
+                                            ->visible(fn (callable $get) => $get('type') === 'textarea'),
+                                    ]),
+                            ])
+                            ->columns(3)
+                            ->defaultItems(0)
+                            ->addActionLabel('Add Field')
+                            ->reorderable()
+                            ->collapsible()
+                            ->itemLabel(fn (array $state): ?string => $state['label'] ?? $state['name'] ?? null)
+                            ->deleteAction(
+                                fn (Action $action) => $action->requiresConfirmation()
+                            ),
+                    ])
+                    ->collapsible(),
             ]);
     }
 

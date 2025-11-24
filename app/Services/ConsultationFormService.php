@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\Purok;
 use App\Enums\SexEnum;
 use App\Models\Patient;
+use App\Models\Program;
 use Filament\Forms\Get;
 use App\Models\Barangay;
 use App\Models\Category;
@@ -18,14 +19,17 @@ use Filament\Forms\Components\Radio;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Textarea;
 use App\Enums\EducationalAttainmentEnum;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\CheckboxList;
 use App\Services\PatientFormOptionsServices;
@@ -85,11 +89,31 @@ class ConsultationFormService
                                             ->searchable()
                                             ->disabledOn('edit')
                                             ->required(),
+                                        Select::make('program_id')
+                                            ->label('Program')
+                                            ->reactive()
+                                            ->live()
+                                            ->options(function () {
+                                                return Program::query()
+                                                    ->get()
+                                                    ->mapWithKeys(function ($patient) {
+                                                        return [$patient->id => $patient->name];
+                                                    })
+                                                    ->sort()
+                                                    ->toArray();
+                                            })
+                                            ->preload()
+                                            ->searchable()
+                                            ->required()
+                                            ->afterStateUpdated(function ($state, callable $set) {
+                                                $set('report_field_response', []);
+                                            })
+                                            ->disabledOn('edit'),
                                         DateTimePicker::make('date')
                                             ->default(Carbon::now())
                                             ->disabledOn('edit')
                                             ->required(),
-                                    ])->columns(2),
+                                    ])->columns(3),
                                 
                                 // PATIENT INFORMATION PREVIEW
                                 Section::make('Patient Information')
@@ -695,6 +719,84 @@ class ConsultationFormService
                                 Section::make('Patient Consultation Details')
                                     ->collapsible()
                                     ->schema([
+                                        Fieldset::make('Program Report Fields')
+                                            ->schema(function (callable $get, $record) {
+                                                // Get program_id from form state or record
+                                                $programId = $get('program_id') ?? $record?->program_id;
+                                                
+                                                if (!$programId) {
+                                                    return [
+                                                        Placeholder::make('select_program')
+                                                            ->label('')
+                                                            ->content('Please select a program first to view report fields.')
+                                                    ];
+                                                }
+                                                
+                                                // Get the program with report_field
+                                                $program = \App\Models\Program::find($programId);
+                                                
+                                                if (!$program || empty($program->report_field)) {
+                                                    return [
+                                                        Placeholder::make('no_fields')
+                                                            ->label('')
+                                                            ->content('This program has no report fields configured.')
+                                                    ];
+                                                }
+                                                
+                                                $reportFields = is_string($program->report_field) 
+                                                    ? json_decode($program->report_field, true) 
+                                                    : $program->report_field;
+                                                
+                                                return collect($reportFields)->map(function ($field) {
+                                                    $component = match($field['type']) {
+                                                        'textarea' => Textarea::make('report_field_response.' . $field['name'])
+                                                            ->label($field['label'])
+                                                            ->rows($field['rows'] ?? 4),
+                                                        'text' => TextInput::make('report_field_response.' . $field['name'])
+                                                            ->label($field['label'])
+                                                            ->placeholder($field['placeholder'] ?? ''),
+                                                        'number' => TextInput::make('report_field_response.' . $field['name'])
+                                                            ->label($field['label'])
+                                                            ->numeric()
+                                                            ->placeholder($field['placeholder'] ?? ''),
+                                                        'select' => Select::make('report_field_response.' . $field['name'])
+                                                            ->label($field['label'])
+                                                            ->options($field['options'] ?? []),
+                                                        'radio' => Radio::make('report_field_response.' . $field['name'])
+                                                            ->label($field['label'])
+                                                            ->options($field['options'] ?? []),
+                                                        'checkbox' => Checkbox::make('report_field_response.' . $field['name'])
+                                                            ->label($field['label']),
+                                                        'toggle' => Toggle::make('report_field_response.' . $field['name'])
+                                                            ->label($field['label']),
+                                                        'date' => DatePicker::make('report_field_response.' . $field['name'])
+                                                            ->label($field['label']),
+                                                        'time' => TimePicker::make('report_field_response.' . $field['name'])
+                                                            ->label($field['label']),
+                                                        'datetime' => DateTimePicker::make('report_field_response.' . $field['name'])
+                                                            ->label($field['label']),
+                                                        default => TextInput::make('report_field_response.' . $field['name'])
+                                                            ->label($field['label'])
+                                                    };
+                                                    
+                                                    // Apply common properties
+                                                    if (!empty($field['helper_text'])) {
+                                                        $component->helperText($field['helper_text']);
+                                                    }
+                                                    
+                                                    if (!empty($field['required'])) {
+                                                        $component->required();
+                                                    }
+                                                    
+                                                    if (!empty($field['placeholder']) && method_exists($component, 'placeholder')) {
+                                                        $component->placeholder($field['placeholder']);
+                                                    }
+                                                    
+                                                    return $component;
+                                                })->toArray();
+                                            })
+                                            ->columns(3)
+                                            ->visible(fn (callable $get) => $get('program_id') !== null),
                                         Fieldset::make()
                                             ->schema([
                                                 ToggleButtons::make('make_referral')

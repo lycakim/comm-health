@@ -5,7 +5,7 @@
                 <div class="flex justify-start gap-2">
                     <x-filament::tabs.item 
                         active @click="tab = 'tab1'" :alpine-active="'tab === \'tab1\''">
-                        Generated Reports
+                        Program Reports
                     </x-filament::tabs.item>
                     
                     <x-filament::tabs.item 

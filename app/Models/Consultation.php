@@ -52,6 +52,7 @@ class Consultation extends Model
         'fundal_height' => 'decimal:2',
         'fetal_hydronephrosis' => 'decimal:2',
         'age_of_gestation' => 'decimal:2',
+        'report_field_response' => 'json',
     ];
 
     public function patient(): BelongsTo
@@ -101,5 +102,10 @@ class Consultation extends Model
     public function getHusbandFullNameAttribute(): string
     {
         return trim("{$this->husband_first_name} {$this->husband_middle_name} {$this->husband_last_name}");
+    }
+
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(Program::class, 'program_id');
     }
 }
