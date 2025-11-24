@@ -104,7 +104,6 @@ class ConsultationFormService
                                             })
                                             ->preload()
                                             ->searchable()
-                                            ->required()
                                             ->afterStateUpdated(function ($state, callable $set) {
                                                 $set('report_field_response', []);
                                             })
