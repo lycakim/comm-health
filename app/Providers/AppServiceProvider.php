@@ -3,10 +3,14 @@
 namespace App\Providers;
 
 use App\Models\Barangay;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Contracts\View\View;
+use App\Listeners\SetFreshLoginFlag;
 use Illuminate\Support\Facades\Auth;
 use App\Filament\Pages\Auth\Register;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Filament\Support\Facades\FilamentView;
 use Filament\Http\Responses\Auth\LoginResponse;
@@ -55,5 +59,13 @@ class AppServiceProvider extends ServiceProvider
                     : '',
             ]),
         );
+
+        // Set fresh login flag on login
+        Event::listen(Login::class, SetFreshLoginFlag::class);
+
+        // Clear the session flag on logout
+        Event::listen(Logout::class, function () {
+            session()->forget('privacy_accepted_this_session');
+        });
     }
 }

@@ -13,7 +13,7 @@
         {{-- Modal --}}
         <div class="flex min-h-full items-center justify-center p-4">
             <div 
-                class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-xl shadow-2xl"
+                class="relative w-full max-w-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl shadow-2xl"
                 @click.away.prevent
                 @keydown.escape.prevent
             >
