@@ -389,10 +389,12 @@ class PatientResource extends Resource
                                     ->options(fn () => PatientFormOptionsServices::getPatientHealthStatuses())
                             ]),
                         TextInput::make('blood_pressure')
-                            ->numeric()
-                            ->minValue(0)
                             ->label('Blood Pressure')
-                            ->hint('mm Hg'),
+                            ->hint('Format: 120/80')
+                            ->required()
+                            ->rule('regex:/^\d{2,3}\/\d{2,3}$/')
+                            ->placeholder('120/80')
+                            ->dehydrateStateUsing(fn($state) => trim($state)),
                         TextInput::make('sugar_level')
                             ->label('Sugar Level')
                             ->columnSpan(2)
