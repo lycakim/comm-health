@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Barangay;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use App\Filament\Pages\Auth\Register;
 use Illuminate\Support\ServiceProvider;
 use Filament\Support\Facades\FilamentView;
@@ -39,9 +41,19 @@ class AppServiceProvider extends ServiceProvider
             fn (): string => view('filament.forms.components.footer')->render()
         );
 
+        // Name and Role
         FilamentView::registerRenderHook(
             PanelsRenderHook::TOPBAR_END,
             fn (): View => view('filament.navbar'),
+        );
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::TOPBAR_START,
+            fn (): View => view('top-nav-header', [
+                'barangay' => ($name = optional(Auth::user()->barangays->first())->name)
+                    ? 'Barangay ' . $name
+                    : '',
+            ]),
         );
     }
 }

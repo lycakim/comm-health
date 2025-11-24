@@ -14,11 +14,11 @@ use Filament\Forms\Set;
 use App\Models\Barangay;
 use App\Models\Category;
 use Filament\Forms\Form;
+use App\Models\Occupation;
 use Filament\Tables\Table;
 use App\Traits\HasUserTypeUrls;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Radio;
-use Filament\Tables\Actions\Action as TablesAction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
@@ -40,6 +40,7 @@ use App\Services\PatientFormOptionsServices;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\Actions\Action;
 use App\Filament\Resources\PatientResource\Pages;
+use Filament\Tables\Actions\Action as TablesAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PatientResource extends Resource
@@ -169,7 +170,31 @@ class PatientResource extends Resource
                                 TextInput::make('contact_number')
                                     ->label('Contact Number')
                                     ->columnSpanFull()
-                                    ->required(),
+                                    ->required()
+                                    ->rule('regex:/^(09\d{9}|9\d{9}|639\d{9})$/')
+                                    ->helperText('Format: 09123456789')
+                                    ->afterStateHydrated(function ($component, $state) {
+                                        // Normalize for display if needed
+                                        if ($state && str_starts_with($state, '63')) {
+                                            $component->state('0' . substr($state, 2));
+                                        }
+                                    })
+                                    ->dehydrateStateUsing(function ($state) {
+                                        // Normalize before saving to DB
+                                        // Always store as 639XXXXXXXXX
+                                        $clean = preg_replace('/\D/', '', $state);
+
+                                        if (str_starts_with($clean, '09')) {
+                                            return '63' . substr($clean, 1);
+                                        }
+
+                                        if (str_starts_with($clean, '9')) {
+                                            return '63' . $clean;
+                                        }
+
+                                        return $clean;
+                                    })
+                                    ->mask('99999999999'), // (optional) enforce 11 digits on screen
                                 DatePicker::make('birth_date')
                                     ->label('Date of Birth')
                                     ->required()
@@ -207,16 +232,32 @@ class PatientResource extends Resource
                                     ->searchable()
                                     ->options(fn () => collect(PatientFormOptionsServices::getPatientEducationalAttainment())->sort()->toArray())
                                     ->required(),
-                                Select::make('occupation')
+                                Select::make('occupation_id')
                                     ->label('Occupation')
                                     ->searchable()
-                                    ->options(fn () => collect(PatientFormOptionsServices::getPatientOccupation())->sort()->toArray())
+                                    ->options(fn () => Occupation::query()->get()->pluck('name', 'id')->sort()->toArray())
+                                    ->createOptionForm(function () {
+                                        return [
+                                            TextInput::make('name')->required(),
+                                            Textarea::make('description'),
+                                        ];
+                                    })
+                                    ->createOptionUsing(function (array $data, Get $get): int {
+                                        $name = $get('name');
+
+                                        $data['name'] = $name;
+
+                                        return Occupation::create($data)->getKey();
+                                    })
                                     ->required(),
                                 Select::make('barangay_id')
                                     ->label('Barangay')
                                     ->searchable()
                                     ->options(Barangay::query()->get()->pluck('name', 'id')->sort()->toArray())
                                     ->preload()
+                                    ->default(function () {
+                                        return Auth::user()->barangays->first()->id;
+                                    })
                                     ->live(),
                                 Select::make('purok_id')
                                     ->label('Purok')

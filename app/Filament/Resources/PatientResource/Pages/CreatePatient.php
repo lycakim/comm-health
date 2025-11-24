@@ -19,6 +19,11 @@ class CreatePatient extends CreateRecord
 {
     protected static string $resource = PatientResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function handleRecordCreation(array $data): Patient
     {
         $data['user_id'] = Auth::id();
@@ -84,6 +89,10 @@ class CreatePatient extends CreateRecord
 
                         if (!empty($formData['category_id'])) {
                             $formData['category_name'] = \App\Models\Category::find($formData['category_id'])->name;
+                        }
+
+                        if (!empty($formData['occupation_id'])) {
+                            $formData['occupation_name'] = \App\Models\Occupation::find($formData['occupation_id'])->name;
                         }
 
                         if (!empty($formData['barangay_id']) && !empty($formData['purok_id'])) {

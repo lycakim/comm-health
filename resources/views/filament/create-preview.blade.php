@@ -122,13 +122,13 @@
                     </div>
                 @endif
 
-                @if(!empty($formData['occupation']))
+                @if(!empty($formData['occupation_id']))
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <x-heroicon-o-academic-cap class="w-4 h-4 text-gray-500" />
                             <span class="text-sm text-gray-700 dark:text-gray-500" style="margin-left: 0.2rem;">Occupation:</span>
                         </div>
-                        <span class="text-sm">{{ $formData['occupation'] }}</span>
+                        <span class="text-sm">{{ $formData['occupation_name'] }}</span>
                     </div>
                 @endif
 
