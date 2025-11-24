@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Filament\Tables;
 use App\Models\Patient;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Widgets\TableWidget as BaseWidget;
 
@@ -21,6 +22,7 @@ class RecentPatients extends BaseWidget
             ->description("Patients with recent consultations or upcoming appointments")
             ->query(
                 Patient::latest()
+                    ->where('barangay_id', Auth::user()->barangays->first()->id)
                     ->limit(10)
             )
             ->columns([

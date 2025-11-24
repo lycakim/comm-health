@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Filament\Tables;
 use App\Models\Program;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -28,7 +29,8 @@ class UpcomingHealthPrograms extends BaseWidget
                 //     ->whereDate('program_date', '<=', now()->addDays(30))
                 //     ->orderBy('program_date')
                 Program::latest()
-                    ->limit(10)
+                    ->where('barangay_id', Auth::user()->barangays->first()->id)
+                    ->limit(5)
             )
             ->headerActions([
                 Tables\Actions\Action::make('view')
@@ -45,7 +47,7 @@ class UpcomingHealthPrograms extends BaseWidget
                             ->weight('bold')
                             ->label('Program')
                             ->description(function ($record) {
-                                $formattedDate = $record->program_date ? Carbon::parse($record->program_date)->format('M d, Y') : '';
+                                $formattedDate = $record->program_start_date ? Carbon::parse($record->program_start_date)->format('M d, Y') : '';
 
                                 $location = $record->barangay && $record->barangay->name
                                     ? $record->barangay->name
