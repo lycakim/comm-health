@@ -144,7 +144,7 @@ class ConsultationResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                Tables\Actions\ViewAction::make('referralDetails')
                     ->extraModalFooterActions(fn($record) => [
                         $record->referral 
                             ? Tables\Actions\Action::make('print')
@@ -511,6 +511,7 @@ class ConsultationResource extends Resource
             'list'   => Pages\ListConsultations::route('/list/{barangay?}'),
             'create' => Pages\CreateConsultation::route('/create'),
             'edit'   => Pages\EditConsultation::route('/{record}/edit'),
+            'view'   => Pages\ViewConsultation::route('/{record}'),
         ];
     }
 

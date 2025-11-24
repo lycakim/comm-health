@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Facades\Auth;
+use App\Services\PDFGenerationService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\ConsultationResource;
@@ -150,10 +151,31 @@ class CreateConsultation extends CreateRecord
             ->body('Consultation has been created and saved.');
     }
 
+    // Add this helper method to get step count
+    protected function getSteps(): array
+    {
+        $wizard = $this->form->getComponent('data');
+        if ($wizard instanceof \Filament\Forms\Components\Wizard) {
+            return $wizard->getChildComponentContainer()->getComponents();
+        }
+        return [];
+    }
+
     protected function getCreateFormAction(): Action
     {
         return Action::make('create')
             ->label('Submit')
+            ->disabled(function () {
+                try {
+                    // Validate the form
+                    $this->form->validate();
+                    return false; // Enable button if validation passes
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    return true; // Disable button if validation fails
+                } catch (\Exception $e) {
+                    return true; // Disable button on any error
+                }
+            })
             ->before(function () {
                 try {
                     $this->form->validate();
@@ -252,6 +274,18 @@ class CreateConsultation extends CreateRecord
             ->action(function () {
                 $this->create();
             })
+            ->after(function () {
+                $record = $this->getRecord();
+
+                if ($record && $record->referral()->exists()) {
+                    $referral = $record->referral;
+
+                    // Open the View modal for this record
+                    $this->redirect(
+                        static::getResource()::getUrl('view', ['record' => $record->id])
+                    );
+                }
+            })
             ->keyBindings(['mod+s']);
     }
 
@@ -341,6 +375,16 @@ class CreateConsultation extends CreateRecord
     protected function getCreateAnotherFormAction(): \Filament\Actions\Action
     {
         return parent::getCreateAnotherFormAction()
-            ->label('Create Another');
+            ->label('Create Another')
+            ->disabled(function () {
+                try {
+                    $this->form->validate();
+                    return false;
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    return true;
+                } catch (\Exception $e) {
+                    return true;
+                }
+            });
     }
 }

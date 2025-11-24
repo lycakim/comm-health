@@ -109,7 +109,9 @@ class ConsultationFormService
                                             })
                                             ->disabledOn('edit'),
                                         DateTimePicker::make('date')
-                                            ->default(Carbon::now())
+                                            ->default(function () {
+                                                return Carbon::now('Asia/Manila')->format('Y-m-d H:i:s');
+                                            })
                                             ->disabledOn('edit')
                                             ->required(),
                                     ])->columns(3),
@@ -1196,6 +1198,7 @@ class ConsultationFormService
                                         'Ambulatory' => 'Ambulatory',
                                         'Medico-Legal' => 'Medico-Legal',
                                     ])
+                                    ->live()
                                     ->inline(),
                                 
                                 ToggleButtons::make('surgical_operation')
