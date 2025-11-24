@@ -37,22 +37,24 @@
                         </h3>
                         
                         <p class="text-sm text-gray-700 dark:text-gray-200 mb-4">
-                            In compliance with the Data Privacy Act, we would like to inform you about how we collect, use, and protect your personal information.
+                            IIn compliance with the Data Privacy Act of 2012 (RA 10173), you hereby consent to the Municipal Health Office of Carmen collecting, using, and processing the personal and health information of residents.
                         </p>
 
                         <div class="space-y-3 text-sm text-gray-700 dark:text-gray-400">
                             <div>
                                 <h4 class="font-semibold text-gray-900 dark:text-white mb-1">
-                                    Information We Collect:
+                                    Please understand that:
                                 </h4>
                                 <ul class="list-disc list-inside space-y-1 ml-2">
-                                    <li>Personal identification information (name, email address)</li>
-                                    <li>Usage data and system logs</li>
-                                    <li>Account credentials (securely encrypted)</li>
+                                    <li>The data will be used only for official health services.</li>
+                                    <li>Only authorized health workers will access the health information.</li>
+                                    <li>Information will not be shared with others without your permission, unless required by law.</li>
+                                    <li>All records are kept secure and protected.</li>
+                                    <li>You are aware of your rights to access, correct, or request the deletion of health data as provided by law.</li>
                                 </ul>
                             </div>
 
-                            <div>
+                            {{-- <div>
                                 <h4 class="font-semibold text-gray-900 dark:text-white mb-1">
                                     How We Use Your Information:
                                 </h4>
@@ -62,9 +64,9 @@
                                     <li>To comply with legal obligations</li>
                                     <li>To communicate important updates</li>
                                 </ul>
-                            </div>
+                            </div> --}}
 
-                            <div>
+                            {{-- <div>
                                 <h4 class="font-semibold text-gray-900 dark:text-white mb-1">
                                     Your Rights:
                                 </h4>
@@ -74,11 +76,11 @@
                                     <li>Right to request deletion of your data</li>
                                     <li>Right to object to data processing</li>
                                 </ul>
-                            </div>
+                            </div> --}}
                         </div>
 
                         <p class="text-sm text-gray-700 dark:text-gray-400 mt-4">
-                            By clicking "Accept and Continue", you acknowledge that you have read and understood this privacy notice and consent to the processing of your personal data as described.
+                            By clicking “Accept and Continue”, you confirm that you have read, understood, and agree to this Consent Form.
                         </p>
                     </div>
                 </div>
