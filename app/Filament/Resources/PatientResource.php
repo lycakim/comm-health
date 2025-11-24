@@ -649,7 +649,23 @@ class PatientResource extends Resource
             ->poll('10s')
             ->deferLoading()
             ->modifyQueryUsing(function (Builder $query) {
-                $query->latest();
+                $user = self::currentUser();
+                
+                if (in_array($user->role, [
+                    'mho',
+                    'admin'
+                ])) {
+                    return;
+                }
+                
+                $assignedBarangayIds = $user->barangays()->pluck('barangays.id');
+
+                if ($assignedBarangayIds->isEmpty()) {
+                    $query->whereRaw('1 = 0');
+                    return;
+                }
+
+                $query->whereIn('barangay_id', $assignedBarangayIds);
             });
     }
 
