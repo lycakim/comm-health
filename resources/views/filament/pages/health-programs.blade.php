@@ -35,6 +35,13 @@
                         wire:click="$set('activeTab', 'past')">
                         Past Programs
                     </x-filament::tabs.item>
+
+                    <x-filament::tabs.item 
+                        alpine-active="$wire.activeTab === 'list'" 
+                        :active="$activeTab === 'list'" 
+                        wire:click="$set('activeTab', 'list')">
+                        List
+                    </x-filament::tabs.item>
                 </div>
             </x-filament::tabs>
         </div>
@@ -101,6 +108,28 @@
                 
                 <div class="mt-6">
                     @livewire(App\Filament\Widgets\PastProgramWidget::class)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- List of Programs Tab Content --}}
+    <div x-show="$wire.activeTab === 'list'">
+        <div class="grid w-full grid-cols-1 gap-4">
+            <div class="calendar-container block p-4 rounded-lg border transition-colors duration-200
+                      bg-white hover:bg-green-50 border-gray-200 hover:border-green-300
+                      dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600">
+                
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-200">
+                    List of Programs
+                </h3>
+                
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 transition-colors duration-200">
+                   All Health Programs
+                </p>
+                
+                <div class="mt-6">
+                    {{ $this->table }}
                 </div>
             </div>
         </div>
