@@ -445,7 +445,7 @@ class PatientResource extends Resource
         return $table
             ->headerActions([
                 TablesAction::make('exportToCSV')
-                    ->label('Export to CSV')
+                    ->label('Generate Report')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
                     ->form([
@@ -465,34 +465,42 @@ class PatientResource extends Resource
                     ->action(function ($data) {
                         $query = Patient::query();
                         $reportTitle = '';
+                        $title = '';
 
                         switch ($data['category']) {
                             case 'patient_profiling':
                                 $reportTitle = 'patient_profiling';
+                                $title = 'Patient Profiling Report';
                                 break;
                             case 'maternal_child':
                                 $query->where('category_id', Category::where('name', 'LIKE', '%maternal and child%')->value('id'));
                                 $reportTitle = 'maternal_and_child_report';
+                                $title = 'Maternal and Child Report';
                                 break;
                             case 'children_adolescent':
                                 $query->where('category_id', Category::where('name', 'LIKE', '%children and adolescent%')->value('id'));
                                 $reportTitle = 'children_and_adolescent_report';
+                                $title = 'Children and Adolescent Report';
                                 break;
                             case 'senior_citizens':
                                 $query->where('category_id', Category::where('name', 'LIKE', '%senior citizen%')->value('id'));
                                 $reportTitle = 'senior_citizens_report';
+                                $title = 'Senior Citizens Report';
                                 break;
                             case 'maintenance':
                                 $query->where('category_id', Category::where('name', 'LIKE', '%person with maintenance%')->value('id'));
                                 $reportTitle = 'person_with_maintenance_report';
+                                $title = 'Person with Maintenance Report';
                                 break;
                             case 'pwds':
                                 $query->where('category_id', Category::where('name', 'LIKE', '%person with disabilities%')->value('id'));
                                 $reportTitle = 'person_with_disabilities_report';
+                                $title = 'Person with Disabilities Report';
                                 break;
                             case 'all':
                             default:
                                 $reportTitle = 'all_patients';
+                                $title = 'All Patients';
                                 break;
                         }
 
