@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\User;
+use App\Enums\RoleEnum;
 use App\Models\Barangay;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
@@ -11,11 +12,11 @@ use App\Filament\Widgets\StatsOverview;
 use App\Filament\Widgets\RecentPatients;
 use App\Filament\Widgets\RecentReferrals;
 use Illuminate\Contracts\Support\Htmlable;
+use App\Filament\Widgets\ActivityLogsWidget;
 use App\Filament\Widgets\HealthServicesChart;
 use App\Filament\Widgets\RecentNotifications;
 use App\Filament\Widgets\PatientCategoryChart;
 use App\Filament\Widgets\UpcomingHealthPrograms;
-use App\Filament\Widgets\ActivityLogsWidget;
 use App\Filament\Widgets\PatientCategoryByBarangayChart;
 
 class Dashboard extends Page
@@ -61,7 +62,7 @@ class Dashboard extends Page
         $widgets = [];
         
         switch ($userRole) {
-            case 'admin':
+            case RoleEnum::ADMIN:
                 $widgets = [
                     HealthServicesChart::class,
                     PatientCategoryChart::class,
@@ -72,7 +73,7 @@ class Dashboard extends Page
                 ];
                 break;
                 
-            case 'mho':
+            case RoleEnum::MHO:
                 $widgets = [
                     HealthServicesChart::class,
                     PatientCategoryChart::class,
@@ -85,7 +86,7 @@ class Dashboard extends Page
                 ];
                 break;
                 
-            case 'midwife':
+            case RoleEnum::MIDWIFE:
                 $widgets = [
                     PatientCategoryChart::class,
                     RecentPatients::class,
@@ -94,7 +95,7 @@ class Dashboard extends Page
                 ];
                 break;
                 
-            case 'bhw':
+            case RoleEnum::BHW:
                 $widgets = [
                     RecentPatients::class,
                     UpcomingHealthPrograms::class,
@@ -102,7 +103,7 @@ class Dashboard extends Page
                 ];
                 break;
                 
-            case 'resident':
+            case RoleEnum::RESIDENT:
             case 'patient':
                 $widgets = [
                     UpcomingHealthPrograms::class,

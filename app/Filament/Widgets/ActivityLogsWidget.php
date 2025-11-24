@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use Filament\Tables;
 use Filament\Tables\Table;
 use App\Models\ActivityLog;
+use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Widgets\TableWidget as BaseWidget;
 
@@ -30,7 +31,7 @@ class ActivityLogsWidget extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(ActivityLog::query()->latest()->limit(20))
+            ->query(ActivityLog::query()->latest()->limit(10))
             ->columns([
                 TextColumn::make('description')
                     ->label('Description')
@@ -48,7 +49,7 @@ class ActivityLogsWidget extends BaseWidget
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->label('Date & Time')
-                    ->formatStateUsing(fn($state) => $state->format('M d, Y g:i a'))
+                    ->formatStateUsing(fn($state) => $state->format('M d, Y g:i A'))
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
@@ -60,4 +61,3 @@ class ActivityLogsWidget extends BaseWidget
         return 'table';
     }
 }
-
