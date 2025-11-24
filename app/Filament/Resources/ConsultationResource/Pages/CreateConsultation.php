@@ -261,8 +261,6 @@ class CreateConsultation extends CreateRecord
                 'patient_id'     => \App\Models\Patient::class,
                 'user_id'        => \App\Models\User::class,
                 'barangay_id'    => \App\Models\Barangay::class,
-                'person_type_id' => \App\Models\PersonType::class,
-                'type'           => \App\Models\PersonType::class,
                 // Add more mappings as needed
             ];
 

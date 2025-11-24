@@ -102,9 +102,4 @@ class Consultation extends Model
     {
         return trim("{$this->husband_first_name} {$this->husband_middle_name} {$this->husband_last_name}");
     }
-
-    public function person_type(): BelongsTo
-    {
-        return $this->belongsTo(PersonType::class);
-    }
 }

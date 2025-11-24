@@ -10,7 +10,6 @@ use Filament\Forms\Get;
 use App\Models\Barangay;
 use App\Models\Category;
 use App\Models\Referral;
-use App\Models\PersonType;
 use App\Models\Consultation;
 use App\Enums\CivilStatusEnum;
 use Illuminate\Support\Facades\DB;
@@ -728,32 +727,6 @@ class ConsultationFormService
                                                     ->label('Birth planned?')
                                                     ->boolean()
                                                     ->inline(),
-                                                Select::make('type')
-                                                    ->preload()
-                                                    ->label('Type')
-                                                    ->columnSpanFull()
-                                                    ->searchable()
-                                                    ->options(fn () => PersonType::query()->where('is_active', true)->get()->pluck('name', 'id')->sort()->toArray())
-                                                    ->when(
-                                                        Auth::user()?->isAdmin() || Auth::user()?->isMHO(), // Only show for admins
-                                                        fn ($select) => $select->createOptionForm(function () {
-                                                            return [
-                                                                TextInput::make('name')
-                                                                    ->unique('person_types', 'name')
-                                                                    ->required(),
-                                                                Textarea::make('description'),
-                                                                ToggleButtons::make('is_active')
-                                                                    ->label('Is Active?')
-                                                                    ->boolean()
-                                                                    ->default(true)
-                                                                    ->grouped()
-                                                                    ->inline(),
-                                                            ];
-                                                        })
-                                                        ->createOptionUsing(function (array $data, Get $get): int {
-                                                            return PersonType::create($data)->getKey();
-                                                        })
-                                                    )
                                                 // ToggleButtons::make('type')
                                                 //     ->inline()
                                                 //     ->inlineLabel(false)
