@@ -16,13 +16,20 @@ use App\Notifications\AnnouncementNotification;
 class CreateProgram extends CreateRecord
 {
     protected static string $resource = ProgramResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
     
     protected function afterCreate(): void
     {
         $recipients = User::whereIn('role', [
             RoleEnum::BHW->value,
             RoleEnum::MIDWIFE->value,
-        ])->get();
+        ])->whereHas('barangays', function ($query) {
+            $query->where('barangays.id', $this->getRecord()->barangay_id);
+        })->get();
 
         $record = $this->getRecord();
 

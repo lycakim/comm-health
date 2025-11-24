@@ -156,15 +156,37 @@ class ProgramResource extends Resource
                             ->disabled($isReadOnly),
                         DatePicker::make('program_start_date')
                             ->required()
+                            ->native(false)
+                            ->displayFormat('d F Y')
                             ->disabled($isReadOnly),
                         DatePicker::make('program_end_date')
                             ->required()
+                            ->native(false)
+                            ->displayFormat('d F Y')
                             ->disabled($isReadOnly),
                         TimePicker::make('program_start_time')
                             ->required()
+                            ->datalist([
+                                '09:00',
+                                '09:30',
+                                '10:00',
+                                '10:30',
+                                '11:00',
+                                '11:30',
+                                '12:00',
+                            ])
                             ->disabled($isReadOnly),
                         TimePicker::make('program_end_time')
                             ->required()
+                            ->datalist([
+                                '09:00',
+                                '09:30',
+                                '10:00',
+                                '10:30',
+                                '11:00',
+                                '11:30',
+                                '12:00',
+                            ])
                             ->disabled($isReadOnly),
                         
                         Select::make('coordinator')

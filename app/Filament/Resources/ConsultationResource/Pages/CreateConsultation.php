@@ -18,6 +18,11 @@ class CreateConsultation extends CreateRecord
 {
     protected static string $resource = ConsultationResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function handleRecordCreation(array $data): Consultation
     {
         return DB::transaction(function () use ($data) {

@@ -14,6 +14,11 @@ class CreateReferral extends CreateRecord
 {
     protected static string $resource = ReferralResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function getCreateFormAction(): Action
     {
         return Action::make('create')

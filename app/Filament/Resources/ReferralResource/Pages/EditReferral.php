@@ -10,6 +10,11 @@ class EditReferral extends EditRecord
 {
     protected static string $resource = ReferralResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function getHeaderActions(): array
     {
         return [
