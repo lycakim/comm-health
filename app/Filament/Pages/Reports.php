@@ -5,35 +5,37 @@ namespace App\Filament\Pages;
 use App\Models\User;
 use App\Models\Report;
 use App\Enums\RoleEnum;
+use App\Models\Patient;
 use Filament\Pages\Page;
 use Filament\Tables\Table;
 use App\Models\Consultation;
 use Filament\Actions\Action;
-use Filament\Tables\Actions\Action as TableAction;
-use Illuminate\Support\HtmlString;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\Group;
-use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Infolist;
-use Filament\Support\Enums\FontWeight;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use App\Services\PDFGenerationService;
 use Filament\Resources\Components\Tab;
+use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Components\Textarea;
+use Filament\Infolists\Components\Grid;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\Group;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Response;
 use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Infolists\Components\Section;
 use Illuminate\Contracts\Support\Htmlable;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Actions\Action as TablesAction;
 
 class Reports extends Page implements HasTable
@@ -394,5 +396,253 @@ class Reports extends Page implements HasTable
                 ->toggleable(isToggledHiddenByDefault: true)
                 ->wrap();
         })->toArray();
+    }
+
+    public function generateReport(string $reportType)
+    {
+        try {
+            // Get data based on report type
+            $data = $this->getReportData($reportType);
+            
+            // Define filename
+            $filename = "{$reportType}_" . now()->format('Y-m-d_His') . '.csv';
+            
+            // Return download
+            return Response::streamDownload(function () use ($data) {
+                $handle = fopen('php://output', 'w');
+                
+                // Add UTF-8 BOM for Excel compatibility
+                fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+                
+                // Add headers
+                fputcsv($handle, $data['headers']);
+                
+                // Add rows
+                foreach ($data['rows'] as $row) {
+                    fputcsv($handle, $row);
+                }
+                
+                fclose($handle);
+            }, $filename, [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => "attachment; filename={$filename}",
+            ]);
+            
+        } catch (\Exception $e) {
+            \Filament\Notifications\Notification::make()
+                ->title('Error generating report')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    protected function getReportData(string $reportType)
+    {
+        return match($reportType) {
+            'patient-profiling' => $this->getPatientProfilingData(),
+            'maternal-child' => $this->getMaternalChildData(),
+            'senior-citizens' => $this->getSeniorCitizensData(),
+            'family-planning' => $this->getFamilyPlanningData(),
+            'morbidity-mortality' => $this->getMorbidityMortalityData(),
+            default => throw new \Exception('Invalid report type'),
+        };
+    }
+
+    protected function getPatientProfilingData()
+    {
+        $patients = Patient::get();
+        
+        return [
+            'headers' => [
+                'Patient ID',
+                'First Name',
+                'Last Name',
+                'Date of Birth',
+                'Age',
+                'Gender',
+                'Contact Number',
+                'Blood Type',
+                'Civil Status',
+                'Registration Date'
+            ],
+            'rows' => $patients->map(function ($patient) {
+                return [
+                    $patient->id,
+                    $patient->first_name,
+                    $patient->last_name,
+                    $patient->date_of_birth?->format('Y-m-d'),
+                    $patient->age,
+                    $patient->sex,
+                    $patient->contact_number,
+                    $patient->blood_type,
+                    $patient->civil_status,
+                    $patient->created_at->format('Y-m-d')
+                ];
+            })->toArray()
+        ];
+    }
+
+    protected function getMaternalChildData()
+    {
+        $patients = Patient::where('sex', 'Female')
+            ->whereBetween('age', [15, 49])
+            ->get();
+        
+        return [
+            'headers' => [
+                'Patient ID',
+                'Full Name',
+                'Age',
+                'Contact Number',
+                'Number of Pregnancies',
+                'Number of Children',
+                'Last Prenatal Visit',
+                'Status'
+            ],
+            'rows' => $patients->map(function ($patient) {
+                return [
+                    $patient->id,
+                    $patient->first_name . ' ' . $patient->last_name,
+                    $patient->age,
+                    $patient->pregnancies?->count() ?? 0,
+                    $patient->children?->count() ?? 0,
+                    $patient->last_prenatal_visit?->format('Y-m-d') ?? 'N/A',
+                    $patient->pregnancy_status ?? 'N/A'
+                ];
+            })->toArray()
+        ];
+    }
+
+    protected function getSeniorCitizensData()
+    {
+        $patients = Patient::where('age', '>=', 60)
+            ->with(['consultations', 'medications'])
+            ->get();
+        
+        return [
+            'headers' => [
+                'Patient ID',
+                'Full Name',
+                'Age',
+                'Gender',
+                'Contact Number',
+                'Blood Type',
+                'Total Consultations',
+                'Active Medications',
+                'Last Consultation Date',
+                'Health Status'
+            ],
+            'rows' => $patients->map(function ($patient) {
+                return [
+                    $patient->id,
+                    $patient->first_name . ' ' . $patient->last_name,
+                    $patient->age,
+                    $patient->sex,
+                    $patient->contact_number,
+                    $patient->blood_type,
+                    $patient->consultations?->count() ?? 0,
+                    $patient->medications?->where('status', 'active')->count() ?? 0,
+                    $patient->consultations?->first()?->date?->format('Y-m-d') ?? 'N/A',
+                    $patient->health_status ?? 'N/A'
+                ];
+            })->toArray()
+        ];
+    }
+
+    protected function getFamilyPlanningData()
+    {
+        $patients = Patient::get();
+        
+        return [
+            'headers' => [
+                'Patient ID',
+                'Full Name',
+                'Age',
+                'Contact Number',
+                'Method Used',
+                'Start Date',
+                'Status',
+                'Last Follow-up Date',
+                'Next Schedule'
+            ],
+            'rows' => $patients->map(function ($patient) {
+                $latestRecord = $patient->familyPlanningRecords?->first();
+                return [
+                    $patient->id,
+                    $patient->first_name . ' ' . $patient->last_name,
+                    $patient->age,
+                    $patient->contact_number,
+                    $latestRecord?->method ?? 'N/A',
+                    $latestRecord?->start_date?->format('Y-m-d') ?? 'N/A',
+                    $latestRecord?->status ?? 'N/A',
+                    $latestRecord?->last_followup?->format('Y-m-d') ?? 'N/A',
+                    $latestRecord?->next_schedule?->format('Y-m-d') ?? 'N/A'
+                ];
+            })->toArray()
+        ];
+    }
+
+    protected function getMorbidityMortalityData()
+    {
+        // Morbidity data
+        $morbidityPatients = Patient::get();
+        
+        // Mortality data
+        $mortalityPatients = Patient::where('status', 'deceased')
+            ->with(['deathRecord'])
+            ->get();
+        
+        $rows = [];
+        
+        // Add morbidity records
+        foreach ($morbidityPatients as $patient) {
+            foreach ($patient->diagnoses as $diagnosis) {
+                $rows[] = [
+                    'MORBIDITY',
+                    $patient->id,
+                    $patient->first_name . ' ' . $patient->last_name,
+                    $patient->age,
+                    $patient->sex,
+                    $diagnosis->disease_name ?? 'N/A',
+                    $diagnosis->diagnosis_date?->format('Y-m-d') ?? 'N/A',
+                    $diagnosis->severity ?? 'N/A',
+                    'N/A', // cause of death
+                    'N/A'  // death date
+                ];
+            }
+        }
+        
+        // Add mortality records
+        foreach ($mortalityPatients as $patient) {
+            $rows[] = [
+                'MORTALITY',
+                $patient->id,
+                $patient->first_name . ' ' . $patient->last_name,
+                $patient->age,
+                $patient->sex,
+                'N/A', // disease name
+                'N/A', // diagnosis date
+                'N/A', // severity
+                $patient->deathRecord?->cause_of_death ?? 'N/A',
+                $patient->deathRecord?->date_of_death?->format('Y-m-d') ?? 'N/A'
+            ];
+        }
+        
+        return [
+            'headers' => [
+                'Type',
+                'Patient ID',
+                'Full Name',
+                'Age',
+                'Gender',
+                'Disease/Condition',
+                'Diagnosis Date',
+                'Severity',
+                'Cause of Death',
+                'Death Date'
+            ],
+            'rows' => $rows
+        ];
     }
 }

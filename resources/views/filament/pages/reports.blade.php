@@ -44,7 +44,9 @@
                     <x-filament::button color="gray" icon="heroicon-o-eye">
                         Preview
                     </x-filament::button>
-                    <x-filament::button icon="heroicon-o-plus">
+                    <x-filament::button 
+                        icon="heroicon-o-plus"
+                        wire:click="generateReport('patient-profiling')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -71,7 +73,9 @@
                     <x-filament::button color="gray" icon="heroicon-o-eye">
                         Preview
                     </x-filament::button>
-                    <x-filament::button icon="heroicon-o-plus">
+                    <x-filament::button 
+                        icon="heroicon-o-plus"
+                        wire:click="generateReport('maternal-child')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -98,7 +102,9 @@
                     <x-filament::button color="gray" icon="heroicon-o-eye">
                         Preview
                     </x-filament::button>
-                    <x-filament::button icon="heroicon-o-plus">
+                    <x-filament::button 
+                        icon="heroicon-o-plus"
+                        wire:click="generateReport('senior-citizens')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -125,7 +131,9 @@
                     <x-filament::button color="gray" icon="heroicon-o-eye">
                         Preview
                     </x-filament::button>
-                    <x-filament::button icon="heroicon-o-plus">
+                    <x-filament::button 
+                        icon="heroicon-o-plus"
+                        wire:click="generateReport('family-planning')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -152,7 +160,9 @@
                     <x-filament::button color="gray" icon="heroicon-o-eye">
                         Preview
                     </x-filament::button>
-                    <x-filament::button icon="heroicon-o-plus">
+                    <x-filament::button 
+                        icon="heroicon-o-plus"
+                        wire:click="generateReport('morbidity-mortality')">
                         Generate Report
                     </x-filament::button>
                 </div>
