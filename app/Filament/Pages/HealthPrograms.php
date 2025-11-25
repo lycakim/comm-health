@@ -48,21 +48,22 @@ class HealthPrograms extends Page implements HasTable
         $isBHWOrMidwife = in_array(self::currentUser()->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]);
         
         return $table
-            ->query(Program::latest()
+            ->query(
+                Program::latest()
                     ->when(
-                        !Auth::user()->role === 'mho',
+                        Auth::user()->role !== RoleEnum::MHO->value,
                         function ($query) {
-                            $user = Auth::user();
-                            $barangay = $user->barangays->first();
-                            if ($barangay) {
-                                $query->where('barangay_id', $barangay->id);
+                            $barangayId = Auth::user()->barangays()->first()->id;
+                            
+                            if ($barangayId) {
+                                $query->where('barangay_id', $barangayId);
                             } else {
-                                // Optionally, return no records if no assigned barangay
                                 $query->whereRaw('1 = 0');
                             }
                         }
                     )
-                    ->limit(5))
+                    ->limit(5)
+            )
             ->columns([
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('barangay.name')
@@ -102,7 +103,7 @@ class HealthPrograms extends Page implements HasTable
                     ->modalSubmitActionLabel('Confirm & Send SMS')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('success')
-                    ->visible(fn () => Auth::user()->isBHW())
+                    ->visible(fn ($record) => Auth::user()->isBHW() && $record->program_end_date > now())
 
                     ->form(function ($record) {
                         $users = \App\Models\Patient::where('barangay_id', $record->barangay_id)->get();
@@ -139,7 +140,8 @@ class HealthPrograms extends Page implements HasTable
                         $program = $record;
                         $users = \App\Models\Patient::where('barangay_id', $program->barangay_id)->get();
 
-                        $smsService = app(\App\Services\SemaphoreService::class);
+                        // $smsService = app(\App\Services\SemaphoreService::class);
+                        $smsService = app(\App\Services\PhilSMSService::class);
 
                         $successCount = 0;
                         $failCount = 0;
@@ -147,9 +149,16 @@ class HealthPrograms extends Page implements HasTable
                         $failedNumbers = []; // Will store patients with failed SMS sends
 
                         // Format program date and time
-                        $programDate = $program->program_date ? Carbon::parse($program->program_date)->format('F d, Y') : 'TBA';
+                        $programStartDate = $program->program_start_date ? Carbon::parse($program->program_start_date)->format('F d, Y') : 'TBA';
+                        $programEndDate = $program->program_start_date ? Carbon::parse($program->program_start_date)->format('F d, Y') : 'TBA';
                         $startTime = $program->program_start_time ? Carbon::parse($program->program_start_time)->format('g:i A') : 'TBA';
                         $endTime = $program->program_end_time ? Carbon::parse($program->program_end_time)->format('g:i A') : 'TBA';
+
+                        if ($programStartDate === $programEndDate) {
+                            $programDate = $programStartDate;
+                        } else {
+                            $programDate = "{$programStartDate} - {$programEndDate}";
+                        }
 
                         foreach ($users as $user) {
                             // Skip if contact number is empty
@@ -160,10 +169,10 @@ class HealthPrograms extends Page implements HasTable
                             }
 
                             // Create personalized message with program details
-                            $message = "Hi {$user->first_name}! <br><br>";
-                            $message .= "New Health Program: {$program->name} <br>";
-                            $message .= "Date: {$programDate} <br>";
-                            $message .= "Time: {$startTime} - {$endTime} <br>";
+                            $message = "Hi {$user->first_name}! \n\n";
+                            $message .= "New Health Program: {$program->name} \n";
+                            $message .= "Date: {$programDate} \n";
+                            $message .= "Time: {$startTime} - {$endTime} \n";
                             
                             if (!empty($program->description)) {
                                 $description = strlen($program->description) > 100 

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\RoleEnum;
 use App\Models\Program;
 use Filament\Actions\Action;
 use Filament\Widgets\Widget;
@@ -31,14 +32,13 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
     {
         return Program::query()
             ->when(
-                !Auth::user()->role === 'mho',
+                Auth::user()->role !== RoleEnum::MHO->value,
                 function ($query) {
-                    $user = Auth::user();
-                    $barangay = $user->barangays->first();
-                    if ($barangay) {
-                        $query->where('barangay_id', $barangay->id);
+                    $barangayId = Auth::user()->barangays()->first()->id;
+                    
+                    if ($barangayId) {
+                        $query->where('barangay_id', $barangayId);
                     } else {
-                        // Optionally, return no records if no assigned barangay
                         $query->whereRaw('1 = 0');
                     }
                 }

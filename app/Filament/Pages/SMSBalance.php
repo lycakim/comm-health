@@ -4,21 +4,22 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
 use Filament\Tables\Table;
-use App\Services\SemaphoreService;
-use App\Models\SMSBalance as SMSBalanceModel;
 use App\Models\SemaphoreMessage;
+use App\Services\PhilSMSService;
+use Filament\Actions\ViewAction;
+use App\Services\SemaphoreService;
+use Filament\Tables\Actions\Action;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Notifications\Notification;
+use Filament\Tables\Columns\Layout\Grid;
 use Filament\Tables\Columns\Layout\Panel;
 use Filament\Tables\Columns\Layout\Split;
-use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Concerns\InteractsWithTable;
-use Filament\Notifications\Notification;
 use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Columns\Layout\Grid;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Support\Enums\FontWeight;
-use Filament\Actions\ViewAction;
+use App\Models\SMSBalance as SMSBalanceModel;
+use Filament\Tables\Concerns\InteractsWithTable;
 
 class SMSBalance extends Page implements HasTable
 {
@@ -65,8 +66,10 @@ class SMSBalance extends Page implements HasTable
     public function checkBalance()
     {
         try {
-            $semaphore = new SemaphoreService();
-            $result = $semaphore->getBalance();
+            // $semaphore = new SemaphoreService();
+            // $result = $semaphore->getBalance();
+            $philsms = new PhilSMSService();
+            $result = $philsms->getBalance();
             
             if ($result['success'] && isset($result['data']['credit_balance'])) {
                 $balance = SMSBalanceModel::create([
@@ -231,9 +234,12 @@ class SMSBalance extends Page implements HasTable
     public function fetchMessages()
     {
         try {
-            $semaphore = new SemaphoreService();
-            $result = $semaphore->getMessages(50, 1);
-            
+            // $semaphore = new SemaphoreService();
+            // $result = $semaphore->getMessages(50, 1);
+
+            $philsms = new PhilSMSService();
+            $result = $philsms->getMessages();
+
             if ($result['success'] && isset($result['data'])) {
                 $messagesData = $result['data'];
 

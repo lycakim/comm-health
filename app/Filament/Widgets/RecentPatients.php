@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use Carbon\Carbon;
 use Filament\Tables;
+use App\Enums\RoleEnum;
 use App\Models\Patient;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
@@ -23,19 +24,18 @@ class RecentPatients extends BaseWidget
             ->query(
                 Patient::latest()
                     ->when(
-                        !Auth::user()->role === 'mho',
+                        Auth::user()->role !== RoleEnum::MHO->value,
                         function ($query) {
-                            $user = Auth::user();
-                            $barangay = $user->barangays->first();
-                            if ($barangay) {
-                                $query->where('barangay_id', $barangay->id);
+                            $barangayId = Auth::user()->barangays()->first()->id;
+                            
+                            if ($barangayId) {
+                                $query->where('barangay_id', $barangayId);
                             } else {
-                                // Optionally, return no records if no assigned barangay
                                 $query->whereRaw('1 = 0');
                             }
                         }
                     )
-                    ->limit(10)
+                    ->limit(5)
             )
             ->columns([
                 Tables\Columns\TextColumn::make('first_name')
