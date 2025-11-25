@@ -3,18 +3,19 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Program;
-use Filament\Widgets\Widget;
-use Illuminate\Database\Eloquent\Model;
-use App\Filament\Resources\ProgramResource;
-use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 use Filament\Actions\Action;
-use Filament\Actions\Concerns\InteractsWithActions;
-use Filament\Actions\Contracts\HasActions;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
+use Filament\Widgets\Widget;
 use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\TextEntry;
+use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Contracts\HasForms;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Infolists\Components\Section;
+use App\Filament\Resources\ProgramResource;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
 class CalendarWidget extends FullCalendarWidget implements HasActions
 {
@@ -29,6 +30,19 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
     public function fetchEvents(array $fetchInfo): array
     {
         return Program::query()
+            ->when(
+                !Auth::user()->role === 'mho',
+                function ($query) {
+                    $user = Auth::user();
+                    $barangay = $user->barangays->first();
+                    if ($barangay) {
+                        $query->where('barangay_id', $barangay->id);
+                    } else {
+                        // Optionally, return no records if no assigned barangay
+                        $query->whereRaw('1 = 0');
+                    }
+                }
+            )
             ->where(function ($query) use ($fetchInfo) {
                 $query->whereBetween('program_start_date', [$fetchInfo['start'], $fetchInfo['end']])
                     ->orWhereBetween('program_end_date', [$fetchInfo['start'], $fetchInfo['end']])

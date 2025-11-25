@@ -48,7 +48,21 @@ class HealthPrograms extends Page implements HasTable
         $isBHWOrMidwife = in_array(self::currentUser()->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]);
         
         return $table
-            ->query(Program::query()->latest())
+            ->query(Program::latest()
+                    ->when(
+                        !Auth::user()->role === 'mho',
+                        function ($query) {
+                            $user = Auth::user();
+                            $barangay = $user->barangays->first();
+                            if ($barangay) {
+                                $query->where('barangay_id', $barangay->id);
+                            } else {
+                                // Optionally, return no records if no assigned barangay
+                                $query->whereRaw('1 = 0');
+                            }
+                        }
+                    )
+                    ->limit(5))
             ->columns([
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('barangay.name')

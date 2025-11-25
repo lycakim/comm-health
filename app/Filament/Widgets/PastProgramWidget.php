@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Filament\Tables;
 use App\Models\Program;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -21,6 +22,19 @@ class PastProgramWidget extends BaseWidget
                 Program::query()
                     ->whereDate('program_start_date', '<', now()->startOfDay())
                     ->whereDate('program_start_date', '>=', now()->subDays(30)->startOfDay())
+                    ->when(
+                        !Auth::user()->role === 'mho',
+                        function ($query) {
+                            $user = Auth::user();
+                            $barangay = $user->barangays->first();
+                            if ($barangay) {
+                                $query->where('barangay_id', $barangay->id);
+                            } else {
+                                // Optionally, return no records if no assigned barangay
+                                $query->whereRaw('1 = 0');
+                            }
+                        }
+                    )
                     ->orderByDesc('program_start_date')
             )
             ->columns([

@@ -29,7 +29,19 @@ class UpcomingHealthPrograms extends BaseWidget
                 //     ->whereDate('program_date', '<=', now()->addDays(30))
                 //     ->orderBy('program_date')
                 Program::latest()
-                    ->where('barangay_id', Auth::user()->barangays->first()->id)
+                    ->when(
+                        !Auth::user()->role === 'mho',
+                        function ($query) {
+                            $user = Auth::user();
+                            $barangay = $user->barangays->first();
+                            if ($barangay) {
+                                $query->where('barangay_id', $barangay->id);
+                            } else {
+                                // Optionally, return no records if no assigned barangay
+                                $query->whereRaw('1 = 0');
+                            }
+                        }
+                    )
                     ->limit(5)
             )
             ->headerActions([
