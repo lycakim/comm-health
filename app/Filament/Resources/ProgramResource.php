@@ -166,27 +166,9 @@ class ProgramResource extends Resource
                             ->disabled($isReadOnly),
                         TimePicker::make('program_start_time')
                             ->required()
-                            ->datalist([
-                                '09:00',
-                                '09:30',
-                                '10:00',
-                                '10:30',
-                                '11:00',
-                                '11:30',
-                                '12:00',
-                            ])
                             ->disabled($isReadOnly),
                         TimePicker::make('program_end_time')
                             ->required()
-                            ->datalist([
-                                '09:00',
-                                '09:30',
-                                '10:00',
-                                '10:30',
-                                '11:00',
-                                '11:30',
-                                '12:00',
-                            ])
                             ->disabled($isReadOnly),
                         
                         Select::make('coordinator')
@@ -196,10 +178,9 @@ class ProgramResource extends Resource
                                 return User::where('role', RoleEnum::MHO)->pluck('name', 'id')->toArray();
                             })
                             ->default(function () {
-                                return User::where('role', RoleEnum::MHO)->value('id');
+                                return User::where('role', RoleEnum::MHO)->first()->id;
                             })
-                            ->selectablePlaceholder(false) // This will auto-select first option
-                            ->disabled(true)
+                            ->disabled()
                             ->required(),
                     ])
                     ->columns(2),
