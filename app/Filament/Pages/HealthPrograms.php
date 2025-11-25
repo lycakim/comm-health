@@ -106,7 +106,7 @@ class HealthPrograms extends Page implements HasTable
                     ->visible(fn ($record) => Auth::user()->isBHW() && $record->program_end_date > now())
 
                     ->form(function ($record) {
-                        $users = \App\Models\Patient::where('barangay_id', $record->barangay_id)->get();
+                        $users = \App\Models\Patient::where('barangay_id', $record->barangay_id)->where('category_id', $record->category_id)->get();
 
                         return [
                             \Filament\Forms\Components\Section::make('Program Details')
