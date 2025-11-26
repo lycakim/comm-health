@@ -34,7 +34,7 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
             ->when(
                 Auth::user()->role !== RoleEnum::MHO->value,
                 function ($query) {
-                    $barangayId = Auth::user()->barangays()->first()->id;
+                    $barangayId = Auth::user()->barangays()->first()->id ?? null;
                     
                     if ($barangayId) {
                         $query->where('barangay_id', $barangayId);

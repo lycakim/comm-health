@@ -256,7 +256,7 @@ class PatientResource extends Resource
                                     ->options(Barangay::query()->get()->pluck('name', 'id')->sort()->toArray())
                                     ->preload()
                                     ->default(function () {
-                                        return Auth::user()->barangays->first()->id;
+                                        return Auth::user()->barangays->first()->id ?? null;
                                     })
                                     ->live(),
                                 Select::make('purok_id')

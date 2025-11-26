@@ -26,7 +26,7 @@ class PastProgramWidget extends BaseWidget
                     ->when(
                         Auth::user()->role !== RoleEnum::MHO->value,
                         function ($query) {
-                            $barangayId = Auth::user()->barangays()->first()->id;
+                            $barangayId = Auth::user()->barangays()->first()->id ?? null;
                             
                             if ($barangayId) {
                                 $query->where('barangay_id', $barangayId);
