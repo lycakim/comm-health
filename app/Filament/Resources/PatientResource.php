@@ -709,8 +709,8 @@ class PatientResource extends Resource
                 $user = self::currentUser();
                 
                 if (in_array($user->role, [
-                    'mho',
-                    'admin'
+                    RoleEnum::MHO,
+                    RoleEnum::ADMIN
                 ])) {
                     return;
                 }
