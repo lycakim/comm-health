@@ -177,10 +177,13 @@ class ProgramResource extends Resource
                             ->options(function () {
                                 return User::where('role', RoleEnum::MHO)->pluck('name', 'id')->toArray();
                             })
-                            ->default(function () {
-                                return User::where('role', RoleEnum::MHO)->first()->id;
+                            ->afterStateHydrated(function (Select $component, $state) {
+                                if (empty($state)) {
+                                    $component->state(User::where('role', RoleEnum::MHO)->first()?->id);
+                                }
                             })
                             ->disabled()
+                            ->dehydrated()
                             ->required(),
                     ])
                     ->columns(2),

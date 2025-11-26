@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\User;
+use App\Enums\RoleEnum;
 use Filament\Pages\Page;
 use Filament\Tables\Table;
 use App\Models\SemaphoreMessage;
@@ -9,6 +11,7 @@ use App\Services\PhilSMSService;
 use Filament\Actions\ViewAction;
 use App\Services\SemaphoreService;
 use Filament\Tables\Actions\Action;
+use Illuminate\Support\Facades\Auth;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
@@ -40,6 +43,15 @@ class SMSBalance extends Page implements HasTable
     public ?array $balanceData = [];
     public ?string $lastRetrievedAt = null;
     public ?string $messagesLastRetrievedAt = null;
+
+    public static function canAccess(): bool
+    {
+        return in_array(self::currentUser()->role, [
+            RoleEnum::BHW,
+            RoleEnum::MIDWIFE,
+            RoleEnum::ADMIN,
+        ]);
+    }
 
     public function mount(): void
     {
@@ -290,5 +302,10 @@ class SMSBalance extends Page implements HasTable
                 ->danger()
                 ->send();
         }
+    }
+
+    public static function currentUser(): ?User
+    {
+        return Auth::user();
     }
 }
