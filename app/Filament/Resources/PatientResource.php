@@ -53,6 +53,12 @@ class PatientResource extends Resource
 
     // protected static ?int $navigationSort = 1;
 
+    // protected static ?string $navigationLabel = 'Patients Records';
+
+    // protected static ?string $modelLabel = 'Patient Information Record';
+
+    // protected static ?string $pluralModelLabel = 'Patient Information Records';
+
     protected static ?string $description = 'View and manage patient records';
 
     public function mount(): void
@@ -513,42 +519,45 @@ class PatientResource extends Resource
                     ])
                     ->action(function ($data) {
                         $query = Patient::query();
+                        $barangayName = Auth::user()->barangays()->first()->name ?? null;
+                        $brgy = $barangayName ? 'barangay_' . strtolower($barangayName) . '_' : '';
+                        
                         $reportTitle = '';
                         $title = '';
 
                         switch ($data['category']) {
                             case 'patient_profiling':
-                                $reportTitle = 'patient_profiling';
-                                $title = 'Patient Profiling Report';
+                                $reportTitle =  $brgy . 'patient_profiling';
+                                $title = 'Patients Information Records';
                                 break;
                             case 'maternal_child':
                                 $query->where('category_id', Category::where('name', 'LIKE', '%maternal and child%')->value('id'));
-                                $reportTitle = 'maternal_and_child_report';
+                                $reportTitle = $brgy . 'maternal_and_child_report';
                                 $title = 'Maternal and Child Report';
                                 break;
                             case 'children_adolescent':
                                 $query->where('category_id', Category::where('name', 'LIKE', '%children and adolescent%')->value('id'));
-                                $reportTitle = 'children_and_adolescent_report';
+                                $reportTitle = $brgy . 'children_and_adolescent_report';
                                 $title = 'Children and Adolescent Report';
                                 break;
                             case 'senior_citizens':
                                 $query->where('category_id', Category::where('name', 'LIKE', '%senior citizen%')->value('id'));
-                                $reportTitle = 'senior_citizens_report';
+                                $reportTitle = $brgy . 'senior_citizens_report';
                                 $title = 'Senior Citizens Report';
                                 break;
                             case 'maintenance':
                                 $query->where('category_id', Category::where('name', 'LIKE', '%person with maintenance%')->value('id'));
-                                $reportTitle = 'person_with_maintenance_report';
+                                $reportTitle = $brgy . 'person_with_maintenance_report';
                                 $title = 'Person with Maintenance Report';
                                 break;
                             case 'pwds':
                                 $query->where('category_id', Category::where('name', 'LIKE', '%person with disabilities%')->value('id'));
-                                $reportTitle = 'person_with_disabilities_report';
+                                $reportTitle = $brgy . 'person_with_disabilities_report';
                                 $title = 'Person with Disabilities Report';
                                 break;
                             case 'all':
                             default:
-                                $reportTitle = 'all_patients';
+                                $reportTitle = $brgy . 'all_patients';
                                 $title = 'All Patients';
                                 break;
                         }
@@ -566,16 +575,42 @@ class PatientResource extends Resource
 
                         return response()->streamDownload(function () use ($patients, $data) {
                             $csv = fopen('php://output', 'w');
+                            $brgy = Auth::user()->barangays()->first()->name ? 'Barangay ' . Auth::user()->barangays()->first()->name . ' Patients Information Records' : 'Patients Information Records';
+
+                            fputcsv($csv, [$brgy]);
+
                             // Add CSV headers, can be extended per report type if needed
-                            fputcsv($csv, ['Full Name', 'Sex', 'Age', 'Barangay', 'Category']);
+                            fputcsv($csv, [
+                                'Full Name', 
+                                'Birthdate', 
+                                'Age', 
+                                'Barangay', 
+                                'Category', 
+                                'Blood Pressure', 
+                                'Sugar Level', 
+                                'Contact Number', 
+                                'Gender', 
+                                'Height', 
+                                'Weight', 
+                                'BMI', 
+                                'Maintenance'
+                        ]);
                             
                             foreach ($patients as $patient) {
                                 fputcsv($csv, [
-                                    $patient->full_name,
-                                    $patient->sex,
+                                    $patient->first_name . ' ' . $patient->middle_name ?? '' . ' ' . $patient->last_name,
+                                    $patient->birth_date->format('M d, Y'),
                                     $patient->age,
                                     $patient->barangay->name ?? 'N/A',
                                     $patient->category->name ?? 'N/A',
+                                    $patient->blood_pressure,
+                                    $patient->sugar_level,
+                                    $patient->contact_number,
+                                    $patient->sex,
+                                    $patient->height,
+                                    $patient->weight,
+                                    $patient->bmi,
+                                    is_array($patient->medication_maintenance) ? implode(', ', $patient->medication_maintenance) : '',
                                 ]);
                             }
                             

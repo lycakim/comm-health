@@ -6,6 +6,7 @@ use App\Models\User;
 use Filament\Tables;
 use App\Enums\RoleEnum;
 use App\Models\Patient;
+use App\Models\Category;
 use Barryvdh\DomPDF\PDF;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
@@ -23,6 +24,7 @@ use Filament\Notifications\Notification;
 use App\Services\ConsultationFormService;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Tables\Actions\Action as TablesAction;
 use App\Filament\Resources\ConsultationResource\Pages;
 use App\Filament\Resources\ConsultationResource\RelationManagers\ReferralsRelationManager;
 
@@ -462,6 +464,140 @@ class ConsultationResource extends Resource
                                 })
                             : null,
                     ]),
+            ])
+            ->headerActions([
+                TablesAction::make('exportToCSV')
+                    ->label('Generate Report')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->form([
+                        Select::make('category')
+                            ->label('Export Category')
+                            ->options([
+                                'patient_profiling' => 'Patients Profiling',
+                                'maternal_child' => 'Maternal and Child Report',
+                                'children_adolescent' => 'Children and Adolescent Reports',
+                                'senior_citizens' => 'Senior Citizens Reports',
+                                'maintenance' => 'Person with Maintenance Reports',
+                                'pwds' => 'Person with Disabilities Reports',
+                            ])
+                            ->required()
+                            ->default('patient_profiling')
+                    ])
+                    ->action(function ($data) {
+                        $query = Consultation::with(['patient', 'patient.barangay', 'patient.category'])->latest();
+                        $barangayName = Auth::user()->barangays()->first()->name ?? null;
+                        $brgy = $barangayName ? 'barangay_' . strtolower($barangayName) . '_' : '';
+                        
+                        $reportTitle = '';
+                        $title = '';
+
+                        switch ($data['category']) {
+                            case 'patient_profiling':
+                                $reportTitle = $brgy . 'patient_profiling';
+                                $title = 'Patients Information Records';
+                                break;
+                            case 'maternal_child':
+                                $query->whereHas('patient', function ($q) {
+                                    $q->where('category_id', Category::where('name', 'LIKE', '%maternal and child%')->value('id'));
+                                });
+                                $reportTitle = $brgy . 'maternal_and_child_report';
+                                $title = 'Maternal and Child Report';
+                                break;
+                            case 'children_adolescent':
+                                $query->whereHas('patient', function ($q) {
+                                    $q->where('category_id', Category::where('name', 'LIKE', '%children and adolescent%')->value('id'));
+                                });
+                                $reportTitle = $brgy . 'children_and_adolescent_report';
+                                $title = 'Children and Adolescent Report';
+                                break;
+                            case 'senior_citizens':
+                                $query->whereHas('patient', function ($q) {
+                                    $q->where('category_id', Category::where('name', 'LIKE', '%senior citizen%')->value('id'));
+                                });
+                                $reportTitle = $brgy . 'senior_citizens_report';
+                                $title = 'Senior Citizens Report';
+                                break;
+                            case 'maintenance':
+                                $query->whereHas('patient', function ($q) {
+                                    $q->where('category_id', Category::where('name', 'LIKE', '%person with maintenance%')->value('id'));
+                                });
+                                $reportTitle = $brgy . 'person_with_maintenance_report';
+                                $title = 'Person with Maintenance Report';
+                                break;
+                            case 'pwds':
+                                $query->whereHas('patient', function ($q) {
+                                    $q->where('category_id', Category::where('name', 'LIKE', '%person with disabilities%')->value('id'));
+                                });
+                                $reportTitle = $brgy . 'person_with_disabilities_report';
+                                $title = 'Person with Disabilities Report';
+                                break;
+                            case 'all':
+                            default:
+                                $reportTitle = $brgy . 'all_patients';
+                                $title = 'All Patients';
+                                break;
+                        }
+
+                        $consultations = $query->get();
+
+                        logger($consultations);
+
+                        if ($consultations->isEmpty()) {
+                            Notification::make()
+                                ->title('No patients found for ' . $title)
+                                ->body('Please select a different category')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        return response()->streamDownload(function () use ($consultations, $data) {
+                            $csv = fopen('php://output', 'w');
+                            $brgy = Auth::user()->barangays()->first()->name ? 'Barangay ' . Auth::user()->barangays()->first()->name . ' Patients Information Records' : 'Patients Information Records';
+
+                            fputcsv($csv, [$brgy]);
+
+                            // Add CSV headers, can be extended per report type if needed
+                            fputcsv($csv, [
+                                'Full Name', 
+                                'Birthdate', 
+                                'Age', 
+                                'Barangay', 
+                                'Category', 
+                                'Blood Pressure', 
+                                'Sugar Level', 
+                                'Contact Number', 
+                                'Gender', 
+                                'Height', 
+                                'Weight', 
+                                'BMI', 
+                                'Maintenance',
+                                'Consultation Date'
+                        ]);
+                            
+                            foreach ($consultations as $consult) {
+                                fputcsv($csv, [
+                                    $consult->patient->first_name . ' ' . $consult->patient->middle_name ?? '' . ' ' . $consult->patient->last_name,
+                                    $consult->patient->birth_date->format('M d, Y'),
+                                    $consult->patient->age,
+                                    $consult->patient->barangay->name ?? 'N/A',
+                                    $consult->patient->category->name ?? 'N/A',
+                                    $consult->patient->blood_pressure,
+                                    $consult->patient->sugar_level,
+                                    $consult->patient->contact_number,
+                                    $consult->patient->sex,
+                                    $consult->patient->height,
+                                    $consult->patient->weight,
+                                    $consult->patient->bmi,
+                                    is_array($consult->patient->medication_maintenance) ? implode(', ', $consult->patient->medication_maintenance) : '',
+                                    $consult->created_at->format('M d, Y')
+                                ]);
+                            }
+                            
+                            fclose($csv);
+                        }, $reportTitle . '_' . date('Y-m-d_His') . '.csv');
+                    })
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
