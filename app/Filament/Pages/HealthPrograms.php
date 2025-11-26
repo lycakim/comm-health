@@ -138,7 +138,7 @@ class HealthPrograms extends Page implements HasTable
 
                     ->action(function ($record) {
                         $program = $record;
-                        $users = \App\Models\Patient::where('barangay_id', $program->barangay_id)->get();
+                        $users = \App\Models\Patient::where('barangay_id', $program->barangay_id)->where('category_id', $record->category_id)->get();
 
                         // $smsService = app(\App\Services\SemaphoreService::class);
                         $smsService = app(\App\Services\PhilSMSService::class);
