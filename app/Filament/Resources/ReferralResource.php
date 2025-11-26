@@ -776,6 +776,7 @@ class ReferralResource extends Resource
                         'accepted' => 'Accepted',
                         'completed' => 'Completed',
                         'cancelled' => 'Cancelled',
+                        'no_show' => 'No Show',
                     ])
                     ->searchable()
             ])

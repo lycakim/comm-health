@@ -139,9 +139,15 @@ class PatientResource extends Resource
                                 //     ->label('Resident')
                                 //     ->options(User::query()->get()->pluck('name', 'id')->toArray())
                                 //     ->columnSpanFull(),
-                                TextInput::make('first_name')->required(),
-                                TextInput::make('middle_name'),
-                                TextInput::make('last_name')->required(),
+                                TextInput::make('first_name')
+                                    ->required()
+                                    ->placeholder('Juan'),
+                                TextInput::make('middle_name')
+                                    ->hint('optional')
+                                    ->placeholder('Manuel'),
+                                TextInput::make('last_name')
+                                    ->required()
+                                    ->placeholder('Dela Cruz'),
                                 TextInput::make('suffix')->hint('Jr., Sr., II, III, etc.'),
                                 Select::make('relationship_to_head_of_family')
                                     ->label('Relationship to the Head of the Family')
