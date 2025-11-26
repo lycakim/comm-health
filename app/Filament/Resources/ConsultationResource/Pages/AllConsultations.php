@@ -20,8 +20,6 @@ class AllConsultations extends Page
     public function mount()
     {
         $this->barangays = Barangay::withCount(['consultations', 'patients'])->get();
-        logger(count($this->barangays->consultations_count));
         $this->consultations = Consultation::count();
-        logger($this->consultations);
     }
 }
