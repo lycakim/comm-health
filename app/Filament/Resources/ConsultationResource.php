@@ -486,7 +486,7 @@ class ConsultationResource extends Resource
                     ])
                     ->action(function ($data) {
                         $query = Consultation::with(['patient', 'patient.barangay', 'patient.category'])->latest();
-                        $barangayName = Auth::user()->barangays()->first()->name ?? null;
+                        $barangayName = Auth::user()->barangays()->first() ? Auth::user()->barangays()->first()->name : '';
                         $brgy = $barangayName ? 'barangay_' . strtolower($barangayName) . '_' : '';
                         
                         $reportTitle = '';

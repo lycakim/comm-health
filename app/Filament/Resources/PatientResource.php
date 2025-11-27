@@ -519,7 +519,7 @@ class PatientResource extends Resource
                     ])
                     ->action(function ($data) {
                         $query = Patient::query();
-                        $barangayName = Auth::user()->barangays()->first()->name ?? null;
+                        $barangayName = Auth::user()->barangays()->first() ? Auth::user()->barangays()->first()->name : '';
                         $brgy = $barangayName ? 'barangay_' . strtolower($barangayName) . '_' : '';
                         
                         $reportTitle = '';
