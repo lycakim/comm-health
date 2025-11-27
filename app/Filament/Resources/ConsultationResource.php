@@ -556,7 +556,9 @@ class ConsultationResource extends Resource
                             $csv = fopen('php://output', 'w');
                             $brgy = Auth::user()->barangays()->first() ? 'Barangay ' . Auth::user()->barangays()->first()->name . ' Patients Information Records' : 'Patients Information Records';
 
-                            fputcsv($csv, [$brgy]);
+                            if ($brgy) {
+                                fputcsv($csv, [$brgy]);
+                            }
 
                             // Add CSV headers, can be extended per report type if needed
                             fputcsv($csv, [
