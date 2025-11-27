@@ -64,6 +64,7 @@ class Reports extends Page implements HasTable
         return [
             Action::make('generate_report')
                 ->label('Generate Report')
+                ->disabled(fn() => ! Auth::user()->barangays()->count() || Auth::user()->role === RoleEnum::MHO->value)
                 ->icon('heroicon-o-plus')
                 ->form([
                     Select::make('report_type')
@@ -149,6 +150,18 @@ class Reports extends Page implements HasTable
             ->query(fn () => Consultation::with('program', 'patient')
                 ->whereNotNull('program_id')
                 ->where('program_id', '>', 0)
+                ->when(
+                    Auth::user()->role !== RoleEnum::MHO->value,
+                    function ($query) {
+                        $barangayId = Auth::user()->barangays()->first()->id ?? null;
+                        
+                        if ($barangayId) {
+                            $query->where('barangay_id', $barangayId);
+                        } else {
+                            $query->whereRaw('1 = 0');
+                        }
+                    }
+                )
                 ->latest()
             )
             ->columns([

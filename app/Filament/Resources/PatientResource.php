@@ -95,6 +95,19 @@ class PatientResource extends Resource
         ]);
     }
 
+    public static function canCreate(): bool
+    {
+        $user = self::currentUser();
+        
+        // MHO can always create
+        if ($user->barangays()->count() > 1) {
+            return true;
+        }
+        
+        // Other users (BHW, Midwife) need assigned barangay
+        return $user->barangays()->count() > 0;
+    }
+
     public static function form(Form $form): Form
     {
         $calculateBMI = function ($state, callable $set, $get) {
@@ -502,6 +515,7 @@ class PatientResource extends Resource
                 TablesAction::make('exportToCSV')
                     ->label('Generate Report')
                     ->icon('heroicon-o-arrow-down-tray')
+                    ->disabled(fn() => ! self::canCreate())
                     ->color('gray')
                     ->form([
                         Select::make('category')

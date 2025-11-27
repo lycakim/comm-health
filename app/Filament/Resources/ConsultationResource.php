@@ -55,6 +55,19 @@ class ConsultationResource extends Resource
         ]);
     }
 
+    public static function canCreate(): bool
+    {
+        $user = self::currentUser();
+        
+        // MHO can always create
+        if ($user->role === RoleEnum::MHO->value) {
+            return true;
+        }
+        
+        // Other users (BHW, Midwife) need at least one assigned barangay
+        return $user->barangays()->count() > 0;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -469,6 +482,13 @@ class ConsultationResource extends Resource
                 TablesAction::make('exportToCSV')
                     ->label('Generate Report')
                     ->icon('heroicon-o-arrow-down-tray')
+                    ->disabled(fn () => !self::canCreate())
+                    ->tooltip(function () {
+                        if (!self::canCreate()) {
+                            return 'You must be assigned to a barangay to generate reports';
+                        }
+                        return null;
+                    })
                     ->color('gray')
                     ->form([
                         Select::make('category')
@@ -630,7 +650,23 @@ class ConsultationResource extends Resource
             ->poll('10s')
             ->deferLoading()
             ->modifyQueryUsing(function (Builder $query) {
-                $query->latest();
+                $user = self::currentUser();
+                
+                if (in_array($user->role, [
+                    RoleEnum::MHO,
+                    RoleEnum::ADMIN
+                ])) {
+                    return;
+                }
+                
+                $assignedBarangayIds = $user->barangays()->pluck('barangays.id');
+
+                if ($assignedBarangayIds->isEmpty()) {
+                    $query->whereRaw('1 = 0');
+                    return;
+                }
+
+                $query->whereIn('barangay_id', $assignedBarangayIds);
             });
     }
 

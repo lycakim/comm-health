@@ -17,44 +17,20 @@ class ListPatients extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        if (!Auth::user()->isMHO()) {
+        // Only show button if user is not MHO AND has assigned barangay
+        if (!Auth::user()->isMHO() && Auth::user()->barangays()->count() > 0) {
             return [
                 Actions\CreateAction::make()
                     ->icon('heroicon-o-plus'),
             ];
         }
+        
+        // Return empty array to hide the create button
         return [];
     }
 
-    // public function getTabs(): array
-    // {
-    //     if (Auth::user()->isMHO()) {
-    //         $tabs = [
-    //             'all' => Tab::make('All')
-    //                 ->modifyQueryUsing(function ($query) {
-    //                     return $query->latest();
-    //                 })
-    //                 ->badge(fn () => $this->getModel()::count()),
-    //         ];
-    
-    //         if (Auth::user()->isMHO()) {
-    //             $barangays = Barangay::all();
-    //         } else {
-    //             $barangays = Auth::user()->barangays;
-    //         }
-    
-    //         foreach ($barangays as $barangay) {
-    //             $tabs[$barangay->id] = Tab::make($barangay->name)
-    //                 ->modifyQueryUsing(function ($query) use ($barangay) {
-    //                     return $query->where('barangay_id', $barangay->id)->latest();
-    //                 })
-    //                 ->badge(fn () => $this->getModel()::where('barangay_id', $barangay->id)->count());
-    //         }
-    
-    //         return $tabs;
-    //     }
-    //     return [];
-    // }
+    // IMPORTANT: Override this method to control the default create action
+    protected static bool $shouldRegisterNavigation = true;
 
     public function getSubheading(): string|Htmlable|null
     {

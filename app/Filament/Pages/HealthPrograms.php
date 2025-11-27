@@ -76,6 +76,7 @@ class HealthPrograms extends Page implements HasTable
             ->headerActions([
                 Action::make('export_csv')
                     ->label('Export CSV')
+                    ->disabled(fn() => Auth::user()->barangays()->count() === 0 || Auth::user()->role === RoleEnum::MHO->value)
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
                     ->action(function () {
