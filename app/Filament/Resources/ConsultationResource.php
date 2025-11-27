@@ -554,7 +554,7 @@ class ConsultationResource extends Resource
 
                         return response()->streamDownload(function () use ($consultations, $data) {
                             $csv = fopen('php://output', 'w');
-                            $brgy = Auth::user()->barangays()->first()->name ? 'Barangay ' . Auth::user()->barangays()->first()->name . ' Patients Information Records' : 'Patients Information Records';
+                            $brgy = Auth::user()->barangays()->first() ? 'Barangay ' . Auth::user()->barangays()->first()->name . ' Patients Information Records' : 'Patients Information Records';
 
                             fputcsv($csv, [$brgy]);
 
