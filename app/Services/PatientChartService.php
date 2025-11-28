@@ -33,8 +33,7 @@ class PatientChartService
      */
     private function getPatientsByPurok(int $year, int $month, $user): array
     {
-        // Get puroks - adjust the model name and relationship as needed
-        // Assuming you have a Purok model or puroks within user's barangay
+        // Get puroks for the user's assigned barangay
         $puroks = \App\Models\Purok::when($user?->barangay_id, function($query) use ($user) {
             return $query->where('barangay_id', $user->barangay_id);
         })->orderBy('name')->get();

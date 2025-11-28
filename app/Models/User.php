@@ -69,6 +69,11 @@ class User extends Authenticatable implements CanLoginDirectly
             ->withTimestamps();
     }
 
+    public function barangay()
+    {
+        return $this->belongsTo(Barangay::class, 'barangay_id');
+    }
+
     public function assignedBarangay()
     {
         return $this->belongsToMany(Barangay::class, 'barangay_users', 'user_id', 'barangay_id')

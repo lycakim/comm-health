@@ -15,42 +15,87 @@ class StatsOverview extends BaseWidget
 {
     protected function getStats(): array
     {
+        $user = Auth::user();
+        
+        // Get the user's assigned barangay_id (for BHWs/Midwives)
+        $barangayId = null;
+        if ($user->isBHW() || $user->isMidwife()) {
+            $barangayId = $user->barangay_id;
+        }
+        
+        // Base queries with barangay filtering for BHWs/Midwives
+        $patientQuery = Patient::query();
+        $consultationQuery = Consultation::query();
+        $referralQuery = Referral::query();
+        $programQuery = Program::query();
+        
+        // For BHW/Midwife: filter by barangay_id, if null show empty (0 counts)
+        if ($user->isBHW() || $user->isMidwife()) {
+            if ($barangayId) {
+                // Filter by assigned barangay
+                $patientQuery->where('barangay_id', $barangayId);
+                $consultationQuery->whereHas('patient', function ($query) use ($barangayId) {
+                    $query->where('barangay_id', $barangayId);
+                });
+                $referralQuery->whereHas('patient', function ($query) use ($barangayId) {
+                    $query->where('barangay_id', $barangayId);
+                });
+                $programQuery->where('barangay_id', $barangayId);
+            } else {
+                // No barangay assigned - return empty queries (0 counts)
+                $patientQuery->whereRaw('1 = 0');
+                $consultationQuery->whereRaw('1 = 0');
+                $referralQuery->whereRaw('1 = 0');
+                $programQuery->whereRaw('1 = 0');
+            }
+        }
+        
         // Calculate percentage changes from last month
-        $patientIncrease = $this->calculatePercentageChange(Patient::class);
-        $consultationIncrease = $this->calculatePercentageChange(Consultation::class);
-        $referralChange = $this->calculatePercentageChange(Referral::class, 'pending');
-        // $reportIncrease = $this->calculatePercentageThisWeek(Report::class);
+        $patientIncrease = $this->calculatePercentageChange(Patient::class, null, $barangayId);
+        $consultationIncrease = $this->calculatePercentageChange(Consultation::class, null, $barangayId);
+        $referralChange = $this->calculatePercentageChange(Referral::class, 'pending', $barangayId);
         
         // Get upcoming program
-        $nextProgram = Program::where('created_at', '>', now())
+        $nextProgram = $programQuery->where('created_at', '>', now())
             ->orderBy('created_at')
             ->first();
             
-        // Count barangays with health workers
-        $barangaysWithHealthWorkers = User::where('role', 'bhw')
-            ->count();
+        // Count barangays with health workers (only for Admin/MHO)
+        $barangaysWithHealthWorkers = 0;
+        if ($user->isAdmin() || $user->isMHO()) {
+            $barangaysWithHealthWorkers = User::where('role', 'bhw')
+                ->whereNotNull('barangay_id')
+                ->distinct('id')
+                ->count();
+        }
 
-        if (Auth::user()->isAdmin() || Auth::user()->isMHO()) {
+        // Get total counts
+        $totalPatients = $patientQuery->count();
+        $totalConsultations = $consultationQuery->count();
+        $pendingReferrals = (clone $referralQuery)->where('status', 'pending')->count();
+        $upcomingProgramsCount = (clone $programQuery)->where('created_at', '>', now())->count();
+
+        if ($user->isAdmin() || $user->isMHO()) {
             return [
-                Stat::make('Total Patients', Patient::count())
+                Stat::make('Total Patients', $totalPatients)
                     ->description('+' . $patientIncrease . '% from last month')
                     ->descriptionIcon($patientIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                     ->chart([10, 12, 13, 14, 15, 12]) // Replace with actual data points
                     ->color('success'),
                     
-                Stat::make('Consultations', Consultation::count())
+                Stat::make('Consultations', $totalConsultations)
                     ->description('+' . $consultationIncrease . '% from last month')
                     ->descriptionIcon($consultationIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                     ->chart([5, 8, 12, 7, 9, 10]) // Replace with actual data points
                     ->color('success'),
                     
-                Stat::make('Pending Referrals', Referral::where('status', 'pending')->count())
+                Stat::make('Pending Referrals', $pendingReferrals)
                     ->description($referralChange > 0 ? '+' : '' . $referralChange . '% from last month')
                     ->descriptionIcon($referralChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                     ->chart([4, 3, 5, 6, 4, 3]) // Replace with actual data points
-                    ->color($referralChange > 0 ? 'danger' : 'success'), // Negative trend is good for pending referrals
+                    ->color($referralChange > 0 ? 'danger' : 'success'),
                     
-                Stat::make('Upcoming Programs', Program::where('created_at', '>', now())->count())
+                Stat::make('Upcoming Programs', $upcomingProgramsCount)
                     ->description('Next: ' . ($nextProgram ? $nextProgram->name . ' (' . $nextProgram->date->format('M d') . ')' : 'None'))
                     ->color('primary'),
                     
@@ -64,36 +109,46 @@ class StatsOverview extends BaseWidget
                     ->color('primary'),
             ];
         }
-        if (Auth::user()->isResident()) {
+        
+        if ($user->isResident()) {
             return [];
         }
+        
+        // BHW/Midwife stats - filtered by assigned barangay
         return [
-                Stat::make('Registered Patients', Patient::count())
-                    ->description('+' . $patientIncrease . '% from last month')
-                    ->descriptionIcon($patientIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                    ->chart([10, 12, 13, 14, 15, 12]) // Replace with actual data points
-                    ->color('success'),
-                    
-                Stat::make('Consultations', Consultation::count())
-                    ->description('+' . $consultationIncrease . '% from last month')
-                    ->descriptionIcon($consultationIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                    ->chart([5, 8, 12, 7, 9, 10]) // Replace with actual data points
-                    ->color('success'),
-                    
-                Stat::make('Pending Referrals', Referral::where('status', 'pending')->count())
-                    ->description($referralChange > 0 ? '+' : '' . $referralChange . '% from last month')
-                    ->descriptionIcon($referralChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                    ->chart([4, 3, 5, 6, 4, 3]) // Replace with actual data points
-                    ->color($referralChange > 0 ? 'danger' : 'success'), // Negative trend is good for pending referrals
-                    
-                Stat::make('Upcoming Programs', Program::where('created_at', '>', now())->count())
-                    ->description('Next: ' . ($nextProgram ? $nextProgram->name . ' (' . $nextProgram->date->format('M d') . ')' : 'None'))
-                    ->color('primary'),
-            ];
+            Stat::make('Registered Patients', $totalPatients)
+                ->description($barangayId ? '+' . $patientIncrease . '% from last month' : 'No barangay assigned')
+                ->descriptionIcon($patientIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                ->chart([10, 12, 13, 14, 15, 12]) // Replace with actual data points
+                ->color('success'),
+                
+            Stat::make('Consultations', $totalConsultations)
+                ->description($barangayId ? '+' . $consultationIncrease . '% from last month' : 'No barangay assigned')
+                ->descriptionIcon($consultationIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                ->chart([5, 8, 12, 7, 9, 10]) // Replace with actual data points
+                ->color('success'),
+                
+            Stat::make('Pending Referrals', $pendingReferrals)
+                ->description($barangayId ? ($referralChange > 0 ? '+' : '') . $referralChange . '% from last month' : 'No barangay assigned')
+                ->descriptionIcon($referralChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                ->chart([4, 3, 5, 6, 4, 3]) // Replace with actual data points
+                ->color($referralChange > 0 ? 'danger' : 'success'),
+                
+            Stat::make('Upcoming Programs', $upcomingProgramsCount)
+                ->description('Next: ' . ($nextProgram ? $nextProgram->name . ' (' . $nextProgram->date->format('M d') . ')' : 'None'))
+                ->color('primary'),
+        ];
     }
 
-    private function calculatePercentageChange(string $model, ?string $condition = null): int
+    private function calculatePercentageChange(string $model, ?string $condition = null, ?int $barangayId = null): int
     {
+        $user = Auth::user();
+        
+        // For BHW/Midwife without barangay_id, return 0 (no data to compare)
+        if (($user->isBHW() || $user->isMidwife()) && is_null($barangayId)) {
+            return 0;
+        }
+        
         $lastMonth = now()->subMonth();
         $currentMonth = now();
         
@@ -110,6 +165,28 @@ class StatsOverview extends BaseWidget
         if ($condition) {
             $queryLastMonth->where('status', $condition);
             $queryCurrentMonth->where('status', $condition);
+        }
+        
+        // Apply barangay filtering if barangay_id is provided
+        if ($barangayId) {
+            if ($model === Patient::class) {
+                $queryLastMonth->where('barangay_id', $barangayId);
+                $queryCurrentMonth->where('barangay_id', $barangayId);
+            } elseif ($model === Consultation::class) {
+                $queryLastMonth->whereHas('patient', function ($query) use ($barangayId) {
+                    $query->where('barangay_id', $barangayId);
+                });
+                $queryCurrentMonth->whereHas('patient', function ($query) use ($barangayId) {
+                    $query->where('barangay_id', $barangayId);
+                });
+            } elseif ($model === Referral::class) {
+                $queryLastMonth->whereHas('patient', function ($query) use ($barangayId) {
+                    $query->where('barangay_id', $barangayId);
+                });
+                $queryCurrentMonth->whereHas('patient', function ($query) use ($barangayId) {
+                    $query->where('barangay_id', $barangayId);
+                });
+            }
         }
         
         $lastMonthCount = $queryLastMonth->count();

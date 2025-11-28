@@ -103,7 +103,7 @@ class UserResource extends Resource
                             ->columnSpanFull(),
                         Select::make('barangay_id')
                             ->label('Assigned Barangay')
-                            ->relationship('barangays', 'name')
+                            ->options(Barangay::query()->get()->pluck('name', 'id')->sort()->toArray())
                             ->preload()
                             ->live()
                             ->searchable(),
@@ -165,15 +165,16 @@ class UserResource extends Resource
                     ->sortable(),
                 TextColumn::make('email')
                     ->searchable(),
-                SelectColumn::make('assigned_barangay_id')
+                SelectColumn::make('barangay_id')
                     ->label('Assigned Barangay')
                     ->searchable()
                     ->sortable()
                     ->disabled(fn ($record) => $record->isAdmin() || $record->isMHO())
                     ->options(Barangay::query()->get()->pluck('name', 'id')->sort()->toArray())
-                    ->getStateUsing(fn ($record) => $record->assignedBarangay->first()?->id)
+                    ->getStateUsing(fn ($record) => $record->barangay_id)
                     ->updateStateUsing(function ($record, $state) {
-                        $record->assignedBarangay()->sync($state ? [$state] : []);
+                        $record->barangay_id = $state;
+                        $record->save();
                         return $state;
                     }),
                 TextColumn::make('role')

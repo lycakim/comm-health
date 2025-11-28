@@ -53,7 +53,7 @@ class HealthPrograms extends Page implements HasTable
                     ->when(
                         Auth::user()->role !== RoleEnum::MHO->value,
                         function ($query) {
-                            $barangayId = Auth::user()->barangays()->first()->id ?? null;
+                            $barangayId = Auth::user()->barangay_id;
                             
                             if ($barangayId) {
                                 $query->where('barangay_id', $barangayId);
@@ -76,7 +76,7 @@ class HealthPrograms extends Page implements HasTable
             ->headerActions([
                 Action::make('export_csv')
                     ->label('Export CSV')
-                    ->disabled(fn() => Auth::user()->barangays()->count() === 0 || Auth::user()->role === RoleEnum::MHO->value)
+                    ->disabled(fn() => is_null(Auth::user()->barangay_id) || Auth::user()->role === RoleEnum::MHO->value)
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
                     ->action(function () {

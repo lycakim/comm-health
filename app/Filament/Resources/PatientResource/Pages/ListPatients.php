@@ -17,8 +17,8 @@ class ListPatients extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        // Only show button if user is not MHO AND has assigned barangay
-        if (!Auth::user()->isMHO() && Auth::user()->barangays()->count() > 0) {
+        // Only show button if user is not MHO AND has assigned barangay_id
+        if (!Auth::user()->isMHO() && !is_null(Auth::user()->barangay_id)) {
             return [
                 Actions\CreateAction::make()
                     ->icon('heroicon-o-plus'),

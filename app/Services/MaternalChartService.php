@@ -45,6 +45,7 @@ class MaternalChartService
      */
     private function getMaternalPatientsByPurok(int $year, int $month, $user): array
     {
+        // Get puroks for the user's assigned barangay
         $puroks = \App\Models\Purok::when($user?->barangay_id, function($query) use ($user) {
             return $query->where('barangay_id', $user->barangay_id);
         })->orderBy('name')->get();

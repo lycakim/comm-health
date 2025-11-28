@@ -37,19 +37,8 @@ class EditUser extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        // Extract barangay_id before updating the record
-        $barangayId = $data['barangay_id'] ?? null;
-        
-        // Remove barangay_id from data since it's not a column on users table
-        unset($data['barangay_id']);
-        
-        // Update all the regular fields on the record
+        // Update all fields including barangay_id directly
         $record->update($data);
-        
-        // Then handle the barangay relationship via pivot table
-        if ($barangayId) {
-            $record->barangays()->sync($barangayId);
-        }
 
         return $record;
     }

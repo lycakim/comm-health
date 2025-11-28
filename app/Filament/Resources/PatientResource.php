@@ -99,13 +99,13 @@ class PatientResource extends Resource
     {
         $user = self::currentUser();
         
-        // MHO can always create
-        if ($user->barangays()->count() > 1) {
+        // MHO/Admin can always create
+        if ($user->isMHO() || $user->isAdmin()) {
             return true;
         }
         
-        // Other users (BHW, Midwife) need assigned barangay
-        return $user->barangays()->count() > 0;
+        // Other users (BHW, Midwife) need assigned barangay_id
+        return !is_null($user->barangay_id);
     }
 
     public static function form(Form $form): Form
@@ -281,7 +281,7 @@ class PatientResource extends Resource
                                     ->options(Barangay::query()->get()->pluck('name', 'id')->sort()->toArray())
                                     ->preload()
                                     ->default(function () {
-                                        return Auth::user()->barangays->first()->id ?? null;
+                                        return Auth::user()->barangay_id;
                                     })
                                     ->live(),
                                 Select::make('purok_id')
@@ -533,7 +533,9 @@ class PatientResource extends Resource
                     ])
                     ->action(function ($data) {
                         $query = Patient::query();
-                        $barangayName = Auth::user()->barangays()->first() ? Auth::user()->barangays()->first()->name : '';
+                        $user = Auth::user();
+                        $barangay = $user->barangay_id ? Barangay::find($user->barangay_id) : null;
+                        $barangayName = $barangay ? $barangay->name : '';
                         $brgy = $barangayName ? 'barangay_' . strtolower($barangayName) . '_' : '';
                         
                         $reportTitle = '';
@@ -589,7 +591,9 @@ class PatientResource extends Resource
 
                         return response()->streamDownload(function () use ($patients, $data) {
                             $csv = fopen('php://output', 'w');
-                            $brgy = Auth::user()->barangays()->first() ? 'Barangay ' . Auth::user()->barangays()->first()->name . ' Patients Information Records' : 'Patients Information Records';
+                            $user = Auth::user();
+                            $barangay = $user->barangay_id ? Barangay::find($user->barangay_id) : null;
+                            $brgy = $barangay ? 'Barangay ' . $barangay->name . ' Patients Information Records' : 'Patients Information Records';
                             
                             if ($brgy) {
                                 fputcsv($csv, [$brgy]);
@@ -766,14 +770,13 @@ class PatientResource extends Resource
                     return;
                 }
                 
-                $assignedBarangayIds = $user->barangays()->pluck('barangays.id');
-
-                if ($assignedBarangayIds->isEmpty()) {
+                // BHW/Midwife: filter by barangay_id, if null show empty
+                if (is_null($user->barangay_id)) {
                     $query->whereRaw('1 = 0');
                     return;
                 }
 
-                $query->whereIn('barangay_id', $assignedBarangayIds);
+                $query->where('barangay_id', $user->barangay_id);
             });
     }
 

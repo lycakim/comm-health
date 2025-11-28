@@ -70,10 +70,11 @@ class CreateUser extends CreateRecord
                 ->send();
         }
 
-        // Attach barangay
-        $barangayId = $this->form->getState()['barangay_id'];
+        // Set barangay_id directly
+        $barangayId = $this->form->getState()['barangay_id'] ?? null;
         if ($barangayId) {
-            $this->record->barangays()->attach($barangayId);
+            $this->record->barangay_id = $barangayId;
+            $this->record->save();
         }
     }
 }

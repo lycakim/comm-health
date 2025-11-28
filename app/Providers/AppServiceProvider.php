@@ -54,8 +54,8 @@ class AppServiceProvider extends ServiceProvider
         FilamentView::registerRenderHook(
             PanelsRenderHook::TOPBAR_START,
             fn (): View => view('top-nav-header', [
-                'barangay' => ($name = optional(Auth::user()->barangays->first())->name)
-                    ? 'Barangay ' . $name
+                'barangay' => ($user = Auth::user()) && $user->barangay_id && ($barangay = \App\Models\Barangay::find($user->barangay_id))
+                    ? 'Barangay ' . $barangay->name
                     : '',
             ]),
         );

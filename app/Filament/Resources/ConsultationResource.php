@@ -64,8 +64,8 @@ class ConsultationResource extends Resource
             return true;
         }
         
-        // Other users (BHW, Midwife) need at least one assigned barangay
-        return $user->barangays()->count() > 0;
+        // Other users (BHW, Midwife) need assigned barangay_id
+        return !is_null($user->barangay_id);
     }
 
     public static function form(Form $form): Form
@@ -506,7 +506,9 @@ class ConsultationResource extends Resource
                     ])
                     ->action(function ($data) {
                         $query = Consultation::with(['patient', 'patient.barangay', 'patient.category'])->latest();
-                        $barangayName = Auth::user()->barangays()->first() ? Auth::user()->barangays()->first()->name : '';
+                        $user = Auth::user();
+                        $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
+                        $barangayName = $barangay ? $barangay->name : '';
                         $brgy = $barangayName ? 'barangay_' . strtolower($barangayName) . '_' : '';
                         
                         $reportTitle = '';
@@ -574,7 +576,9 @@ class ConsultationResource extends Resource
 
                         return response()->streamDownload(function () use ($consultations, $data) {
                             $csv = fopen('php://output', 'w');
-                            $brgy = Auth::user()->barangays()->first() ? 'Barangay ' . Auth::user()->barangays()->first()->name . ' Patients Information Records' : 'Patients Information Records';
+                            $user = Auth::user();
+                            $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
+                            $brgy = $barangay ? 'Barangay ' . $barangay->name . ' Patients Information Records' : 'Patients Information Records';
 
                             if ($brgy) {
                                 fputcsv($csv, [$brgy]);
@@ -659,14 +663,15 @@ class ConsultationResource extends Resource
                     return;
                 }
                 
-                $assignedBarangayIds = $user->barangays()->pluck('barangays.id');
-
-                if ($assignedBarangayIds->isEmpty()) {
+                // BHW/Midwife: filter by barangay_id, if null show empty
+                if (is_null($user->barangay_id)) {
                     $query->whereRaw('1 = 0');
                     return;
                 }
 
-                $query->whereIn('barangay_id', $assignedBarangayIds);
+                $query->whereHas('patient', function ($patientQuery) use ($user) {
+                    $patientQuery->where('barangay_id', $user->barangay_id);
+                })->latest();
             });
     }
 
