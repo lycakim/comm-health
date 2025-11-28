@@ -59,8 +59,8 @@ class ConsultationResource extends Resource
     {
         $user = self::currentUser();
         
-        // MHO can always create
-        if ($user->role === RoleEnum::MHO->value) {
+        // MHO/Admin can always create
+        if ($user->isMHO() || $user->isAdmin()) {
             return true;
         }
         
@@ -482,7 +482,7 @@ class ConsultationResource extends Resource
                 TablesAction::make('exportToCSV')
                     ->label('Generate Report')
                     ->icon('heroicon-o-arrow-down-tray')
-                    ->disabled(fn () => !self::canCreate())
+                    ->disabled(fn () => ! self::canCreate())
                     ->tooltip(function () {
                         if (!self::canCreate()) {
                             return 'You must be assigned to a barangay to generate reports';
