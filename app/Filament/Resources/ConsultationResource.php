@@ -494,15 +494,15 @@ class ConsultationResource extends Resource
                         Select::make('category')
                             ->label('Export Category')
                             ->options([
-                                'patient_profiling' => 'Patients Profiling',
-                                'maternal_child' => 'Maternal and Child Report',
-                                'children_adolescent' => 'Children and Adolescent Reports',
-                                'senior_citizens' => 'Senior Citizens Reports',
-                                'maintenance' => 'Person with Maintenance Reports',
-                                'pwds' => 'Person with Disabilities Reports',
+                                'consultations_patient_profiling' => 'Consultations with Patients Profiling',
+                                'consultations_maternal_child' => 'Consultations with Maternal and Child Report',
+                                'consultations_children_adolescent' => 'Consultations with Children and Adolescent Reports',
+                                'consultations_senior_citizens' => 'Consultations with Senior Citizens Reports',
+                                'consultations_maintenance' => 'Consultations with Person with Maintenance Reports',
+                                'consultations_pwds' => 'Consultations with Person with Disabilities Reports',
                             ])
                             ->required()
-                            ->default('patient_profiling')
+                            ->default('consultations_patient_profiling')
                     ])
                     ->action(function ($data) {
                         $query = Consultation::with(['patient', 'patient.barangay', 'patient.category'])->latest();
@@ -515,43 +515,43 @@ class ConsultationResource extends Resource
                         $title = '';
 
                         switch ($data['category']) {
-                            case 'patient_profiling':
-                                $reportTitle = $brgy . 'patient_profiling';
+                            case 'consultations_patient_profiling':
+                                $reportTitle = $brgy . 'consultations_patient_profiling';
                                 $title = 'Patients Information Records';
                                 break;
-                            case 'maternal_child':
+                            case 'consultations_maternal_child':
                                 $query->whereHas('patient', function ($q) {
                                     $q->where('category_id', Category::where('name', 'LIKE', '%maternal and child%')->value('id'));
                                 });
-                                $reportTitle = $brgy . 'maternal_and_child_report';
+                                $reportTitle = $brgy . 'consultations_maternal_child';
                                 $title = 'Maternal and Child Report';
                                 break;
-                            case 'children_adolescent':
+                            case 'consultations_children_adolescent':
                                 $query->whereHas('patient', function ($q) {
                                     $q->where('category_id', Category::where('name', 'LIKE', '%children and adolescent%')->value('id'));
                                 });
-                                $reportTitle = $brgy . 'children_and_adolescent_report';
+                                $reportTitle = $brgy . 'consultations_children_adolescent';
                                 $title = 'Children and Adolescent Report';
                                 break;
-                            case 'senior_citizens':
+                            case 'consultations_senior_citizens':
                                 $query->whereHas('patient', function ($q) {
                                     $q->where('category_id', Category::where('name', 'LIKE', '%senior citizen%')->value('id'));
                                 });
-                                $reportTitle = $brgy . 'senior_citizens_report';
+                                $reportTitle = $brgy . 'consultations_senior_citizens';
                                 $title = 'Senior Citizens Report';
                                 break;
-                            case 'maintenance':
+                            case 'consultations_maintenance':
                                 $query->whereHas('patient', function ($q) {
                                     $q->where('category_id', Category::where('name', 'LIKE', '%person with maintenance%')->value('id'));
                                 });
-                                $reportTitle = $brgy . 'person_with_maintenance_report';
+                                $reportTitle = $brgy . 'consultations_maintenance';
                                 $title = 'Person with Maintenance Report';
                                 break;
-                            case 'pwds':
+                            case 'consultations_pwds':
                                 $query->whereHas('patient', function ($q) {
                                     $q->where('category_id', Category::where('name', 'LIKE', '%person with disabilities%')->value('id'));
                                 });
-                                $reportTitle = $brgy . 'person_with_disabilities_report';
+                                $reportTitle = $brgy . 'consultations_pwds';
                                 $title = 'Person with Disabilities Report';
                                 break;
                             case 'all':
@@ -578,7 +578,7 @@ class ConsultationResource extends Resource
                             $csv = fopen('php://output', 'w');
                             $user = Auth::user();
                             $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
-                            $brgy = $barangay ? 'Barangay ' . $barangay->name . ' Patients Information Records' : 'Patients Information Records';
+                            $brgy = $barangay ? 'Barangay ' . $barangay->name . ' Consultations Information Records' : 'Consultations Information Records';
 
                             if ($brgy) {
                                 fputcsv($csv, [$brgy]);
