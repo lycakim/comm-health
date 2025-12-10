@@ -2,6 +2,7 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "install": "npm install",
         "build": "vite build",
         "dev": "vite"
     },
