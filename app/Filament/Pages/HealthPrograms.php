@@ -170,19 +170,19 @@ class HealthPrograms extends Page implements HasTable
                             }
 
                             // Create personalized message with program details
-                            $message = "Hi {$user->first_name}! \n\n";
-                            $message .= "New Health Program: {$program->name} \n";
-                            $message .= "Date: {$programDate} \n";
-                            $message .= "Time: {$startTime} - {$endTime} \n";
-                            
+                            $message = "Maayong adlaw {$user->first_name}!\n\n";
+                            $message .= "Aduna kitay bag-ong programa: {$program->name}\n\n";
+                            $message .= "Petsa: {$programDate}\n";
+                            $message .= "Oras: {$startTime} - {$endTime}\n";
+
                             if (!empty($program->description)) {
                                 $description = strlen($program->description) > 100 
                                     ? substr($program->description, 0, 100) . '...' 
                                     : $program->description;
                                 $message .= "\n{$description}\n";
                             }
-                            
-                            $message .= "\nPlease attend. Thank you!";
+
+                            $message .= "\nPalihug tambong. Salamat kaayo!";
 
                             $result = $smsService->sendSMS($user->contact_number, $message);
 

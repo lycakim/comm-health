@@ -19,6 +19,8 @@ class CreatePatient extends CreateRecord
 {
     protected static string $resource = PatientResource::class;
 
+    protected static ?string $title = 'Create Resident';
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');

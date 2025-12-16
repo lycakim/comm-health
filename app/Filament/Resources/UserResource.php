@@ -21,6 +21,7 @@ use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\SelectColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\UserResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -174,6 +175,15 @@ class UserResource extends Resource
                     ->getStateUsing(fn ($record) => $record->barangay_id)
                     ->updateStateUsing(function ($record, $state) {
                         $record->barangay_id = $state;
+                        $record->save();
+                        return $state;
+                    }),
+                ToggleColumn::make('is_active')
+                    ->label('Active')
+                    ->default(true)
+                    ->getStateUsing(fn ($record) => $record->is_active)
+                    ->updateStateUsing(function ($record, $state) {
+                        $record->is_active = $state;
                         $record->save();
                         return $state;
                     }),

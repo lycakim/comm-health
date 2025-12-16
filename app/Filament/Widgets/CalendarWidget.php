@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Enums\RoleEnum;
 use App\Models\Program;
+use App\Models\Consultation;
 use Filament\Actions\Action;
 use Filament\Widgets\Widget;
 use Filament\Infolists\Infolist;
@@ -27,14 +28,19 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
     protected int | string | array $columnSpan = 'full';
 
     public ?Program $selectedEvent = null;
+    public ?Consultation $selectedConsultation = null;
+    public ?string $eventType = null;
 
     public function fetchEvents(array $fetchInfo): array
     {
-        return Program::query()
+        $user = Auth::user();
+        
+        // Fetch Programs
+        $programs = Program::query()
             ->when(
-                Auth::user()->role !== RoleEnum::MHO->value,
-                function ($query) {
-                    $barangayId = Auth::user()->barangay_id;
+                $user->role !== RoleEnum::MHO->value,
+                function ($query) use ($user) {
+                    $barangayId = $user->barangay_id;
                     
                     if ($barangayId) {
                         $query->where('barangay_id', $barangayId);
@@ -56,22 +62,70 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
                 'id' => $event->id,
                 'title' => $event->name,
                 'start' => $event->program_start_date,
-                'end'   => $event->program_end_date,
-            ])
-            ->toArray();
+                'end' => $event->program_end_date,
+                'color' => '#10b981', // Green for programs
+                'extendedProps' => [
+                    'type' => 'program'
+                ]
+            ]);
+
+        // Fetch Consultations
+        $consultations = Consultation::query()
+            ->when(
+                $user->role !== RoleEnum::MHO->value,
+                function ($query) use ($user) {
+                    $barangayId = $user->barangay_id;
+                    
+                    if ($barangayId) {
+                        $query->whereHas('patient', function ($q) use ($barangayId) {
+                            $q->where('barangay_id', $barangayId);
+                        });
+                    } else {
+                        $query->whereRaw('1 = 0');
+                    }
+                }
+            )
+            ->whereBetween('date', [$fetchInfo['start'], $fetchInfo['end']])
+            ->with('patient')
+            ->get()
+            ->map(fn (Consultation $consultation) => [
+                'id' => $consultation->id,
+                'title' => 'Consultation: ' . ($consultation->patient->first_name ?? 'Unknown'),
+                'start' => $consultation->date,
+                'end' => $consultation->date,
+                'color' => '#3b82f6', // Blue for consultations
+                'extendedProps' => [
+                    'type' => 'consultation'
+                ]
+            ]);
+
+        return $programs->concat($consultations)->toArray();
     }
 
     public function onEventClick($event): void
     {
-        $program = Program::with(['category', 'barangay'])->find($event['id']);
+        $eventType = $event['extendedProps']['type'] ?? 'program';
+        $this->eventType = $eventType;
 
-        if (!$program) {
-            return;
+        if ($eventType === 'program') {
+            $program = Program::with(['category', 'barangay'])->find($event['id']);
+            
+            if (!$program) {
+                return;
+            }
+            
+            $this->selectedEvent = $program;
+            $this->mountAction('viewProgram');
+        } else {
+            $consultation = Consultation::with(['patient', 'category'])->find($event['id']);
+            
+            if (!$consultation) {
+                return;
+            }
+            
+            $this->selectedConsultation = $consultation;
+            $this->mountAction('viewConsultation');
         }
-        
-        $this->selectedEvent = $program;
-        
-        $this->mountAction('viewProgram');
     }
 
     public function viewProgramAction(): Action
@@ -111,6 +165,50 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
                                 ->placeholder('No description available.')
                                 ->html()
                                 ->prose(),
+                        ])
+                        ->columns(2),
+                ])
+            )
+            ->modalWidth('2xl')
+            ->modalFooterActions(fn () => [])
+            ->closeModalByClickingAway(true);
+    }
+
+    public function viewConsultationAction(): Action
+    {
+        return Action::make('viewConsultation')
+            ->modalHeading(fn () => 'Consultation Details')
+            ->infolist(fn (Infolist $infolist) => $infolist
+                ->record($this->selectedConsultation)
+                ->schema([
+                    Section::make()
+                        ->schema([
+                            TextEntry::make('patient.full_name')
+                                ->label('Patient Name')
+                                ->formatStateUsing(fn ($record) => 
+                                    ($record->patient->first_name ?? '') . ' ' . 
+                                    ($record->patient->last_name ?? '')
+                                ),
+                            TextEntry::make('date')
+                                ->label('Consultation Date')
+                                ->date('M d, Y'),
+                            TextEntry::make('category.name')
+                                ->label('Category')
+                                ->badge()
+                                ->color('success')
+                                ->formatStateUsing(fn ($state) => $state ? ucfirst($state) : 'N/A'),
+                            TextEntry::make('chief_complaint')
+                                ->label('Chief Complaint')
+                                ->columnSpanFull()
+                                ->placeholder('N/A'),
+                            TextEntry::make('diagnosis')
+                                ->label('Diagnosis')
+                                ->columnSpanFull()
+                                ->placeholder('N/A'),
+                            TextEntry::make('treatment')
+                                ->label('Treatment')
+                                ->columnSpanFull()
+                                ->placeholder('N/A'),
                         ])
                         ->columns(2),
                 ])

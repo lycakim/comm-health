@@ -9,3 +9,49 @@
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+:root {
+    font-size: 20px !important;
+}
+
+/* Filament-specific font size improvements */
+.fi-body {
+    font-size: 1rem !important;
+}
+
+.fi-section-header-heading,
+.fi-section-header-description {
+    font-size: 1.125rem !important;
+}
+
+.fi-input-label,
+.fi-field-wrapper-label {
+    font-size: 0.9375rem !important;
+}
+
+.fi-input input,
+.fi-input textarea,
+.fi-select select {
+    font-size: 1rem !important;
+}
+
+.fi-table th,
+.fi-table td {
+    font-size: 0.9375rem !important;
+}
+
+.fi-modal-heading {
+    font-size: 1.25rem !important;
+}
+
+.fi-modal-description {
+    font-size: 1rem !important;
+}
+
+.fi-widget-stat-value {
+    font-size: 1.5rem !important;
+}
+
+.fi-widget-stat-label {
+    font-size: 0.9375rem !important;
+}

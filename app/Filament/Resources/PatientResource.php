@@ -37,11 +37,17 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Support\Htmlable;
 use Filament\Forms\Components\CheckboxList;
 use App\Services\PatientFormOptionsServices;
+use App\Services\PDFGenerationService;
+use App\Services\PatientImportService;
+use App\Jobs\ImportPatientsJob;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\Actions\Action;
 use App\Filament\Resources\PatientResource\Pages;
 use Filament\Tables\Actions\Action as TablesAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Storage;
 
 class PatientResource extends Resource
 {
@@ -53,13 +59,17 @@ class PatientResource extends Resource
 
     // protected static ?int $navigationSort = 1;
 
-    // protected static ?string $navigationLabel = 'Patients Records';
+    protected static ?string $navigationLabel = 'Residents Record';
+    
+    protected static ?string $modelLabel = 'Resident';
+    
+    protected static ?string $pluralModelLabel = 'Residents';
 
-    // protected static ?string $modelLabel = 'Patient Information Record';
+    protected static ?string $slug = 'residents';
 
-    // protected static ?string $pluralModelLabel = 'Patient Information Records';
+    protected static ?string $breadcrumb = 'Residents Record';
 
-    protected static ?string $description = 'View and manage patient records';
+    protected static ?string $description = 'View and manage residents records';
 
     public function mount(): void
     {
@@ -80,9 +90,9 @@ class PatientResource extends Resource
     {
         $user = self::currentUser();
         if ($user->isMHO() || $user->isBHW() || $user->isMidwife()) {
-            return 'Patient Records';
+            return 'Residents Record';
         }
-        return 'Patients';
+        return 'Residents';
     }
 
     public static function canAccess(): bool
@@ -133,7 +143,7 @@ class PatientResource extends Resource
 
         return $form
             ->schema([
-                Section::make('Patients Statistics')
+                Section::make('Residents Statistics')
                     ->collapsible()
                     ->collapsed()
                     ->schema([
@@ -182,7 +192,17 @@ class PatientResource extends Resource
                                     ->label('Category')
                                     ->searchable()
                                     ->columnSpan(2)
-                                    ->options(Category::query()->get()->pluck('name', 'id')->toArray())
+                                    ->lazy()
+                                    ->options(
+                                        Category::query()
+                                            ->get()
+                                            ->mapWithKeys(fn ($category) => [
+                                                $category->id => $category->description 
+                                                    ? "{$category->name} - {$category->description}"
+                                                    : $category->name
+                                            ])
+                                            ->toArray()
+                                    )
                                     ->preload(),
                                 TextInput::make('relationship_to_head_of_family_other')
                                     ->label('Please specify relationship')
@@ -223,10 +243,26 @@ class PatientResource extends Resource
                                 DatePicker::make('birth_date')
                                     ->label('Date of Birth')
                                     ->required()
+                                    ->displayFormat('M d, Y')
+                                    ->native(false)
+                                    ->firstDayOfWeek(7)
+                                    ->maxDate(now())
+                                    ->rule('before_or_equal:' . now()->format('Y-m-d'))
                                     ->reactive()
                                     ->debounce(500)
-                                    ->afterStateUpdated(function (callable $set, $state) {
-                                        $set('age', $state ? Carbon::parse($state)->age : null);
+                                    ->afterStateUpdated(function (callable $set, Get $get, $state) {
+                                        if ($state) {
+                                            $age = Carbon::parse($state)->age;
+                                            $set('age', $age);
+                                            
+                                            // Auto-assign category based on age
+                                            $categoryId = self::getCategoryIdByAge($age);
+                                            if ($categoryId && !$get('category_id')) {
+                                                $set('category_id', $categoryId);
+                                            }
+                                        } else {
+                                            $set('age', null);
+                                        }
                                     }),
                                 TextInput::make('age')
                                     ->label('Age (Years)')
@@ -419,10 +455,11 @@ class PatientResource extends Resource
                             ->required()
                             ->rule('regex:/^\d{2,3}\/\d{2,3}$/')
                             ->placeholder('120/80')
+                            ->columnSpan(1)
                             ->dehydrateStateUsing(fn($state) => trim($state)),
                         TextInput::make('sugar_level')
                             ->label('Sugar Level')
-                            ->columnSpan(2)
+                            ->columnSpan(1)
                             ->numeric()
                             ->hint('mg/dl'),
                         TextInput::make('height')
@@ -430,11 +467,12 @@ class PatientResource extends Resource
                             ->numeric()
                             ->hint('cm')
                             ->label('Height')
+                            ->columnSpan(1)
                             ->reactive()
                             ->afterStateUpdated($calculateBMI),
                         TextInput::make('weight')
                             ->minValue(0)
-                            ->columnSpan(2)
+                            ->columnSpan(1)
                             ->hint('kg')
                             ->numeric()
                             ->label('Weight')
@@ -513,7 +551,7 @@ class PatientResource extends Resource
         return $table
             ->headerActions([
                 TablesAction::make('exportToCSV')
-                    ->label('Generate Report')
+                    ->label('Export CSV')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->disabled(fn() => ! self::canCreate())
                     ->color('gray')
@@ -574,7 +612,7 @@ class PatientResource extends Resource
                             case 'all':
                             default:
                                 $reportTitle = $brgy . 'all_patients';
-                                $title = 'All Patients';
+                                $title = 'All Residents';
                                 break;
                         }
 
@@ -636,7 +674,248 @@ class PatientResource extends Resource
                             
                             fclose($csv);
                         }, $reportTitle . '_' . date('Y-m-d_His') . '.csv');
-                    })
+                    }),
+                // TablesAction::make('exportToPDF')
+                //     ->label('Export PDF')
+                //     ->icon('heroicon-o-document-arrow-down')
+                //     ->disabled(fn() => ! self::canCreate())
+                //     ->color('success')
+                //     ->form([
+                //         Select::make('category')
+                //             ->label('Export Category')
+                //             ->options([
+                //                 'patient_profiling' => 'Patients Profiling',
+                //                 'maternal_child' => 'Maternal and Child Report',
+                //                 'children_adolescent' => 'Children and Adolescent Reports',
+                //                 'senior_citizens' => 'Senior Citizens Reports',
+                //                 'maintenance' => 'Person with Maintenance Reports',
+                //                 'pwds' => 'Person with Disabilities Reports',
+                //             ])
+                //             ->required()
+                //             ->default('patient_profiling')
+                //     ])
+                //     ->action(function ($data, PDFGenerationService $pdfService) {
+                //         $query = Patient::query();
+                //         $user = Auth::user();
+                //         $barangay = $user->barangay_id ? Barangay::find($user->barangay_id) : null;
+                //         $barangayName = $barangay ? $barangay->name : '';
+                //         $brgy = $barangayName ? 'barangay_' . strtolower($barangayName) . '_' : '';
+                        
+                //         $reportTitle = '';
+                //         $title = '';
+
+                //         switch ($data['category']) {
+                //             case 'patient_profiling':
+                //                 $reportTitle = $brgy . 'patient_profiling';
+                //                 $title = 'Patients Information Records';
+                //                 break;
+                //             case 'maternal_child':
+                //                 $query->where('category_id', Category::where('name', 'LIKE', '%maternal and child%')->value('id'));
+                //                 $reportTitle = $brgy . 'maternal_and_child_report';
+                //                 $title = 'Maternal and Child Report';
+                //                 break;
+                //             case 'children_adolescent':
+                //                 $query->where('category_id', Category::where('name', 'LIKE', '%children and adolescent%')->value('id'));
+                //                 $reportTitle = $brgy . 'children_and_adolescent_report';
+                //                 $title = 'Children and Adolescent Report';
+                //                 break;
+                //             case 'senior_citizens':
+                //                 $query->where('category_id', Category::where('name', 'LIKE', '%senior citizen%')->value('id'));
+                //                 $reportTitle = $brgy . 'senior_citizens_report';
+                //                 $title = 'Senior Citizens Report';
+                //                 break;
+                //             case 'maintenance':
+                //                 $query->where('category_id', Category::where('name', 'LIKE', '%person with maintenance%')->value('id'));
+                //                 $reportTitle = $brgy . 'person_with_maintenance_report';
+                //                 $title = 'Person with Maintenance Report';
+                //                 break;
+                //             case 'pwds':
+                //                 $query->where('category_id', Category::where('name', 'LIKE', '%person with disabilities%')->value('id'));
+                //                 $reportTitle = $brgy . 'person_with_disabilities_report';
+                //                 $title = 'Person with Disabilities Report';
+                //                 break;
+                //             case 'all':
+                //             default:
+                //                 $reportTitle = $brgy . 'all_patients';
+                //                 $title = 'All Residents';
+                //                 break;
+                //         }
+
+                //         $patients = $query->get();
+
+                //         if ($patients->isEmpty()) {
+                //             Notification::make()
+                //                 ->title('No patients found for ' . $title)
+                //                 ->body('Please select a different category')
+                //                 ->danger()
+                //                 ->send();
+                //             return;
+                //         }
+
+                //         try {
+                //             $pdf = $pdfService->generatePatientListPdf($patients, $title, $barangay);
+                //             $filename = $reportTitle . '_' . date('Y-m-d_His') . '.pdf';
+                            
+                //             Notification::make()
+                //                 ->title('PDF Report Generated')
+                //                 ->success()
+                //                 ->body('Your PDF report is ready for download.')
+                //                 ->send();
+
+                //             return response()->streamDownload(
+                //                 fn () => print($pdf->output()),
+                //                 $filename,
+                //                 ['Content-Type' => 'application/pdf']
+                //             );
+                //         } catch (\Exception $e) {
+                //             Notification::make()
+                //                 ->title('Error Generating PDF')
+                //                 ->danger()
+                //                 ->body($e->getMessage())
+                //             ->persistent()
+                //             ->send();
+                //         }
+                //     }),
+                // TablesAction::make('bulkImport')
+                //     ->label('Bulk Import Patients')
+                //     ->icon('heroicon-o-arrow-up-tray')
+                //     ->color('info')
+                //     ->disabled(fn() => ! self::canCreate())
+                //     ->form([
+                //         FileUpload::make('file')
+                //             ->label('CSV File')
+                //             ->acceptedFileTypes(['text/csv', 'text/plain', 'application/vnd.ms-excel'])
+                //             ->required()
+                //             ->helperText('Upload a CSV file with patient data. Download the template for the correct format.'),
+                //     ])
+                //     ->action(function (array $data, PatientImportService $importService) {
+                //         try {
+                //             $filePath = Storage::path($data['file']);
+                            
+                //             // Parse CSV file
+                //             $rows = [];
+                //             $handle = fopen($filePath, 'r');
+                            
+                //             if ($handle === false) {
+                //                 throw new \Exception('Could not open file');
+                //             }
+                            
+                //             // Read header row
+                //             $headers = fgetcsv($handle);
+                //             if ($headers === false) {
+                //                 fclose($handle);
+                //                 throw new \Exception('CSV file is empty or invalid');
+                //             }
+                            
+                //             // Read data rows
+                //             while (($row = fgetcsv($handle)) !== false) {
+                //                 if (count($row) !== count($headers)) {
+                //                     continue; // Skip malformed rows
+                //                 }
+                //                 $rows[] = array_combine($headers, $row);
+                //             }
+                            
+                //             fclose($handle);
+                            
+                //             // Clean up uploaded file
+                //             Storage::delete($data['file']);
+                            
+                //             if (empty($rows)) {
+                //                 Notification::make()
+                //                     ->title('No data found')
+                //                     ->body('The CSV file contains no valid data rows.')
+                //                     ->warning()
+                //                     ->send();
+                //                 return;
+                //             }
+                            
+                //             // Import patients
+                //             $results = $importService->importPatients($rows);
+                            
+                //             // Show results
+                //             $message = "Successfully imported {$results['success']} patient(s).";
+                //             if ($results['failed'] > 0) {
+                //                 $message .= " {$results['failed']} failed.";
+                //             }
+                            
+                //             Notification::make()
+                //                 ->title('Import Completed')
+                //                 ->body($message)
+                //                 ->success()
+                //                 ->send();
+                            
+                //             // Show errors if any
+                //             if (!empty($results['errors'])) {
+                //                 $errorDetails = collect($results['errors'])->take(5)->map(function ($error) {
+                //                     return "Row {$error['row']}: {$error['message']}";
+                //                 })->implode("\n");
+                                
+                //                 Notification::make()
+                //                     ->title('Import Errors')
+                //                     ->body($errorDetails . (count($results['errors']) > 5 ? "\n... and " . (count($results['errors']) - 5) . " more" : ''))
+                //                     ->warning()
+                //                     ->persistent()
+                //                     ->send();
+                //             }
+                //         } catch (\Exception $e) {
+                //             Notification::make()
+                //                 ->title('Import Failed')
+                //                 ->body($e->getMessage())
+                //                 ->danger()
+                //                 ->persistent()
+                //                 ->send();
+                //         }
+                //     })
+                //     ->modalHeading('Bulk Import Patients')
+                //     ->modalDescription('Upload a CSV file to import multiple patients at once.')
+                //     ->modalSubmitActionLabel('Import')
+                //     ->modalWidth('xl'),
+                // TablesAction::make('downloadTemplate')
+                //     ->label('Download Template')
+                //     ->icon('heroicon-o-document-arrow-down')
+                //     ->color('gray')
+                //     ->action(function () {
+                //         $headers = PatientImportService::getTemplateHeaders();
+                        
+                //         // Create example row
+                //         $exampleRow = [
+                //             'Juan',
+                //             'Manuel',
+                //             'Dela Cruz',
+                //             'Jr.',
+                //             '1990-01-15',
+                //             'male',
+                //             'Single',
+                //             '09123456789',
+                //             '1', // barangay_id - user should replace with actual ID
+                //             '', // purok_id - optional
+                //             '', // category_id - optional (auto-assigned)
+                //             '', // occupation_id - optional
+                //             '120/80',
+                //             '90',
+                //             '170',
+                //             '70',
+                //             'Manila',
+                //             'College',
+                //         ];
+                        
+                //         return response()->streamDownload(function () use ($headers, $exampleRow) {
+                //             $csv = fopen('php://output', 'w');
+                            
+                //             // Add UTF-8 BOM for Excel compatibility
+                //             fprintf($csv, chr(0xEF).chr(0xBB).chr(0xBF));
+                            
+                //             fputcsv($csv, $headers);
+                //             fputcsv($csv, $exampleRow);
+                            
+                //             // Add empty rows for user to fill
+                //             for ($i = 0; $i < 5; $i++) {
+                //                 fputcsv($csv, array_fill(0, count($headers), ''));
+                //             }
+                            
+                //             fclose($csv);
+                //         }, 'patient_import_template_' . date('Y-m-d') . '.csv');
+                //     })
             ])
             ->columns([
                 TextColumn::make('full_name')
@@ -758,8 +1037,11 @@ class PatientResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->poll('10s')
-            ->deferLoading()
+            ->defaultPaginationPageOption(25) // Reduce from 50/100
+            ->deferLoading() // Defer table loading
+            ->persistFiltersInSession() // Cache filters
+            ->persistSearchInSession() // Cache search
+            ->poll('30s')
             ->modifyQueryUsing(function (Builder $query) {
                 $user = self::currentUser();
                 
@@ -816,5 +1098,29 @@ class PatientResource extends Resource
     public static function currentUser(): ?User
     {
         return Auth::user();
+    }
+
+    /**
+     * Get category ID based on age
+     * Children & Adolescents: 0-18 years -> Child category
+     * Senior Citizen: 60+ years -> Senior Citizen category
+     * Adult: 19-59 years -> no auto-assignment
+     */
+    protected static function getCategoryIdByAge(int $age): ?int
+    {
+        if ($age >= 0 && $age <= 18) {
+            // Children & Adolescents
+            return Category::where('name', 'LIKE', '%child%')
+                ->orWhere('is_child', true)
+                ->value('id');
+        } elseif ($age >= 60) {
+            // Senior Citizen
+            return Category::where('name', 'LIKE', '%senior citizen%')
+                ->orWhere('name', 'LIKE', '%senior%')
+                ->value('id');
+        }
+        
+        // Adult (19-59) - no auto-assignment
+        return null;
     }
 }

@@ -157,12 +157,16 @@ class ProgramResource extends Resource
                         DatePicker::make('program_start_date')
                             ->required()
                             ->native(false)
-                            ->displayFormat('d F Y')
+                            ->displayFormat('M d, Y')
+                            ->minDate(now())
+                            ->firstDayOfWeek(7)
                             ->disabled($isReadOnly),
                         DatePicker::make('program_end_date')
                             ->required()
                             ->native(false)
-                            ->displayFormat('d F Y')
+                            ->displayFormat('M d, Y')
+                            ->minDate(now())
+                            ->firstDayOfWeek(7)
                             ->disabled($isReadOnly),
                         TimePicker::make('program_start_time')
                             ->required()
@@ -415,19 +419,19 @@ class ProgramResource extends Resource
                             }
 
                             // Create personalized message with program details
-                            $message = "Hi {$user->first_name}! <br><br>";
-                            $message .= "New Health Program: {$program->name} <br>";
-                            $message .= "Date: {$programDate} <br>";
-                            $message .= "Time: {$startTime} - {$endTime} <br>";
-                            
+                            $message = "Maayong adlaw {$user->first_name}!\n\n";
+                            $message .= "Aduna kitay bag-ong programa: {$program->name}\n\n";
+                            $message .= "Petsa: {$programDate}\n";
+                            $message .= "Oras: {$startTime} - {$endTime}\n";
+
                             if (!empty($program->description)) {
                                 $description = strlen($program->description) > 100 
                                     ? substr($program->description, 0, 100) . '...' 
                                     : $program->description;
                                 $message .= "\n{$description}\n";
                             }
-                            
-                            $message .= "\nPlease attend. Thank you!";
+
+                            $message .= "\nPalihug tambong. Salamat kaayo!";
 
                             $result = $smsService->sendSMS($user->contact_number, $message);
 

@@ -13,6 +13,8 @@ class AllPatients extends Page
 
     protected static string $view = 'filament.resources.patient-resource.pages.all-patients';
 
+    protected static ?string $title = 'All Residents';
+
     public $barangays;
 
     public $patients;

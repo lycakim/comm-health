@@ -14,88 +14,95 @@ class PatientChartService
      * Get patient count by barangay or purok for a specific month and year
      * Based on user role: BHW = Purok, MHW = Barangay
      */
-    public function getPatientsByBarangay(int $year, int $month, ?string $userRole = null): array
+    public function getPatientsByBarangay(int $year, int $month, ?string $userRole = null, string $genderFilter = 'all'): array
     {
         $user = auth()->user();
         $role = $userRole ?? $user?->role;
         
         // Determine if we're filtering by purok (BHW) or barangay (MHW)
         if ($user->isBHW()) {
-            return $this->getPatientsByPurok($year, $month, $user);
+            return $this->getPatientsByPurok($year, $month, $user, $genderFilter);
         }
         
         // Default: MHW or admin - show by barangay
-        return $this->getPatientsByBarangayData($year, $month, $user, $role);
+        return $this->getPatientsByBarangayData($year, $month, $user, $role, $genderFilter);
     }
 
     /**
      * Get patients by purok (for BHW users)
      */
-    private function getPatientsByPurok(int $year, int $month, $user): array
+    private function getPatientsByPurok(int $year, int $month, $user, string $genderFilter = 'all'): array
     {
         // Get puroks for the user's assigned barangay
         $puroks = \App\Models\Purok::when($user?->barangay_id, function($query) use ($user) {
             return $query->where('barangay_id', $user->barangay_id);
         })->orderBy('name')->get();
         
+        $datasets = [];
+        
+        // Determine which datasets to collect
+        $collectMale = in_array($genderFilter, ['all', 'male']);
+        $collectFemale = in_array($genderFilter, ['all', 'female']);
+        $collectChildren = in_array($genderFilter, ['all', 'children']);
+        
         $maleData = [];
         $femaleData = [];
         $childrenData = [];
         
         foreach ($puroks as $purok) {
-            // Get male count
-            $maleCount = Patient::where('purok_id', $purok->id)
-                ->where('sex', 'male')
+            // Base query for the purok
+            $baseQuery = Patient::where('purok_id', $purok->id)
                 ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->count();
+                ->whereMonth('created_at', $month);
             
-            // Get female count
-            $femaleCount = Patient::where('purok_id', $purok->id)
-                ->where('sex', 'female')
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->count();
+            if ($collectMale) {
+                $maleData[] = (clone $baseQuery)->where('sex', 'male')->count();
+            }
             
-            // Get children count
-            $childrenCount = Patient::where('purok_id', $purok->id)
-                ->whereHas('category', function($query) {
-                    $query->where('name', 'LIKE', '%child%')
-                          ->orWhere('name', 'LIKE', '%pediatric%');
-                })
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->count();
+            if ($collectFemale) {
+                $femaleData[] = (clone $baseQuery)->where('sex', 'female')->count();
+            }
             
-            $maleData[] = $maleCount;
-            $femaleData[] = $femaleCount;
-            $childrenData[] = $childrenCount;
+            if ($collectChildren) {
+                $childrenData[] = (clone $baseQuery)
+                    ->whereRaw('TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) < 18')
+                    ->count();
+            }
+        }
+        
+        // Build datasets
+        if ($collectMale) {
+            $datasets[] = [
+                'label' => 'Male',
+                'data' => $maleData,
+                'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
+                'borderColor' => 'rgb(59, 130, 246)',
+                'borderWidth' => 1,
+            ];
+        }
+        
+        if ($collectFemale) {
+            $datasets[] = [
+                'label' => 'Female',
+                'data' => $femaleData,
+                'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
+                'borderColor' => 'rgb(236, 72, 153)',
+                'borderWidth' => 1,
+            ];
+        }
+        
+        if ($collectChildren) {
+            $datasets[] = [
+                'label' => 'Children (0-17)',
+                'data' => $childrenData,
+                'backgroundColor' => 'rgba(16, 185, 129, 0.5)',
+                'borderColor' => 'rgb(16, 185, 129)',
+                'borderWidth' => 1,
+            ];
         }
         
         return [
-            'datasets' => [
-                [
-                    'label' => 'Male',
-                    'data' => $maleData,
-                    'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
-                    'borderColor' => 'rgb(59, 130, 246)',
-                    'borderWidth' => 1,
-                ],
-                [
-                    'label' => 'Female',
-                    'data' => $femaleData,
-                    'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
-                    'borderColor' => 'rgb(236, 72, 153)',
-                    'borderWidth' => 1,
-                ],
-                [
-                    'label' => 'Children',
-                    'data' => $childrenData,
-                    'backgroundColor' => 'rgba(16, 185, 129, 0.5)',
-                    'borderColor' => 'rgb(16, 185, 129)',
-                    'borderWidth' => 1,
-                ],
-            ],
+            'datasets' => $datasets,
             'labels' => $puroks->pluck('name')->toArray(),
         ];
     }
@@ -103,73 +110,76 @@ class PatientChartService
     /**
      * Get patients by barangay (for MHW users and admins)
      */
-    private function getPatientsByBarangayData(int $year, int $month, $user, ?RoleEnum $role): array
+    private function getPatientsByBarangayData(int $year, int $month, $user, $role, string $genderFilter = 'all'): array
     {
-        $barangays = Barangay::when(
-            $role === RoleEnum::MHO && $user?->barangay_id,
-            function($query) use ($user) {
-                return $query->where('id', $user->barangay_id);
-            }
-        )->orderBy('name')->get();
+        // Get all barangays
+        $barangays = \App\Models\Barangay::orderBy('name')->get();
+        
+        $datasets = [];
+        
+        // Determine which datasets to collect
+        $collectMale = in_array($genderFilter, ['all', 'male']);
+        $collectFemale = in_array($genderFilter, ['all', 'female']);
+        $collectChildren = in_array($genderFilter, ['all', 'children']);
         
         $maleData = [];
         $femaleData = [];
         $childrenData = [];
         
         foreach ($barangays as $barangay) {
-            // Get male count
-            $maleCount = Patient::where('barangay_id', $barangay->id)
-                ->where('sex', 'male')
+            // Base query for the barangay
+            $baseQuery = Patient::where('barangay_id', $barangay->id)
                 ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->count();
+                ->whereMonth('created_at', $month);
             
-            // Get female count
-            $femaleCount = Patient::where('barangay_id', $barangay->id)
-                ->where('sex', 'female')
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->count();
+            if ($collectMale) {
+                $maleData[] = (clone $baseQuery)->where('sex', 'male')->count();
+            }
             
-            // Get children count
-            $childrenCount = Patient::where('barangay_id', $barangay->id)
-                ->whereHas('category', function($query) {
-                    $query->where('name', 'LIKE', '%child%')
-                          ->orWhere('name', 'LIKE', '%pediatric%');
-                })
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->count();
+            if ($collectFemale) {
+                $femaleData[] = (clone $baseQuery)->where('sex', 'female')->count();
+            }
             
-            $maleData[] = $maleCount;
-            $femaleData[] = $femaleCount;
-            $childrenData[] = $childrenCount;
+            if ($collectChildren) {
+                $childrenData[] = (clone $baseQuery)
+                    ->whereRaw('TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) < 18')
+                    ->count();
+            }
+        }
+        
+        // Build datasets
+        if ($collectMale) {
+            $datasets[] = [
+                'label' => 'Male',
+                'data' => $maleData,
+                'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
+                'borderColor' => 'rgb(59, 130, 246)',
+                'borderWidth' => 1,
+            ];
+        }
+        
+        if ($collectFemale) {
+            $datasets[] = [
+                'label' => 'Female',
+                'data' => $femaleData,
+                'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
+                'borderColor' => 'rgb(236, 72, 153)',
+                'borderWidth' => 1,
+            ];
+        }
+        
+        if ($collectChildren) {
+            $datasets[] = [
+                'label' => 'Children (0-17)',
+                'data' => $childrenData,
+                'backgroundColor' => 'rgba(16, 185, 129, 0.5)',
+                'borderColor' => 'rgb(16, 185, 129)',
+                'borderWidth' => 1,
+            ];
         }
         
         return [
-            'datasets' => [
-                [
-                    'label' => 'Male',
-                    'data' => $maleData,
-                    'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
-                    'borderColor' => 'rgb(59, 130, 246)',
-                    'borderWidth' => 1,
-                ],
-                [
-                    'label' => 'Female',
-                    'data' => $femaleData,
-                    'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
-                    'borderColor' => 'rgb(236, 72, 153)',
-                    'borderWidth' => 1,
-                ],
-                [
-                    'label' => 'Children',
-                    'data' => $childrenData,
-                    'backgroundColor' => 'rgba(16, 185, 129, 0.5)',
-                    'borderColor' => 'rgb(16, 185, 129)',
-                    'borderWidth' => 1,
-                ],
-            ],
+            'datasets' => $datasets,
             'labels' => $barangays->pluck('name')->toArray(),
         ];
     }

@@ -91,6 +91,7 @@ class CategoryResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')->searchable(),
+                TextColumn::make('description')->searchable(),
             ])
             ->filters([
                 //

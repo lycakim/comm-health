@@ -37,27 +37,35 @@ class HealthServicesChart extends ChartWidget
         ];        
     }
 
-    // protected function getData(): array
-    // {
-    //     $user = Auth::user();
-        
-    //     // If user is BHW, only show data for their assigned barangay
-    //     if ($user->role === 'bhw' && $user->barangay_id) {
-    //         // Filter data by user's barangay
-    //         return $this->getBarangaySpecificData($user->barangay_id);
-    //     }
-        
-    //     // For patients, only show their own data
-    //     if (in_array($user->role, ['resident', 'patient'])) {
-    //         return $this->getPatientSpecificData($user->id);
-    //     }
-        
-    //     // For other roles, show broader data
-    //     return $this->getAllData();
-    // }
-
     protected function getType(): string
     {
         return 'bar';
+    }
+
+    protected function getOptions(): array
+    {
+        return [
+            'plugins' => [
+                'legend' => [
+                    'display' => true,
+                    'position' => 'top',
+                ],
+            ],
+            'scales' => [
+                'x' => [
+                    'ticks' => [
+                        'maxRotation' => 45,
+                        'minRotation' => 45,
+                    ],
+                ],
+                'y' => [
+                    'beginAtZero' => true,
+                    'ticks' => [
+                        'stepSize' => 1,
+                        'precision' => 0,
+                    ],
+                ],
+            ],
+        ];
     }
 }

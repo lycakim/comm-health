@@ -40,13 +40,13 @@ class ListPatients extends ListRecords
             $barangay = Barangay::where('id', $barangayFromRoute)->first();
 
             if (!$barangay) {
-                return 'View and manage patient records across all barangays';
+                return 'View and manage resident records across all barangays';
             }
             
-            return 'View and manage patient records across barangay ' . $barangay->name;
+            return 'View and manage resident records across barangay ' . $barangay->name;
         }
         
-        return 'View and manage patient records across all barangays';
+        return 'View and manage resident records across all barangays';
     }
 
     protected function getTableQuery(): Builder

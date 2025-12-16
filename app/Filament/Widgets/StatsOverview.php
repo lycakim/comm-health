@@ -77,7 +77,7 @@ class StatsOverview extends BaseWidget
 
         if ($user->isAdmin() || $user->isMHO()) {
             return [
-                Stat::make('Total Patients', $totalPatients)
+                Stat::make('Total Residents', $totalPatients)
                     ->description('+' . $patientIncrease . '% from last month')
                     ->descriptionIcon($patientIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                     ->chart([10, 12, 13, 14, 15, 12]) // Replace with actual data points

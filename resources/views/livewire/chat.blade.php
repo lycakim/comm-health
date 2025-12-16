@@ -62,12 +62,12 @@ x-init="
             </div>
 
             <div class="overflow-y-auto flex-1">
-                <ul class="divide-y divide-gray-100">
+                <ul class="divide-y divide-gray-100 dark:divide-gray-700">
                     @foreach($users as $user)
                         <li 
                             wire:key="user-{{ $user->id }}" 
                             wire:click="selectUser({{ $user->id }})" 
-                            class="px-4 py-3 flex items-center space-x-3 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors {{ $selectedUser && $selectedUser->id === $user->id ? 'bg-emerald-50 dark:bg-emerald-900 dark:bg-opacity-20' : '' }}"
+                            class="px-4 py-3 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-150 {{ $selectedUser && $selectedUser->id === $user->id ? 'bg-emerald-50 dark:bg-emerald-900/30 border-r-2 border-emerald-500' : '' }}"
                         >
                             <div class="flex-shrink-0">
                                 <div class="relative">
@@ -85,16 +85,20 @@ x-init="
                                 </div>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ $user->name }}</p>
+                                <div class="flex items-center justify-between">
+                                    <p class="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">{{ $user->name }}</p>
+                                </div>
                                 @if(isset($lastMessages[$user->id]))
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                        {{ Str::limit($lastMessages[$user->id], 25) }}
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                                        {{ Str::limit($lastMessages[$user->id], 30) }}
                                     </p>
+                                @else
+                                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 italic">No messages yet</p>
                                 @endif
                             </div>
                             @if(isset($unreadMessageCounts[$user->id]) && $unreadMessageCounts[$user->id] > 0)
-                                <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-emerald-600 dark:bg-emerald-500 rounded-full">
-                                    {{ $unreadMessageCounts[$user->id] }}
+                                <span class="inline-flex items-center justify-center min-w-[20px] h-5 px-2 text-xs font-bold leading-none text-white bg-emerald-600 dark:bg-emerald-500 rounded-full shadow-sm">
+                                    {{ $unreadMessageCounts[$user->id] > 99 ? '99+' : $unreadMessageCounts[$user->id] }}
                                 </span>
                             @endif
                         </li>
@@ -110,7 +114,7 @@ x-init="
         >
             @if($selectedUser)
                 <!-- Chat Header -->
-                <div style="padding: 17px 17px;" class="border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shadow-sm bg-white dark:bg-gray-900 rounded-tr-lg">
+                <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shadow-sm bg-white dark:bg-gray-900 rounded-tr-lg">
                     <div class="flex items-center space-x-3">
                         <button 
                             x-show="isMobile" 
@@ -148,7 +152,7 @@ x-init="
                 </div>
                 
                 <!-- Messages -->
-                <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-800" x-ref="chatMessages" style="max-height: calc(100vh - 10rem);">
+                <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-3 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900" x-ref="chatMessages" style="max-height: calc(100vh - 10rem);">
                     @foreach($messages as $message)
                         <div class="flex {{ $message->sender_id === auth()->id() ? 'justify-end' : 'justify-start' }}">
                             @if($message->sender_id !== auth()->id())
@@ -163,11 +167,17 @@ x-init="
                                 </div>
                             @endif
                             <div class="flex flex-col {{ $message->sender_id === auth()->id() ? 'items-end' : 'items-start' }}">
-                                <div class="{{ $message->sender_id === auth()->id() ? 'bg-gray-700 dark:bg-gray-100 border dark:border-gray-600 text-gray-900 dark:text-white rounded-tr-none' : 'bg-gray-100 border dark:bg-gray-600 dark:border-gray-600 text-gray-900 rounded-tl-none' }} px-4 py-2 rounded-lg max-w-sm sm:max-w-md shadow-md">
-                                    <p>{{ $message->content }}</p>
+                                <div class="{{ $message->sender_id === auth()->id() ? 'bg-emerald-600 text-white rounded-tr-none' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-tl-none' }} px-4 py-2.5 rounded-lg max-w-sm sm:max-w-md shadow-sm hover:shadow-md transition-shadow">
+                                    <p class="text-sm leading-relaxed whitespace-pre-wrap break-words">{{ $message->content }}</p>
                                 </div>
-                                <span class="text-xs {{ $message->sender_id === auth()->id() ? 'text-right' : 'text-left' }} text-gray-500 dark:text-gray-400 mt-1">
-                                    {{ $message->created_at->format('H:i') }}
+                                <span class="text-xs {{ $message->sender_id === auth()->id() ? 'text-right' : 'text-left' }} text-gray-500 dark:text-gray-400 mt-1.5 px-1">
+                                    @if($message->created_at->isToday())
+                                        {{ $message->created_at->format('H:i') }}
+                                    @elseif($message->created_at->isYesterday())
+                                        Yesterday {{ $message->created_at->format('H:i') }}
+                                    @else
+                                        {{ $message->created_at->format('M d, H:i') }}
+                                    @endif
                                 </span>
                             </div>
                         </div>
@@ -196,16 +206,16 @@ x-init="
                 
                 <!-- Message Input -->
                 <div class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4 rounded-br-lg">
-                    <form wire:submit.prevent="sendMessage" class="flex space-x-2">
+                    <form wire:submit.prevent="sendMessage" class="flex items-end space-x-2">
                         <input 
                             type="text" 
                             wire:model.defer="message" 
-                            class="flex-1 border border-gray-300 dark:border-gray-600 rounded-l-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" 
+                            class="flex-1 border border-gray-300 dark:border-gray-600 rounded-l-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all" 
                             placeholder="Type your message..."
                         >
                         <button 
                             type="submit" 
-                            class="bg-emerald-600 hover:bg-emerald-700 text-gray-900 dark:text-white px-4 py-2 rounded-r-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors"
+                            class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-5 py-2.5 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />

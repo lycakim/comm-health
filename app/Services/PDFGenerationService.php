@@ -255,4 +255,42 @@ class PDFGenerationService
                 'isRemoteEnabled' => true,
             ]);
     }
+
+    /**
+     * Generate PDF for patient list reports
+     */
+    public function generatePatientListPdf($patients, string $title, $barangay = null): \Barryvdh\DomPDF\PDF
+    {
+        $html = view('pdf.patient-list', [
+            'patients' => $patients,
+            'title' => $title,
+            'barangay' => $barangay,
+            'date' => now()->format('F d, Y'),
+        ])->render();
+
+        return Pdf::loadHTML($html)
+            ->setPaper('legal', 'landscape')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
+    }
+
+    /**
+     * Generate PDF for consultation reports
+     */
+    public function generateConsultationReportPdf(Consultation $consultation): \Barryvdh\DomPDF\PDF
+    {
+        $html = view('pdf.consultation-report', [
+            'consultation' => $consultation,
+            'date' => now()->format('F d, Y'),
+        ])->render();
+
+        return Pdf::loadHTML($html)
+            ->setPaper('legal', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
+    }
 }

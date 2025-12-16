@@ -11,6 +11,7 @@ class PatientChart extends ChartWidget
     protected static ?string $heading = null;
     
     public ?string $filter = null;
+    public ?string $genderFilter = 'all';
     public ?int $fiscalYear = null;
 
     protected $listeners = ['fiscalYearChanged' => 'updateFiscalYear'];
@@ -33,9 +34,14 @@ class PatientChart extends ChartWidget
     {
         $service = new PatientChartService();
         
-        // Parse the selected month and year from filter (format: "YYYY-MM")
         [$year, $month] = explode('-', $this->filter);
-        return $service->getPatientsByBarangay((int)$year, (int)$month);
+        
+        return $service->getPatientsByBarangay(
+            (int)$year, 
+            (int)$month, 
+            null, 
+            $this->genderFilter ?? 'all'
+        );
     }
 
     protected function getType(): string
@@ -46,9 +52,15 @@ class PatientChart extends ChartWidget
     protected function getFilters(): ?array
     {
         $filters = [];
-        $currentYear = now()->year;
         
-        // Generate filters for the last 24 months
+        // Add gender filters
+        $filters['gender_all'] = '👥 All Patients';
+        $filters['gender_male'] = '👨 Male Only';
+        $filters['gender_female'] = '👩 Female Only';
+        $filters['gender_children'] = '👶 Children (0-17)';
+        $filters['divider'] = '─────────────';
+        
+        // Generate month filters
         for ($i = 0; $i < 24; $i++) {
             $date = now()->subMonths($i);
             $key = $date->format('Y-m');
@@ -57,6 +69,18 @@ class PatientChart extends ChartWidget
         }
         
         return $filters;
+    }
+
+    public function updatedFilter($value): void
+    {
+        // Handle gender filter
+        if (str_starts_with($value, 'gender_')) {
+            $this->genderFilter = str_replace('gender_', '', $value);
+            $this->filter = now()->format('Y-m'); // Reset to current month
+        } else {
+            // It's a month filter
+            $this->filter = $value;
+        }
     }
 
     protected function getOptions(): array
@@ -79,6 +103,7 @@ class PatientChart extends ChartWidget
                     'beginAtZero' => true,
                     'ticks' => [
                         'stepSize' => 1,
+                        'precision' => 0,
                     ],
                 ],
             ],

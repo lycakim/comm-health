@@ -557,7 +557,7 @@ class ConsultationResource extends Resource
                             case 'all':
                             default:
                                 $reportTitle = $brgy . 'all_patients';
-                                $title = 'All Patients';
+                                $title = 'All Residents';
                                 break;
                         }
 

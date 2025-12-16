@@ -78,6 +78,7 @@ class SeniorCitizenChart extends ChartWidget
                     'beginAtZero' => true,
                     'ticks' => [
                         'stepSize' => 1,
+                        'precision' => 0,
                     ],
                 ],
             ],
