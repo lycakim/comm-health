@@ -1041,7 +1041,7 @@ class PatientResource extends Resource
             ->deferLoading() // Defer table loading
             ->persistFiltersInSession() // Cache filters
             ->persistSearchInSession() // Cache search
-            ->poll('30s')
+            // Polling removed for better performance - refresh manually if needed
             ->modifyQueryUsing(function (Builder $query) {
                 $user = self::currentUser();
                 

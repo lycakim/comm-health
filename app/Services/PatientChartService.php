@@ -30,6 +30,7 @@ class PatientChartService
 
     /**
      * Get patients by purok (for BHW users)
+     * Optimized: Uses single aggregated query instead of N queries per purok
      */
     private function getPatientsByPurok(int $year, int $month, $user, string $genderFilter = 'all'): array
     {
@@ -38,39 +39,58 @@ class PatientChartService
             return $query->where('barangay_id', $user->barangay_id);
         })->orderBy('name')->get();
         
-        $datasets = [];
+        if ($puroks->isEmpty()) {
+            return ['datasets' => [], 'labels' => []];
+        }
+        
+        $purokIds = $puroks->pluck('id')->toArray();
         
         // Determine which datasets to collect
         $collectMale = in_array($genderFilter, ['all', 'male']);
         $collectFemale = in_array($genderFilter, ['all', 'female']);
         $collectChildren = in_array($genderFilter, ['all', 'children']);
         
+        // Build SELECT clause with conditional aggregation
+        $selectClause = 'purok_id';
+        if ($collectMale) {
+            $selectClause .= ', SUM(CASE WHEN sex = \'male\' THEN 1 ELSE 0 END) as male_count';
+        }
+        if ($collectFemale) {
+            $selectClause .= ', SUM(CASE WHEN sex = \'female\' THEN 1 ELSE 0 END) as female_count';
+        }
+        if ($collectChildren) {
+            $selectClause .= ', SUM(CASE WHEN TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) < 18 THEN 1 ELSE 0 END) as children_count';
+        }
+        
+        // Single aggregated query for all puroks
+        $counts = Patient::whereIn('purok_id', $purokIds)
+            ->whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->selectRaw($selectClause)
+            ->groupBy('purok_id')
+            ->get()
+            ->keyBy('purok_id');
+        
+        // Build data arrays matching purok order
         $maleData = [];
         $femaleData = [];
         $childrenData = [];
         
         foreach ($puroks as $purok) {
-            // Base query for the purok
-            $baseQuery = Patient::where('purok_id', $purok->id)
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month);
-            
+            $count = $counts->get($purok->id);
             if ($collectMale) {
-                $maleData[] = (clone $baseQuery)->where('sex', 'male')->count();
+                $maleData[] = $count ? (int)$count->male_count : 0;
             }
-            
             if ($collectFemale) {
-                $femaleData[] = (clone $baseQuery)->where('sex', 'female')->count();
+                $femaleData[] = $count ? (int)$count->female_count : 0;
             }
-            
             if ($collectChildren) {
-                $childrenData[] = (clone $baseQuery)
-                    ->whereRaw('TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) < 18')
-                    ->count();
+                $childrenData[] = $count ? (int)$count->children_count : 0;
             }
         }
         
         // Build datasets
+        $datasets = [];
         if ($collectMale) {
             $datasets[] = [
                 'label' => 'Male',
@@ -109,45 +129,65 @@ class PatientChartService
 
     /**
      * Get patients by barangay (for MHW users and admins)
+     * Optimized: Uses single aggregated query instead of N queries per barangay
      */
     private function getPatientsByBarangayData(int $year, int $month, $user, $role, string $genderFilter = 'all'): array
     {
         // Get all barangays
         $barangays = \App\Models\Barangay::orderBy('name')->get();
         
-        $datasets = [];
+        if ($barangays->isEmpty()) {
+            return ['datasets' => [], 'labels' => []];
+        }
+        
+        $barangayIds = $barangays->pluck('id')->toArray();
         
         // Determine which datasets to collect
         $collectMale = in_array($genderFilter, ['all', 'male']);
         $collectFemale = in_array($genderFilter, ['all', 'female']);
         $collectChildren = in_array($genderFilter, ['all', 'children']);
         
+        // Build SELECT clause with conditional aggregation
+        $selectClause = 'barangay_id';
+        if ($collectMale) {
+            $selectClause .= ', SUM(CASE WHEN sex = \'male\' THEN 1 ELSE 0 END) as male_count';
+        }
+        if ($collectFemale) {
+            $selectClause .= ', SUM(CASE WHEN sex = \'female\' THEN 1 ELSE 0 END) as female_count';
+        }
+        if ($collectChildren) {
+            $selectClause .= ', SUM(CASE WHEN TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) < 18 THEN 1 ELSE 0 END) as children_count';
+        }
+        
+        // Single aggregated query for all barangays
+        $counts = Patient::whereIn('barangay_id', $barangayIds)
+            ->whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->selectRaw($selectClause)
+            ->groupBy('barangay_id')
+            ->get()
+            ->keyBy('barangay_id');
+        
+        // Build data arrays matching barangay order
         $maleData = [];
         $femaleData = [];
         $childrenData = [];
         
         foreach ($barangays as $barangay) {
-            // Base query for the barangay
-            $baseQuery = Patient::where('barangay_id', $barangay->id)
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month);
-            
+            $count = $counts->get($barangay->id);
             if ($collectMale) {
-                $maleData[] = (clone $baseQuery)->where('sex', 'male')->count();
+                $maleData[] = $count ? (int)$count->male_count : 0;
             }
-            
             if ($collectFemale) {
-                $femaleData[] = (clone $baseQuery)->where('sex', 'female')->count();
+                $femaleData[] = $count ? (int)$count->female_count : 0;
             }
-            
             if ($collectChildren) {
-                $childrenData[] = (clone $baseQuery)
-                    ->whereRaw('TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) < 18')
-                    ->count();
+                $childrenData[] = $count ? (int)$count->children_count : 0;
             }
         }
         
         // Build datasets
+        $datasets = [];
         if ($collectMale) {
             $datasets[] = [
                 'label' => 'Male',
@@ -186,29 +226,41 @@ class PatientChartService
 
     /**
      * Get patient count by barangay with gender breakdown
+     * Optimized: Uses single aggregated query instead of 2N queries
      */
     public function getPatientsByBarangayWithGender(int $year, int $month): array
     {
         $barangays = Barangay::orderBy('name')->get();
         
+        if ($barangays->isEmpty()) {
+            return [
+                'datasets' => [],
+                'labels' => [],
+            ];
+        }
+        
+        $barangayIds = $barangays->pluck('id')->toArray();
+        
+        // Single aggregated query for all barangays
+        $counts = Patient::whereIn('barangay_id', $barangayIds)
+            ->whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->selectRaw('
+                barangay_id,
+                SUM(CASE WHEN sex = \'male\' THEN 1 ELSE 0 END) as male_count,
+                SUM(CASE WHEN sex = \'female\' THEN 1 ELSE 0 END) as female_count
+            ')
+            ->groupBy('barangay_id')
+            ->get()
+            ->keyBy('barangay_id');
+        
         $maleData = [];
         $femaleData = [];
         
         foreach ($barangays as $barangay) {
-            $maleCount = Patient::where('barangay_id', $barangay->id)
-                ->where('sex', 'male')
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->count();
-            
-            $femaleCount = Patient::where('barangay_id', $barangay->id)
-                ->where('sex', 'female')
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->count();
-            
-            $maleData[] = $maleCount;
-            $femaleData[] = $femaleCount;
+            $count = $counts->get($barangay->id);
+            $maleData[] = $count ? (int)$count->male_count : 0;
+            $femaleData[] = $count ? (int)$count->female_count : 0;
         }
         
         return [
@@ -377,42 +429,36 @@ class PatientChartService
 
     /**
      * Get patient count by age group for a given year
+     * Optimized: Uses database-level age calculation instead of loading all records
      */
     public function getPatientsByAgeGroup(int $year = null): array
     {
         $year = $year ?? now()->year;
 
-        $patients = Patient::whereYear('created_at', $year)->get();
+        // Use database-level age calculation instead of loading all records
+        $ageGroups = Patient::whereYear('created_at', $year)
+            ->selectRaw('
+                SUM(CASE WHEN TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) < 18 THEN 1 ELSE 0 END) as age_0_17,
+                SUM(CASE WHEN TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) BETWEEN 18 AND 35 THEN 1 ELSE 0 END) as age_18_35,
+                SUM(CASE WHEN TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) BETWEEN 36 AND 50 THEN 1 ELSE 0 END) as age_36_50,
+                SUM(CASE WHEN TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) BETWEEN 51 AND 65 THEN 1 ELSE 0 END) as age_51_65,
+                SUM(CASE WHEN TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) > 65 THEN 1 ELSE 0 END) as age_65_plus
+            ')
+            ->first();
 
-        $ageGroups = [
-            '0-17' => 0,
-            '18-35' => 0,
-            '36-50' => 0,
-            '51-65' => 0,
-            '65+' => 0,
+        $ageGroupData = [
+            '0-17' => (int)($ageGroups->age_0_17 ?? 0),
+            '18-35' => (int)($ageGroups->age_18_35 ?? 0),
+            '36-50' => (int)($ageGroups->age_36_50 ?? 0),
+            '51-65' => (int)($ageGroups->age_51_65 ?? 0),
+            '65+' => (int)($ageGroups->age_65_plus ?? 0),
         ];
-
-        foreach ($patients as $patient) {
-            $age = Carbon::parse($patient->date_of_birth)->age;
-            
-            if ($age < 18) {
-                $ageGroups['0-17']++;
-            } elseif ($age <= 35) {
-                $ageGroups['18-35']++;
-            } elseif ($age <= 50) {
-                $ageGroups['36-50']++;
-            } elseif ($age <= 65) {
-                $ageGroups['51-65']++;
-            } else {
-                $ageGroups['65+']++;
-            }
-        }
 
         return [
             'datasets' => [
                 [
                     'label' => 'Patients by Age Group',
-                    'data' => array_values($ageGroups),
+                    'data' => array_values($ageGroupData),
                     'backgroundColor' => [
                         'rgba(59, 130, 246, 0.5)',
                         'rgba(16, 185, 129, 0.5)',
@@ -422,7 +468,7 @@ class PatientChartService
                     ],
                 ],
             ],
-            'labels' => array_keys($ageGroups),
+            'labels' => array_keys($ageGroupData),
         ];
     }
 

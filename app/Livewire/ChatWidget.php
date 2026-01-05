@@ -181,15 +181,20 @@ class ChatWidget extends Component
 
     public function calculateUnreadCounts(): void
     {
-        $this->unreadCounts = [];
+        // Optimize: Use single aggregated query instead of N+1 queries
+        $this->unreadCounts = Chat::where('receiver_id', Auth::id())
+            ->whereNull('read_at')
+            ->whereIn('sender_id', array_keys($this->users))
+            ->groupBy('sender_id')
+            ->selectRaw('sender_id, COUNT(*) as count')
+            ->pluck('count', 'sender_id')
+            ->toArray();
         
+        // Ensure all users have a count (even if 0)
         foreach ($this->users as $userId => $userName) {
-            $count = Chat::where('sender_id', $userId)
-                ->where('receiver_id', Auth::id())
-                ->whereNull('read_at')
-                ->count();
-            
-            $this->unreadCounts[$userId] = $count;
+            if (!isset($this->unreadCounts[$userId])) {
+                $this->unreadCounts[$userId] = 0;
+            }
         }
     }
 

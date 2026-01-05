@@ -4,8 +4,10 @@ return [
 
     /*
      * If set to false, no activities will be saved to the database.
+     * Disabled by default in local environment for better performance.
+     * Set ACTIVITY_LOGGER_ENABLED=true in .env to enable in local.
      */
-    'enabled' => env('ACTIVITY_LOGGER_ENABLED', true),
+    'enabled' => env('ACTIVITY_LOGGER_ENABLED', config('app.env') !== 'local'),
 
     /*
      * When the clean-command is executed, all recording activities older than

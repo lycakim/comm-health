@@ -651,7 +651,7 @@ class ConsultationResource extends Resource
                         );
                     }),
             ])
-            ->poll('10s')
+            // Polling removed for better performance - refresh manually if needed
             ->deferLoading()
             ->modifyQueryUsing(function (Builder $query) {
                 $user = self::currentUser();
