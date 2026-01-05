@@ -27,10 +27,12 @@ use Illuminate\Support\Facades\Schema;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\SelectColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ViewField;
 use Filament\Notifications\Notification;
 use Filament\Tables\Actions\ActionGroup;
+use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -675,247 +677,6 @@ class PatientResource extends Resource
                             fclose($csv);
                         }, $reportTitle . '_' . date('Y-m-d_His') . '.csv');
                     }),
-                // TablesAction::make('exportToPDF')
-                //     ->label('Export PDF')
-                //     ->icon('heroicon-o-document-arrow-down')
-                //     ->disabled(fn() => ! self::canCreate())
-                //     ->color('success')
-                //     ->form([
-                //         Select::make('category')
-                //             ->label('Export Category')
-                //             ->options([
-                //                 'patient_profiling' => 'Patients Profiling',
-                //                 'maternal_child' => 'Maternal and Child Report',
-                //                 'children_adolescent' => 'Children and Adolescent Reports',
-                //                 'senior_citizens' => 'Senior Citizens Reports',
-                //                 'maintenance' => 'Person with Maintenance Reports',
-                //                 'pwds' => 'Person with Disabilities Reports',
-                //             ])
-                //             ->required()
-                //             ->default('patient_profiling')
-                //     ])
-                //     ->action(function ($data, PDFGenerationService $pdfService) {
-                //         $query = Patient::query();
-                //         $user = Auth::user();
-                //         $barangay = $user->barangay_id ? Barangay::find($user->barangay_id) : null;
-                //         $barangayName = $barangay ? $barangay->name : '';
-                //         $brgy = $barangayName ? 'barangay_' . strtolower($barangayName) . '_' : '';
-                        
-                //         $reportTitle = '';
-                //         $title = '';
-
-                //         switch ($data['category']) {
-                //             case 'patient_profiling':
-                //                 $reportTitle = $brgy . 'patient_profiling';
-                //                 $title = 'Patients Information Records';
-                //                 break;
-                //             case 'maternal_child':
-                //                 $query->where('category_id', Category::where('name', 'LIKE', '%maternal and child%')->value('id'));
-                //                 $reportTitle = $brgy . 'maternal_and_child_report';
-                //                 $title = 'Maternal and Child Report';
-                //                 break;
-                //             case 'children_adolescent':
-                //                 $query->where('category_id', Category::where('name', 'LIKE', '%children and adolescent%')->value('id'));
-                //                 $reportTitle = $brgy . 'children_and_adolescent_report';
-                //                 $title = 'Children and Adolescent Report';
-                //                 break;
-                //             case 'senior_citizens':
-                //                 $query->where('category_id', Category::where('name', 'LIKE', '%senior citizen%')->value('id'));
-                //                 $reportTitle = $brgy . 'senior_citizens_report';
-                //                 $title = 'Senior Citizens Report';
-                //                 break;
-                //             case 'maintenance':
-                //                 $query->where('category_id', Category::where('name', 'LIKE', '%person with maintenance%')->value('id'));
-                //                 $reportTitle = $brgy . 'person_with_maintenance_report';
-                //                 $title = 'Person with Maintenance Report';
-                //                 break;
-                //             case 'pwds':
-                //                 $query->where('category_id', Category::where('name', 'LIKE', '%person with disabilities%')->value('id'));
-                //                 $reportTitle = $brgy . 'person_with_disabilities_report';
-                //                 $title = 'Person with Disabilities Report';
-                //                 break;
-                //             case 'all':
-                //             default:
-                //                 $reportTitle = $brgy . 'all_patients';
-                //                 $title = 'All Residents';
-                //                 break;
-                //         }
-
-                //         $patients = $query->get();
-
-                //         if ($patients->isEmpty()) {
-                //             Notification::make()
-                //                 ->title('No patients found for ' . $title)
-                //                 ->body('Please select a different category')
-                //                 ->danger()
-                //                 ->send();
-                //             return;
-                //         }
-
-                //         try {
-                //             $pdf = $pdfService->generatePatientListPdf($patients, $title, $barangay);
-                //             $filename = $reportTitle . '_' . date('Y-m-d_His') . '.pdf';
-                            
-                //             Notification::make()
-                //                 ->title('PDF Report Generated')
-                //                 ->success()
-                //                 ->body('Your PDF report is ready for download.')
-                //                 ->send();
-
-                //             return response()->streamDownload(
-                //                 fn () => print($pdf->output()),
-                //                 $filename,
-                //                 ['Content-Type' => 'application/pdf']
-                //             );
-                //         } catch (\Exception $e) {
-                //             Notification::make()
-                //                 ->title('Error Generating PDF')
-                //                 ->danger()
-                //                 ->body($e->getMessage())
-                //             ->persistent()
-                //             ->send();
-                //         }
-                //     }),
-                // TablesAction::make('bulkImport')
-                //     ->label('Bulk Import Patients')
-                //     ->icon('heroicon-o-arrow-up-tray')
-                //     ->color('info')
-                //     ->disabled(fn() => ! self::canCreate())
-                //     ->form([
-                //         FileUpload::make('file')
-                //             ->label('CSV File')
-                //             ->acceptedFileTypes(['text/csv', 'text/plain', 'application/vnd.ms-excel'])
-                //             ->required()
-                //             ->helperText('Upload a CSV file with patient data. Download the template for the correct format.'),
-                //     ])
-                //     ->action(function (array $data, PatientImportService $importService) {
-                //         try {
-                //             $filePath = Storage::path($data['file']);
-                            
-                //             // Parse CSV file
-                //             $rows = [];
-                //             $handle = fopen($filePath, 'r');
-                            
-                //             if ($handle === false) {
-                //                 throw new \Exception('Could not open file');
-                //             }
-                            
-                //             // Read header row
-                //             $headers = fgetcsv($handle);
-                //             if ($headers === false) {
-                //                 fclose($handle);
-                //                 throw new \Exception('CSV file is empty or invalid');
-                //             }
-                            
-                //             // Read data rows
-                //             while (($row = fgetcsv($handle)) !== false) {
-                //                 if (count($row) !== count($headers)) {
-                //                     continue; // Skip malformed rows
-                //                 }
-                //                 $rows[] = array_combine($headers, $row);
-                //             }
-                            
-                //             fclose($handle);
-                            
-                //             // Clean up uploaded file
-                //             Storage::delete($data['file']);
-                            
-                //             if (empty($rows)) {
-                //                 Notification::make()
-                //                     ->title('No data found')
-                //                     ->body('The CSV file contains no valid data rows.')
-                //                     ->warning()
-                //                     ->send();
-                //                 return;
-                //             }
-                            
-                //             // Import patients
-                //             $results = $importService->importPatients($rows);
-                            
-                //             // Show results
-                //             $message = "Successfully imported {$results['success']} patient(s).";
-                //             if ($results['failed'] > 0) {
-                //                 $message .= " {$results['failed']} failed.";
-                //             }
-                            
-                //             Notification::make()
-                //                 ->title('Import Completed')
-                //                 ->body($message)
-                //                 ->success()
-                //                 ->send();
-                            
-                //             // Show errors if any
-                //             if (!empty($results['errors'])) {
-                //                 $errorDetails = collect($results['errors'])->take(5)->map(function ($error) {
-                //                     return "Row {$error['row']}: {$error['message']}";
-                //                 })->implode("\n");
-                                
-                //                 Notification::make()
-                //                     ->title('Import Errors')
-                //                     ->body($errorDetails . (count($results['errors']) > 5 ? "\n... and " . (count($results['errors']) - 5) . " more" : ''))
-                //                     ->warning()
-                //                     ->persistent()
-                //                     ->send();
-                //             }
-                //         } catch (\Exception $e) {
-                //             Notification::make()
-                //                 ->title('Import Failed')
-                //                 ->body($e->getMessage())
-                //                 ->danger()
-                //                 ->persistent()
-                //                 ->send();
-                //         }
-                //     })
-                //     ->modalHeading('Bulk Import Patients')
-                //     ->modalDescription('Upload a CSV file to import multiple patients at once.')
-                //     ->modalSubmitActionLabel('Import')
-                //     ->modalWidth('xl'),
-                // TablesAction::make('downloadTemplate')
-                //     ->label('Download Template')
-                //     ->icon('heroicon-o-document-arrow-down')
-                //     ->color('gray')
-                //     ->action(function () {
-                //         $headers = PatientImportService::getTemplateHeaders();
-                        
-                //         // Create example row
-                //         $exampleRow = [
-                //             'Juan',
-                //             'Manuel',
-                //             'Dela Cruz',
-                //             'Jr.',
-                //             '1990-01-15',
-                //             'male',
-                //             'Single',
-                //             '09123456789',
-                //             '1', // barangay_id - user should replace with actual ID
-                //             '', // purok_id - optional
-                //             '', // category_id - optional (auto-assigned)
-                //             '', // occupation_id - optional
-                //             '120/80',
-                //             '90',
-                //             '170',
-                //             '70',
-                //             'Manila',
-                //             'College',
-                //         ];
-                        
-                //         return response()->streamDownload(function () use ($headers, $exampleRow) {
-                //             $csv = fopen('php://output', 'w');
-                            
-                //             // Add UTF-8 BOM for Excel compatibility
-                //             fprintf($csv, chr(0xEF).chr(0xBB).chr(0xBF));
-                            
-                //             fputcsv($csv, $headers);
-                //             fputcsv($csv, $exampleRow);
-                            
-                //             // Add empty rows for user to fill
-                //             for ($i = 0; $i < 5; $i++) {
-                //                 fputcsv($csv, array_fill(0, count($headers), ''));
-                //             }
-                            
-                //             fclose($csv);
-                //         }, 'patient_import_template_' . date('Y-m-d') . '.csv');
-                //     })
             ])
             ->columns([
                 TextColumn::make('full_name')
@@ -938,11 +699,26 @@ class PatientResource extends Resource
                     ->label('Assigned Barangay')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('category.name')
+                SelectColumn::make('category_id')
                     ->label('Category')
-                    ->default('N/A')
+                    ->options(
+                        Category::query()
+                            ->get()
+                            ->mapWithKeys(fn ($category) => [
+                                $category->id => $category->description 
+                                    ? "{$category->name} - {$category->description}"
+                                    : $category->name
+                            ])
+                            ->toArray()
+                    )
                     ->searchable()
                     ->sortable(),
+                // Add column who imported the resident/patient this column only visible to MHO and admin
+                TextColumn::make('user.name')
+                    ->label('Imported By')
+                    ->searchable()
+                    ->sortable()
+                    ->hidden(fn ($record) => ! in_array(self::currentUser()->role, [RoleEnum::MHO, RoleEnum::ADMIN]))
             ])
             ->filters([
                 SelectFilter::make('category_id')
@@ -1034,6 +810,41 @@ class PatientResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('assignCategory')
+                        ->label('Assign Category')
+                        ->icon('heroicon-o-tag')
+                        ->color('info')
+                        ->form([
+                            Select::make('category_id')
+                                ->label('Category')
+                                ->searchable()
+                                ->options(
+                                    Category::query()
+                                        ->get()
+                                        ->mapWithKeys(fn ($category) => [
+                                            $category->id => $category->description 
+                                                ? "{$category->name} - {$category->description}"
+                                                : $category->name
+                                        ])
+                                        ->toArray()
+                                )
+                                ->required()
+                                ->preload(),
+                        ])
+                        ->action(function (Collection $records, array $data) {
+                            $count = $records->count();
+                            $records->each->update(['category_id' => $data['category_id']]);
+                            
+                            Notification::make()
+                                ->title('Category assigned successfully')
+                                ->body("Category has been assigned to {$count} resident(s).")
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion()
+                        ->modalHeading('Assign Category to Selected Residents')
+                        ->modalDescription('Choose a category to assign to all selected residents.')
+                        ->modalSubmitActionLabel('Assign Category'),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
