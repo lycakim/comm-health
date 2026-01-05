@@ -41,7 +41,8 @@ class MessageSent implements ShouldBroadcastNow
                 senderId: $chat->sender_id,
                 senderName: $chat->sender->name ?? 'Unknown',
                 messagePreview: $messagePreview,
-                chatId: $chat->id
+                chatId: $chat->id,
+                receiverId: $chat->receiver_id
             ));
         }
     }

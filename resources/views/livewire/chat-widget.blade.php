@@ -1,39 +1,6 @@
 <div x-data="{ 
         isChatOpen: @entangle('isChatOpen'),
         viewMode: @entangle('viewMode'),
-        notificationPopup: {
-            show: false,
-            senderId: null,
-            senderName: '',
-            message: '',
-            timeout: null
-        },
-        showNotification(senderId, senderName, message) {
-            this.notificationPopup.senderId = senderId;
-            this.notificationPopup.senderName = senderName;
-            this.notificationPopup.message = message;
-            this.notificationPopup.show = true;
-            
-            // Auto-dismiss after 5 seconds
-            if (this.notificationPopup.timeout) {
-                clearTimeout(this.notificationPopup.timeout);
-            }
-            this.notificationPopup.timeout = setTimeout(() => {
-                this.notificationPopup.show = false;
-            }, 5000);
-        },
-        closeNotification() {
-            this.notificationPopup.show = false;
-            if (this.notificationPopup.timeout) {
-                clearTimeout(this.notificationPopup.timeout);
-            }
-        },
-        openChatFromNotification() {
-            if (this.notificationPopup.senderId) {
-                @this.call('openChatFromNotification', this.notificationPopup.senderId);
-                this.closeNotification();
-            }
-        },
         scrollToBottom() {
             this.$nextTick(() => {
                 const chatBody = this.$refs.chatBody;
@@ -54,12 +21,6 @@
         Livewire.on('scroll-to-bottom', () => scrollToBottom());
         Livewire.on('message-sent', () => scrollToBottom());
         Livewire.on('message-received', () => scrollToBottom());
-        Livewire.on('show-message-notification', (event) => {
-            const data = event[0] || event;
-            if (data.sender_id && data.sender_name) {
-                showNotification(data.sender_id, data.sender_name, data.message || '');
-            }
-        });
         
         // Listen for notification click events
         Livewire.on('open-conversation-from-notification', (event) => {
@@ -79,42 +40,6 @@
      class="fixed bottom-4 right-4 z-50"
      style="position: fixed; right: 20px; bottom: 20px;">
     
-    <!-- Notification Popup -->
-    <div x-show="notificationPopup.show"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 transform translate-y-2"
-         x-transition:enter-end="opacity-100 transform translate-y-0"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 transform translate-y-0"
-         x-transition:leave-end="opacity-0 transform translate-y-2"
-         class="mb-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl p-4 w-[320px]"
-         style="box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
-        <div class="flex items-start justify-between">
-            <div class="flex-1">
-                <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-                    New message from <span x-text="notificationPopup.senderName"></span>
-                </h4>
-                <p class="text-xs text-gray-600 dark:text-gray-400 mb-3 line-clamp-2" x-text="notificationPopup.message"></p>
-                <div class="flex gap-2">
-                    <button @click="openChatFromNotification()"
-                            class="px-3 py-1.5 text-xs font-medium bg-emerald-500 hover:bg-emerald-600 text-white rounded-md transition-colors">
-                        Open Chat
-                    </button>
-                    <button @click="closeNotification()"
-                            class="px-3 py-1.5 text-xs font-medium bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors">
-                        Dismiss
-                    </button>
-                </div>
-            </div>
-            <button @click="closeNotification()"
-                    class="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-
     <div class="flex flex-wrap gap-3 items-end">
         <!-- Chat Window -->
         <div x-show="isChatOpen"
@@ -342,37 +267,75 @@
                 
                 userNotificationChannel
                     .notification((notification) => {
-                        console.log('🔔 Notification received:', notification);
+                        console.log('🔔 Notification received in chat widget:', notification);
                         
-                        if (notification.type === 'message' || notification.type === 'App\\Notifications\\MessageNotification') {
-                            // Show notification popup
-                            Livewire.dispatch('show-message-notification', {
-                                sender_id: notification.data?.sender_id || notification.sender_id,
-                                sender_name: notification.data?.sender_name || notification.sender_name || 'Someone',
-                                message: notification.data?.message_preview || notification.message_preview || '',
+                        // Laravel wraps broadcast notification data in a 'data' property
+                        const notificationData = notification.data || notification;
+                        const notificationType = notification.type || notificationData.type;
+                        
+                        if (notificationType === 'message' || 
+                            notificationType === 'App\\Notifications\\MessageNotification' ||
+                            notificationType?.includes('MessageNotification')) {
+                            
+                            // Extract data from notification (check both data property and top-level)
+                            const senderId = notificationData.sender_id || notification.sender_id;
+                            const senderName = notificationData.sender_name || notification.sender_name || 'Someone';
+                            const message = notificationData.message_preview || notification.message_preview || '';
+                            const receiverId = notificationData.receiver_id || notification.receiver_id;
+                            
+                            console.log('📨 Extracted notification data:', {
+                                senderId,
+                                senderName,
+                                message,
+                                receiverId,
+                                currentUserId
                             });
                             
-                            // Trigger unread count update
-                            Livewire.dispatch('message-received-from-echo', {
-                                chat: {
-                                    sender_id: notification.data?.sender_id || notification.sender_id,
-                                    sender_name: notification.data?.sender_name || notification.sender_name,
-                                    message: notification.data?.message_preview || notification.message_preview,
-                                }
-                            });
+                            // Only process if we have valid data and it's for the current user
+                            if (!senderId || !receiverId) {
+                                console.warn('⚠️ Invalid notification data:', notification);
+                                return;
+                            }
                             
-                            // Show browser notification
-                            if ("Notification" in window && Notification.permission === "granted") {
-                                new Notification("New Message from " + (notification.data?.sender_name || notification.sender_name || 'Someone'), {
-                                    body: notification.data?.message_preview || notification.message_preview || 'You have a new message',
-                                    icon: "/favicon.ico",
-                                    badge: "/favicon.ico",
-                                    tag: 'message-' + (notification.data?.sender_id || notification.sender_id),
+                            if (receiverId != currentUserId) {
+                                console.log('⚠️ Notification not for current user, skipping');
+                                return;
+                            }
+                            
+                            // Trigger handleIncomingMessage to show Filament notification and update UI
+                            const component = Livewire.find(@js($this->getId()));
+                            if (component) {
+                                console.log('✅ Calling handleIncomingMessage on component');
+                                component.call('handleIncomingMessage', {
+                                    chat: {
+                                        sender_id: senderId,
+                                        sender_name: senderName,
+                                        message: message,
+                                        receiver_id: receiverId,
+                                    }
+                                });
+                            } else {
+                                console.warn('⚠️ Component not found, using dispatch fallback');
+                                // Fallback: dispatch event
+                                Livewire.dispatch('message-received-from-echo', {
+                                    chat: {
+                                        sender_id: senderId,
+                                        sender_name: senderName,
+                                        message: message,
+                                        receiver_id: receiverId,
+                                    }
                                 });
                             }
                             
-                            // Play notification sound
-                            Livewire.dispatch('play-notification-sound');
+                            // Browser notification
+                            if ("Notification" in window && Notification.permission === "granted") {
+                                new Notification(`New Message from ${senderName}`, {
+                                    body: message,
+                                    icon: "/favicon.ico",
+                                    badge: "/favicon.ico",
+                                    tag: 'message-' + senderId,
+                                });
+                            }
                         }
                     })
                     .subscribed(() => {

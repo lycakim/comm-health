@@ -62,13 +62,31 @@ class ChatWidget extends Component
         $this->calculateUnreadCounts();
         
         // Check if we're already viewing this conversation
-        $isCurrentConversation = $this->selectedUserId == $senderId && $this->viewMode === 'messages';
+        $isCurrentConversation = $this->isChatOpen && 
+                                  $this->selectedUserId == $senderId && 
+                                  $this->viewMode === 'messages';
         
         if ($isCurrentConversation) {
             // Already viewing this conversation - just reload messages
             $this->loadMessages();
             $this->dispatch('scroll-to-bottom');
         } else {
+            // Not viewing this conversation - show notification and update UI
+            // Show Filament notification with clickable action
+            FilamentNotification::make()
+                ->title('New message from ' . $senderName)
+                ->body($message)
+                ->success()
+                ->duration(6000)
+                ->icon('heroicon-o-chat-bubble-left-right')
+                ->actions([
+                    \Filament\Notifications\Actions\Action::make('open')
+                        ->label('Open Chat')
+                        ->button()
+                        ->dispatch('open-conversation-from-notification', ['userId' => $senderId]),
+                ])
+                ->send();
+            
             // Auto-open chat widget and switch to sender's conversation
             // Force chat to open first - this is critical for the UI to show
             $this->isChatOpen = true;
@@ -84,27 +102,6 @@ class ChatWidget extends Component
             
             // Dispatch event with the conversation ID for Echo subscription
             $this->dispatch('conversation-changed', conversationId: $this->getConversationId());
-            
-            // Show custom popup notification
-            $this->dispatch('show-message-notification', [
-                'sender_id' => $senderId,
-                'sender_name' => $senderName,
-                'message' => $message,
-            ]);
-            
-            // Show Filament notification with clickable action
-            FilamentNotification::make()
-                ->title('New message from ' . $senderName)
-                ->body($message)
-                ->success()
-                ->icon('heroicon-o-chat-bubble-left-right')
-                ->actions([
-                    \Filament\Notifications\Actions\Action::make('open')
-                        ->label('Open Chat')
-                        ->button()
-                        ->dispatch('open-conversation-from-notification', ['userId' => $senderId]),
-                ])
-                ->send();
         }
         
         // Play notification sound
