@@ -20,6 +20,8 @@ Route::get('/register', function () {
     return redirect('/commhealth/register');
 })->name('register');
 
+Route::redirect('profile', '/commhealth/settings')->name('profile');
+
 Route::middleware(['auth'])->group(function () {
     // MHO Routes
     Route::prefix('commhealth/mho')->middleware('check.user.type:mho')->group(function () {

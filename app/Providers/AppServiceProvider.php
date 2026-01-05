@@ -60,6 +60,11 @@ class AppServiceProvider extends ServiceProvider
             ]),
         );
 
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::USER_MENU_PROFILE_AFTER,
+            fn (): View => view('account'),
+        );
+
         // Set fresh login flag on login
         Event::listen(Login::class, SetFreshLoginFlag::class);
 

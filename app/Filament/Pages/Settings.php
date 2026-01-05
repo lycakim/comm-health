@@ -14,9 +14,13 @@ use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 
-class Settings extends Page
+class Settings extends Page implements HasForms
 {
+    use InteractsWithForms;
+
     protected static ?string $navigationIcon = 'heroicon-o-cog';
 
     protected static string $view = 'filament.pages.settings';
@@ -25,7 +29,8 @@ class Settings extends Page
 
     protected static ?int $navigationSort = 4;
 
-    public ?array $data = [];
+    public ?array $profileData = [];
+    public ?array $passwordData = [];
 
     public static function canAccess(): bool
     {
@@ -45,23 +50,45 @@ class Settings extends Page
     {
         $user = Auth::user();
 
-        $this->form->fill([
+        $this->profileForm->fill([
             'name' => $user->name,
             'email' => $user->email,
         ]);
+
+        $this->passwordForm->fill();
     }
-    
-    public function form(Form $form): Form
+
+    protected function getForms(): array
+    {
+        return [
+            'profileForm',
+            'passwordForm',
+        ];
+    }
+
+    public function profileForm(Form $form): Form
     {
         return $form
             ->schema([
-                Section::make('Account Information')
+                Section::make('Profile Information')
                     ->description("Update your account's profile information and email address.")
-                    ->collapsible(true)
                     ->schema([
-                        TextInput::make('name')->required(),
-                        TextInput::make('email')->disabled(),
+                        TextInput::make('name')
+                            ->label('Name')
+                            ->required(),
+                        TextInput::make('email')
+                            ->label('Email Address')
+                            ->disabled(),
                     ]),
+            ])
+            ->statePath('profileData')
+            ->model(User::class);
+    }
+
+    public function passwordForm(Form $form): Form
+    {
+        return $form
+            ->schema([
                 Section::make('Update Password')
                     ->description('Ensure your account is using a long, random password to stay secure.')
                     ->schema([
@@ -83,6 +110,7 @@ class Settings extends Page
                             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                             ->dehydrated(fn ($state) => filled($state)),
                         TextInput::make('new_password')
+                            ->label('New Password')
                             ->password()
                             ->minLength(8)
                             ->required(
@@ -110,33 +138,48 @@ class Settings extends Page
                             ->dehydrated(fn ($state) => filled($state)),
                     ]),
             ])
-            ->statePath('data')
+            ->statePath('passwordData')
             ->model(User::class);
     }
 
-    public function save()
+    public function saveProfile()
     {
-        $data = $this->form->getState();
+        $data = $this->profileForm->getState();
 
         $user = User::find(Auth::user()->id);
-
         $user->name = $data['name'];
-
-        if (filled($data['new_password'] ?? null)) {
-            $user->password = $data['new_password'];
-        }
-
         $user->save();
 
-        session()->put([
-            'password_hash_'.Auth::getDefaultDriver() => $user->getAuthPassword(),
-        ]);
-
-        redirect('/commhealth/settings');
-
         Notification::make()
-            ->title('Saved successfully')
+            ->title('Profile updated successfully')
             ->success()
             ->send();
+    }
+
+    public function savePassword()
+    {
+        $data = $this->passwordForm->getState();
+
+        if (filled($data['new_password'] ?? null)) {
+            $user = User::find(Auth::user()->id);
+            $user->password = $data['new_password'];
+            $user->save();
+
+            session()->put([
+                'password_hash_'.Auth::getDefaultDriver() => $user->getAuthPassword(),
+            ]);
+
+            $this->passwordForm->fill();
+
+            Notification::make()
+                ->title('Password updated successfully')
+                ->success()
+                ->send();
+        } else {
+            Notification::make()
+                ->title('Please enter a new password')
+                ->warning()
+                ->send();
+        }
     }
 }
