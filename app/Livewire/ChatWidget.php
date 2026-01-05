@@ -7,56 +7,107 @@ use App\Models\User;
 use Livewire\Component;
 use App\Events\MessageSent;
 use Illuminate\Support\Facades\Auth;
+use Filament\Notifications\Notification as FilamentNotification;
 
 class ChatWidget extends Component
 {
     public array $messages = [];
     public array $users = [];
+    public array $unreadCounts = [];
     public ?int $selectedUserId = null;
     public string $message = '';
     public bool $isChatOpen = false;
     public bool $hasUnreadMessages = false;
+    public string $viewMode = 'users'; // 'users' or 'messages'
 
     public function mount(): void
     {
         $this->loadUsers();
-
-        if (!$this->selectedUserId) {
-            // If no user is selected, default to the first available user
-            $this->selectedUserId = User::where('id', '!=', Auth::id())
-                ->orderBy('created_at', 'desc')
-                ->value('id');
-        }
+        $this->calculateUnreadCounts();
         
-        if ($this->selectedUserId) {
-            $this->loadMessages();
-            // Dispatch initial conversation ID for Echo subscription
-            $this->dispatch('conversation-changed', conversationId: $this->getConversationId());
-        }
+        // Start with user list view, no user selected initially
+        $this->viewMode = 'users';
     }
 
     public function getListeners(): array
     {
         return [
             'message-received-from-echo' => 'handleIncomingMessage',
+            'open-chat-with-user' => 'openChatFromNotification',
+            'open-conversation-from-notification' => 'openConversationFromNotification',
         ];
     }
 
-    public function handleIncomingMessage(): void
+    public function handleIncomingMessage($data = []): void
     {
-        // Reload messages when receiving a broadcast
-        $this->loadMessages();
-        
-         // Open chat window if it's closed
-        if (!$this->isChatOpen) {
-            $this->isChatOpen = true;
-            $this->hasUnreadMessages = true;
+        // Extract chat data - handle both array and object formats
+        $chat = is_array($data) ? ($data['chat'] ?? $data) : ($data->chat ?? null);
+        if (!$chat) {
+            return;
         }
         
-        // Dispatch browser event to scroll to bottom
-        $this->dispatch('scroll-to-bottom');
+        $senderId = is_array($chat) ? ($chat['sender_id'] ?? null) : ($chat->sender_id ?? null);
+        $receiverId = is_array($chat) ? ($chat['receiver_id'] ?? null) : ($chat->receiver_id ?? null);
+        $senderName = is_array($chat) ? ($chat['sender_name'] ?? 'Someone') : ($chat->sender->name ?? 'Someone');
+        $message = is_array($chat) ? ($chat['message'] ?? '') : ($chat->message ?? '');
         
-        // Optional: Play notification sound
+        // Determine if this message is for the current user
+        $isForCurrentUser = $receiverId == Auth::id();
+        
+        if (!$isForCurrentUser || !$senderId) {
+            return;
+        }
+        
+        // Update unread counts
+        $this->calculateUnreadCounts();
+        
+        // Check if we're already viewing this conversation
+        $isCurrentConversation = $this->selectedUserId == $senderId && $this->viewMode === 'messages';
+        
+        if ($isCurrentConversation) {
+            // Already viewing this conversation - just reload messages
+            $this->loadMessages();
+            $this->dispatch('scroll-to-bottom');
+        } else {
+            // Auto-open chat widget and switch to sender's conversation
+            // Force chat to open first - this is critical for the UI to show
+            $this->isChatOpen = true;
+            
+            // Select the user (this will switch to messages view and load messages)
+            $this->selectedUserId = $senderId;
+            $this->viewMode = 'messages';
+            $this->loadMessages();
+            $this->hasUnreadMessages = false;
+            
+            // Mark messages as read
+            $this->markMessagesAsRead($senderId);
+            
+            // Dispatch event with the conversation ID for Echo subscription
+            $this->dispatch('conversation-changed', conversationId: $this->getConversationId());
+            
+            // Show custom popup notification
+            $this->dispatch('show-message-notification', [
+                'sender_id' => $senderId,
+                'sender_name' => $senderName,
+                'message' => $message,
+            ]);
+            
+            // Show Filament notification with clickable action
+            FilamentNotification::make()
+                ->title('New message from ' . $senderName)
+                ->body($message)
+                ->success()
+                ->icon('heroicon-o-chat-bubble-left-right')
+                ->actions([
+                    \Filament\Notifications\Actions\Action::make('open')
+                        ->label('Open Chat')
+                        ->button()
+                        ->dispatch('open-conversation-from-notification', ['userId' => $senderId]),
+                ])
+                ->send();
+        }
+        
+        // Play notification sound
         $this->dispatch('play-notification-sound');
     }
 
@@ -77,21 +128,82 @@ class ChatWidget extends Component
             return;
         }
 
-        $this->selectedUserId = $userId;
-        $this->loadMessages();
+        // Ensure chat is open first
         $this->isChatOpen = true;
-        $this->hasUnreadMessages = false; // Mark as read when user opens chat
+        
+        $this->selectedUserId = $userId;
+        $this->viewMode = 'messages';
+        $this->loadMessages();
+        $this->hasUnreadMessages = false;
+        
+        // Mark messages from this user as read
+        $this->markMessagesAsRead($userId);
         
         // Dispatch event with the conversation ID
         $this->dispatch('conversation-changed', conversationId: $this->getConversationId());
     }
 
+    public function showUserList(): void
+    {
+        $this->viewMode = 'users';
+        $this->selectedUserId = null;
+        $this->messages = [];
+        $this->calculateUnreadCounts();
+    }
+
+    public function openChatFromNotification(int $userId): void
+    {
+        $this->selectUser($userId);
+    }
+
+    public function openConversationFromNotification($data = []): void
+    {
+        // Handle different data formats
+        if (is_array($data)) {
+            $userId = $data['userId'] ?? $data[0]['userId'] ?? null;
+        } else {
+            $userId = $data;
+        }
+        
+        if ($userId) {
+            $this->selectUser((int)$userId);
+        }
+    }
+
     protected function loadUsers(): void
     {
         $this->users = User::where('id', '!=', Auth::id())
+            ->where('role', '!=', 'resident')
             ->orderBy('name')
-            ->pluck('name', 'id')
+            ->get()
+            ->mapWithKeys(function ($user) {
+                return [$user->id => $user->name];
+            })
             ->toArray();
+    }
+
+    public function calculateUnreadCounts(): void
+    {
+        $this->unreadCounts = [];
+        
+        foreach ($this->users as $userId => $userName) {
+            $count = Chat::where('sender_id', $userId)
+                ->where('receiver_id', Auth::id())
+                ->whereNull('read_at')
+                ->count();
+            
+            $this->unreadCounts[$userId] = $count;
+        }
+    }
+
+    public function markMessagesAsRead(int $userId): void
+    {
+        Chat::where('sender_id', $userId)
+            ->where('receiver_id', Auth::id())
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+        
+        $this->calculateUnreadCounts();
     }
 
     public function sendMessage(): void
