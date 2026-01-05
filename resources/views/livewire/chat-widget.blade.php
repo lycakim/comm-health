@@ -169,11 +169,17 @@
                     <div>
                         @foreach($users as $userId => $userName)
                             <button wire:click="selectUser({{ $userId }})"
-                                    class="w-full px-4 py-5 transition-colors text-left flex items-center justify-between"
+                                    class="w-full px-4 py-5 transition-colors text-left flex items-center justify-between hover:bg-gray-50"
                                     style="border-bottom: 1px solid rgba(75, 85, 99, 0.2);"
-                                    onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.05)'"
+                                    onmouseover="
+                                        if (document.documentElement.classList.contains('dark')) {
+                                            this.style.backgroundColor='rgba(255, 255, 255, 0.05)';
+                                        } else {
+                                            this.style.backgroundColor='rgba(229, 231, 235, 0.9)'; // gray-200, a bit darker
+                                        }
+                                    "
                                     onmouseout="this.style.backgroundColor='transparent'">
-                                <span class="text-sm font-medium" style="color: #e5e7eb;">
+                                <span class="text-sm font-medium">
                                     {{ $userName }}
                                 </span>
                                 @if(isset($unreadCounts[$userId]) && $unreadCounts[$userId] > 0)
