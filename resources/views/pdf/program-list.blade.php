@@ -60,47 +60,32 @@
     <table>
         <thead>
             <tr>
-                <th>Full Name</th>
-                <th>Birthdate</th>
-                <th>Age</th>
+                <th>Program Name</th>
                 <th>Barangay</th>
                 <th>Category</th>
-                <th>Blood Pressure</th>
-                <th>Sugar Level</th>
-                <th>Contact Number</th>
-                <th>Gender</th>
-                <th>Height</th>
-                <th>Weight</th>
-                <th>BMI</th>
-                <th>Maintenance</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Start Time</th>
+                <th>End Time</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($patients as $patient)
+            @foreach($programs as $program)
                 <tr>
-                    <td>{{ $patient->first_name }} {{ $patient->middle_name ?? '' }} {{ $patient->last_name }} {{ $patient->suffix ?? '' }}</td>
-                    <td>{{ $patient->birth_date ? $patient->birth_date->format('M d, Y') : 'N/A' }}</td>
-                    <td>{{ $patient->birth_date ? \Carbon\Carbon::parse($patient->birth_date)->age : 'N/A' }}</td>
-                    <td>{{ $patient->barangay->name ?? 'N/A' }}</td>
-                    <td>{{ $patient->category->name ?? 'N/A' }}</td>
-                    <td>{{ $patient->blood_pressure ?? 'N/A' }}</td>
-                    <td>{{ $patient->sugar_level ?? 'N/A' }}</td>
-                    <td>{{ $patient->contact_number ?? 'N/A' }}</td>
-                    <td>{{ ucfirst($patient->sex) ?? 'N/A' }}</td>
-                    <td>{{ $patient->height ?? 'N/A' }}</td>
-                    <td>{{ $patient->weight ?? 'N/A' }}</td>
-                    <td>{{ $patient->bmi ?? 'N/A' }}</td>
-                    <td>{{ is_array($patient->medication_maintenance) ? implode(', ', $patient->medication_maintenance) : ($patient->medication_maintenance ?? 'N/A') }}</td>
+                    <td>{{ $program->name ?? 'N/A' }}</td>
+                    <td>{{ $program->barangay->name ?? 'N/A' }}</td>
+                    <td>{{ $program->category->name ?? 'N/A' }}</td>
+                    <td>{{ $program->program_start_date ? \Carbon\Carbon::parse($program->program_start_date)->format('M d, Y') : 'N/A' }}</td>
+                    <td>{{ $program->program_end_date ? \Carbon\Carbon::parse($program->program_end_date)->format('M d, Y') : 'N/A' }}</td>
+                    <td>{{ $program->program_start_time ? \Carbon\Carbon::parse($program->program_start_time)->format('g:i A') : 'N/A' }}</td>
+                    <td>{{ $program->program_end_time ? \Carbon\Carbon::parse($program->program_end_time)->format('g:i A') : 'N/A' }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
     <div class="footer">
-        <p>Total Records: {{ $patients->count() }}</p>
+        <p>Total Records: {{ $programs->count() }}</p>
     </div>
 </body>
 </html>
-
-
-

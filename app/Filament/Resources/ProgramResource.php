@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 use App\Traits\HasUserTypeUrls;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use App\Services\SemaphoreService;
+use App\Services\PhilSMSService;
 use Filament\Forms\Components\Grid;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
@@ -331,13 +331,45 @@ class ProgramResource extends Resource
                     ->label('Export CSV')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
-                    ->action(function () {
-                        $programs = Program::all();
+                    ->form([
+                        Select::make('format')
+                            ->label('Export Format')
+                            ->options([
+                                'csv' => 'CSV (Spreadsheet)',
+                                'pdf' => 'PDF (Document)',
+                            ])
+                            ->default('csv')
+                            ->required()
+                    ])
+                    ->action(function ($data) {
+                        $programs = Program::with(['barangay', 'category'])->get();
+                        $title = 'Health Programs Report';
+                        $barangay = null;
+
+                        // Handle PDF export
+                        if ($data['format'] === 'pdf') {
+                            $pdfService = app(\App\Services\PDFGenerationService::class);
+                            $pdf = $pdfService->generateProgramListPdf($programs, $title, $barangay);
+                            $filename = 'health-programs_' . date('Y-m-d_His') . '.pdf';
+                            
+                            return response()->streamDownload(
+                                fn () => print($pdf->output()),
+                                $filename,
+                                ['Content-Type' => 'application/pdf']
+                            );
+                        }
+
+                        // Handle CSV export
                         return response()->streamDownload(function () use ($programs) {
                             $csv = fopen('php://output', 'w');
                             fputcsv($csv, ['Program Name', 'Barangay', 'Category', 'Date']);
                             foreach ($programs as $program) {
-                                fputcsv($csv, [$program->name, $program->barangay->name, $program->category->name, $program->program_date]);
+                                fputcsv($csv, [
+                                    $program->name, 
+                                    $program->barangay->name ?? 'N/A', 
+                                    $program->category->name ?? 'N/A', 
+                                    $program->program_start_date ? \Carbon\Carbon::parse($program->program_start_date)->format('Y-m-d') : 'N/A'
+                                ]);
                             }
                             fclose($csv);
                         }, 'health-programs_' . date('Y-m-d_His') . '.csv');
@@ -356,7 +388,7 @@ class ProgramResource extends Resource
                 Tables\Actions\DeleteAction::make(),
                 // button for sending sms to all patients in the barangay
                 Tables\Actions\Action::make('send_sms')
-                    ->label('Send SMS')
+                    ->label('Send SMSsss')
                     ->modalHeading('Send SMS Notification')
                     ->modalSubmitActionLabel('Confirm & Send SMS')
                     ->icon('heroicon-o-paper-airplane')
@@ -379,9 +411,9 @@ class ProgramResource extends Resource
                                         ->default($record->description)
                                         ->disabled(),
 
-                                    \Filament\Forms\Components\TextInput::make('program_date')
-                                        ->label('Date')
-                                        ->default($record->program_date)
+                                    \Filament\Forms\Components\TextInput::make('program_start_date')
+                                        ->label('Datessss')
+                                        ->default($record->program_start_date)
                                         ->disabled(),
                                 ]),
 
@@ -398,7 +430,7 @@ class ProgramResource extends Resource
                         $program = $record;
                         $users = \App\Models\Patient::where('barangay_id', $program->barangay_id)->get();
 
-                        $smsService = app(\App\Services\SemaphoreService::class);
+                        $smsService = app(\App\Services\PhilSMSService::class);
 
                         $successCount = 0;
                         $failCount = 0;
@@ -406,7 +438,7 @@ class ProgramResource extends Resource
                         $failedNumbers = []; // Will store patients with failed SMS sends
 
                         // Format program date and time
-                        $programDate = $program->program_date ? Carbon::parse($program->program_date)->format('F d, Y') : 'TBA';
+                        $programDate = $program->program_start_date ? Carbon::parse($program->program_start_date)->format('F d, Y') : 'TBA';
                         $startTime = $program->program_start_time ? Carbon::parse($program->program_start_time)->format('g:i A') : 'TBA';
                         $endTime = $program->program_end_time ? Carbon::parse($program->program_end_time)->format('g:i A') : 'TBA';
 
@@ -420,7 +452,7 @@ class ProgramResource extends Resource
 
                             // Create personalized message with program details
                             $message = "Maayong adlaw {$user->first_name}!\n\n";
-                            $message .= "Aduna kitay bag-ong programa: {$program->name}\n\n";
+                            $message .= "Nagpahibalo ang Barangay nga aduna kita'y {$program->name}\n";
                             $message .= "Petsa: {$programDate}\n";
                             $message .= "Oras: {$startTime} - {$endTime}\n";
 
@@ -431,7 +463,8 @@ class ProgramResource extends Resource
                                 $message .= "\n{$description}\n";
                             }
 
-                            $message .= "\nPalihug tambong. Salamat kaayo!";
+                            $message .= "\nPalihug mangadto sa takdang oras aron matagaan og hustong serbisyo.";
+                            $message .= "\nDaghang salamat ug kita-kits!";
 
                             $result = $smsService->sendSMS($user->contact_number, $message);
 

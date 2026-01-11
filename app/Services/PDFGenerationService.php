@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Consultation;
 use App\Models\Patient;
+use App\Models\Program;
 use App\Models\Referral;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
@@ -288,6 +289,75 @@ class PDFGenerationService
 
         return Pdf::loadHTML($html)
             ->setPaper('legal', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
+    }
+
+    /**
+     * Generate PDF for consultation list reports
+     */
+    public function generateConsultationListPdf($consultations, string $title, $barangay = null): \Barryvdh\DomPDF\PDF
+    {
+        $html = view('pdf.consultation-list', [
+            'consultations' => $consultations,
+            'title' => $title,
+            'barangay' => $barangay,
+            'date' => now()->format('F d, Y'),
+        ])->render();
+
+        return Pdf::loadHTML($html)
+            ->setPaper('legal', 'landscape')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
+    }
+
+    /**
+     * Generate PDF for program list reports
+     */
+    public function generateProgramListPdf($programs, string $title, $barangay = null): \Barryvdh\DomPDF\PDF
+    {
+        $html = view('pdf.program-list', [
+            'programs' => $programs,
+            'title' => $title,
+            'barangay' => $barangay,
+            'date' => now()->format('F d, Y'),
+        ])->render();
+
+        return Pdf::loadHTML($html)
+            ->setPaper('legal', 'landscape')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
+    }
+
+    /**
+     * Generate PDF for report data (used by Reports page)
+     */
+    public function generateReportDataPdf(array $reportData, string $reportType): \Barryvdh\DomPDF\PDF
+    {
+        $templateMap = [
+            'patient-profiling' => 'pdf.reports.patient-profiling',
+            'maternal-child' => 'pdf.reports.maternal-child',
+            'senior-citizens' => 'pdf.reports.senior-citizens',
+            'family-planning' => 'pdf.reports.family-planning',
+            'morbidity-mortality' => 'pdf.reports.morbidity-mortality',
+        ];
+
+        $template = $templateMap[$reportType] ?? 'pdf.reports.patient-profiling';
+
+        $html = view($template, [
+            'headers' => $reportData['headers'] ?? [],
+            'rows' => $reportData['rows'] ?? [],
+            'date' => now()->format('F d, Y'),
+        ])->render();
+
+        return Pdf::loadHTML($html)
+            ->setPaper('legal', 'landscape')
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
                 'isRemoteEnabled' => true,

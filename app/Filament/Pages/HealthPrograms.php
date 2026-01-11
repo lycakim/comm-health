@@ -10,6 +10,7 @@ use Filament\Pages\Page;
 use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
 use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Select;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
@@ -79,13 +80,45 @@ class HealthPrograms extends Page implements HasTable
                     ->disabled(fn() => is_null(Auth::user()->barangay_id) || Auth::user()->role === RoleEnum::MHO->value)
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
-                    ->action(function () {
-                        $programs = Program::all();
+                    ->form([
+                        Select::make('format')
+                            ->label('Export Format')
+                            ->options([
+                                'csv' => 'CSV (Spreadsheet)',
+                                'pdf' => 'PDF (Document)',
+                            ])
+                            ->default('csv')
+                            ->required()
+                    ])
+                    ->action(function ($data) {
+                        $programs = Program::with(['barangay', 'category'])->get();
+                        $title = 'Health Programs Report';
+                        $barangay = Auth::user()->barangay_id ? \App\Models\Barangay::find(Auth::user()->barangay_id) : null;
+
+                        // Handle PDF export
+                        if ($data['format'] === 'pdf') {
+                            $pdfService = app(\App\Services\PDFGenerationService::class);
+                            $pdf = $pdfService->generateProgramListPdf($programs, $title, $barangay);
+                            $filename = 'health-programs_' . date('Y-m-d_His') . '.pdf';
+                            
+                            return response()->streamDownload(
+                                fn () => print($pdf->output()),
+                                $filename,
+                                ['Content-Type' => 'application/pdf']
+                            );
+                        }
+
+                        // Handle CSV export
                         return response()->streamDownload(function () use ($programs) {
                             $csv = fopen('php://output', 'w');
                             fputcsv($csv, ['Program Name', 'Barangay', 'Category', 'Date']);
                             foreach ($programs as $program) {
-                                fputcsv($csv, [$program->name, $program->barangay->name, $program->category->name, $program->program_date]);
+                                fputcsv($csv, [
+                                    $program->name, 
+                                    $program->barangay->name ?? 'N/A', 
+                                    $program->category->name ?? 'N/A', 
+                                    $program->program_start_date ? Carbon::parse($program->program_start_date)->format('Y-m-d') : 'N/A'
+                                ]);
                             }
                             fclose($csv);
                         }, 'health-programs_' . date('Y-m-d_His') . '.csv');
@@ -122,9 +155,10 @@ class HealthPrograms extends Page implements HasTable
                                         ->default($record->description)
                                         ->disabled(),
 
-                                    \Filament\Forms\Components\TextInput::make('program_date')
-                                        ->label('Date')
-                                        ->default($record->program_date)
+                                    \Filament\Forms\Components\TextInput::make('program_start_date')
+                                        ->label('Datexxx')
+                                        ->formatStateUsing(fn ($state) => $state ? Carbon::parse($state)->format('F d, Y') : null)
+                                        ->default($record->program_start_date)
                                         ->disabled(),
                                 ]),
 
@@ -171,7 +205,7 @@ class HealthPrograms extends Page implements HasTable
 
                             // Create personalized message with program details
                             $message = "Maayong adlaw {$user->first_name}!\n\n";
-                            $message .= "Aduna kitay bag-ong programa: {$program->name}\n\n";
+                            $message .= "Nagpahibalo ang Barangay nga aduna kita'y {$program->name}\n";
                             $message .= "Petsa: {$programDate}\n";
                             $message .= "Oras: {$startTime} - {$endTime}\n";
 
@@ -182,7 +216,8 @@ class HealthPrograms extends Page implements HasTable
                                 $message .= "\n{$description}\n";
                             }
 
-                            $message .= "\nPalihug tambong. Salamat kaayo!";
+                            $message .= "\nPalihug mangadto sa takdang oras aron matagaan og hustong serbisyo.";
+                            $message .= "\nDaghang salamat ug kita-kits!";
 
                             $result = $smsService->sendSMS($user->contact_number, $message);
 

@@ -14,7 +14,7 @@ class PhilSMSService
     public function __construct()
     {
         $this->apiToken = config('services.philsms.api_token');
-        $this->baseUrl = config('services.philsms.base_url', 'https://app.philsms.com/api/v3');
+        $this->baseUrl = config('services.philsms.base_url', 'https://dashboard.philsms.com/api/v3');
         $this->senderId = config('services.philsms.sender_id', 'Philsms');
     }
 
@@ -34,20 +34,52 @@ class PhilSMSService
         ?string $scheduleTime = null
     ): array {
         try {
+            // Validate API token before proceeding
+            if (empty($this->apiToken)) {
+                $errorMsg = 'PhilSMS API token is not configured. Please set PHILSMS_API_TOKEN in your .env file.';
+                Log::error('PhilSMS: Missing API Token', [
+                    'base_url' => $this->baseUrl,
+                    'sender_id' => $this->senderId
+                ]);
+                return [
+                    'success' => false,
+                    'message' => $errorMsg,
+                    'data' => null
+                ];
+            }
+
             // Format recipient(s)
+            $originalRecipient = $recipient;
             if (is_array($recipient)) {
                 $formattedRecipients = array_map([$this, 'formatPhoneNumber'], $recipient);
-                $recipient = implode(',', $formattedRecipients);
+                $recipient = implode(',', array_filter($formattedRecipients));
             } else {
                 $recipient = $this->formatPhoneNumber($recipient);
             }
 
             // Validate at least one recipient
             if (empty($recipient)) {
+                Log::warning('PhilSMS: No valid recipients provided', [
+                    'original_recipient' => is_array($originalRecipient) ? implode(',', $originalRecipient) : $originalRecipient
+                ]);
                 return [
                     'success' => false,
-                    'message' => 'No valid recipients provided',
+                    'message' => 'No valid recipients provided. Please check phone number format (should be 09XXXXXXXXX or 639XXXXXXXXX).',
                     'data' => null
+                ];
+            }
+
+            // Validate phone number format for single recipient
+            if (!is_array($originalRecipient) && !$this->validatePhoneNumber($recipient)) {
+                Log::warning('PhilSMS: Invalid phone number format', [
+                    'original' => $originalRecipient,
+                    'formatted' => $recipient
+                ]);
+                return [
+                    'success' => false,
+                    'message' => "Invalid phone number format: {$originalRecipient}. Expected format: 09XXXXXXXXX or 639XXXXXXXXX",
+                    'data' => null,
+                    'formatted_number' => $recipient
                 ];
             }
 
@@ -64,10 +96,15 @@ class PhilSMSService
                 $payload['schedule_time'] = $scheduleTime;
             }
 
+            $endpoint = "{$this->baseUrl}/sms/send";
+            
             Log::info('PhilSMS: Sending SMS', [
+                'endpoint' => $endpoint,
                 'recipient' => $recipient,
                 'sender_id' => $payload['sender_id'],
-                'scheduled' => !empty($scheduleTime)
+                'message_length' => strlen($message),
+                'scheduled' => !empty($scheduleTime),
+                'payload' => $payload
             ]);
 
             // Make API request with Bearer token authentication
@@ -75,71 +112,140 @@ class PhilSMSService
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
                 'Authorization' => 'Bearer ' . $this->apiToken,
-            ])->post("{$this->baseUrl}/sms/send", $payload);
+            ])->timeout(30)->post($endpoint, $payload);
 
             $result = $response->json();
             $statusCode = $response->status();
 
-            // Log API response
+            // Log API response with full details
             Log::info('PhilSMS API Response', [
+                'endpoint' => $endpoint,
                 'status_code' => $statusCode,
-                'response' => $result,
-                'http_successful' => $response->successful()
+                'http_successful' => $response->successful(),
+                'response_body' => $result,
+                'response_headers' => $response->headers()
             ]);
 
-            // Parse response according to PhilSMS API format
+            // Handle HTTP errors (4xx, 5xx)
             if (!$response->successful()) {
-                $errorMessage = $result['message'] ?? "HTTP Error: {$statusCode}";
+                $errorMessage = $this->extractErrorMessage($result, $statusCode);
                 
                 Log::error('PhilSMS HTTP Error', [
+                    'endpoint' => $endpoint,
                     'status_code' => $statusCode,
-                    'error' => $errorMessage,
-                    'response' => $result
+                    'error_message' => $errorMessage,
+                    'full_response' => $result,
+                    'recipient' => $recipient,
+                    'payload' => $payload
                 ]);
 
                 return [
                     'success' => false,
                     'message' => $errorMessage,
-                    'data' => $result
+                    'data' => $result,
+                    'status_code' => $statusCode,
+                    'formatted_number' => $recipient
                 ];
             }
 
             // PhilSMS returns: {"status": "success|error", "data": {...}, "message": "..."}
             $isSuccess = isset($result['status']) && $result['status'] === 'success';
-            $message = $result['message'] ?? ($isSuccess ? 'Message sent successfully' : 'Unknown response');
+            $apiMessage = $result['message'] ?? ($isSuccess ? 'Message sent successfully' : 'Unknown response');
 
             if ($isSuccess) {
                 Log::info('PhilSMS: Message sent successfully', [
                     'recipient' => $recipient,
+                    'message_id' => $result['data']['message_id'] ?? $result['data']['id'] ?? null,
                     'data' => $result['data'] ?? null
                 ]);
             } else {
                 Log::error('PhilSMS: API returned error status', [
+                    'endpoint' => $endpoint,
                     'status' => $result['status'] ?? 'unknown',
-                    'message' => $message,
-                    'response' => $result
+                    'api_message' => $apiMessage,
+                    'full_response' => $result,
+                    'recipient' => $recipient
                 ]);
             }
 
             return [
                 'success' => $isSuccess,
-                'message' => $message,
+                'message' => $apiMessage,
                 'data' => $result['data'] ?? null,
-                'raw_response' => $result
+                'raw_response' => $result,
+                'formatted_number' => $recipient
             ];
 
-        } catch (\Exception $e) {
-            Log::error('PhilSMS Exception', [
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            $errorMsg = 'Failed to connect to PhilSMS API. Please check your internet connection and API endpoint.';
+            Log::error('PhilSMS Connection Exception', [
                 'error' => $e->getMessage(),
+                'endpoint' => $this->baseUrl,
                 'trace' => $e->getTraceAsString()
             ]);
 
             return [
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $errorMsg . ' (' . $e->getMessage() . ')',
+                'data' => null
+            ];
+        } catch (\Exception $e) {
+            Log::error('PhilSMS Exception', [
+                'error' => $e->getMessage(),
+                'error_type' => get_class($e),
+                'endpoint' => $this->baseUrl,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'An unexpected error occurred: ' . $e->getMessage(),
                 'data' => null
             ];
         }
+    }
+
+    /**
+     * Extract user-friendly error message from API response
+     *
+     * @param array|null $result API response
+     * @param int $statusCode HTTP status code
+     * @return string Error message
+     */
+    protected function extractErrorMessage(?array $result, int $statusCode): string
+    {
+        if (empty($result)) {
+            return "HTTP Error {$statusCode}: No response from API";
+        }
+
+        // Check for common error patterns
+        $errorMessage = $result['message'] ?? null;
+        
+        if ($errorMessage) {
+            return $errorMessage;
+        }
+
+        // Handle specific HTTP status codes
+        $statusMessages = [
+            401 => 'Unauthorized: Invalid or missing API token. Please check your PHILSMS_API_TOKEN configuration.',
+            403 => 'Forbidden: API token does not have permission to send SMS.',
+            404 => 'Not Found: API endpoint not found. Please verify the base URL configuration.',
+            422 => 'Validation Error: Invalid request parameters. Check recipient format and message content.',
+            429 => 'Rate Limit Exceeded: Too many requests. Please try again later.',
+            500 => 'Internal Server Error: PhilSMS service is experiencing issues. Please try again later.',
+            503 => 'Service Unavailable: PhilSMS service is temporarily unavailable.',
+        ];
+
+        if (isset($statusMessages[$statusCode])) {
+            return $statusMessages[$statusCode];
+        }
+
+        // Check for error in data field
+        if (isset($result['data']['error'])) {
+            return $result['data']['error'];
+        }
+
+        return "HTTP Error {$statusCode}: " . ($errorMessage ?? 'Unknown error occurred');
     }
 
     /**

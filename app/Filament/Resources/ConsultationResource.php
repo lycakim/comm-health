@@ -494,7 +494,7 @@ class ConsultationResource extends Resource
                         Select::make('category')
                             ->label('Export Category')
                             ->options([
-                                'consultations_patient_profiling' => 'Consultations with Patients Profiling',
+                                'consultations_resident_profiling' => 'Consultations with Residents Profiling',
                                 'consultations_maternal_child' => 'Consultations with Maternal and Child Report',
                                 'consultations_children_adolescent' => 'Consultations with Children and Adolescent Reports',
                                 'consultations_senior_citizens' => 'Consultations with Senior Citizens Reports',
@@ -502,7 +502,15 @@ class ConsultationResource extends Resource
                                 'consultations_pwds' => 'Consultations with Person with Disabilities Reports',
                             ])
                             ->required()
-                            ->default('consultations_patient_profiling')
+                            ->default('consultations_resident_profiling'),
+                        Select::make('format')
+                            ->label('Export Format')
+                            ->options([
+                                'csv' => 'CSV (Spreadsheet)',
+                                'pdf' => 'PDF (Document)',
+                            ])
+                            ->default('csv')
+                            ->required()
                     ])
                     ->action(function ($data) {
                         $query = Consultation::with(['patient', 'patient.barangay', 'patient.category'])->latest();
@@ -515,9 +523,9 @@ class ConsultationResource extends Resource
                         $title = '';
 
                         switch ($data['category']) {
-                            case 'consultations_patient_profiling':
-                                $reportTitle = $brgy . 'consultations_patient_profiling';
-                                $title = 'Patients Information Records';
+                            case 'consultations_resident_profiling':
+                                $reportTitle = $brgy . 'consultations_resident_profiling';
+                                $title = 'Residents Information Records';
                                 break;
                             case 'consultations_maternal_child':
                                 $query->whereHas('patient', function ($q) {
@@ -574,6 +582,23 @@ class ConsultationResource extends Resource
                             return;
                         }
 
+                        $user = Auth::user();
+                        $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
+
+                        // Handle PDF export
+                        if ($data['format'] === 'pdf') {
+                            $pdfService = app(\App\Services\PDFGenerationService::class);
+                            $pdf = $pdfService->generateConsultationListPdf($consultations, $title, $barangay);
+                            $filename = $reportTitle . '_' . date('Y-m-d_His') . '.pdf';
+                            
+                            return response()->streamDownload(
+                                fn () => print($pdf->output()),
+                                $filename,
+                                ['Content-Type' => 'application/pdf']
+                            );
+                        }
+
+                        // Handle CSV export
                         return response()->streamDownload(function () use ($consultations, $data) {
                             $csv = fopen('php://output', 'w');
                             $user = Auth::user();

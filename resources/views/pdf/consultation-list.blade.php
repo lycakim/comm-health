@@ -73,34 +73,36 @@
                 <th>Weight</th>
                 <th>BMI</th>
                 <th>Maintenance</th>
+                <th>Consultation Date</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($patients as $patient)
+            @foreach($consultations as $consultation)
+                @php
+                    $patient = $consultation->patient;
+                @endphp
                 <tr>
-                    <td>{{ $patient->first_name }} {{ $patient->middle_name ?? '' }} {{ $patient->last_name }} {{ $patient->suffix ?? '' }}</td>
+                    <td>{{ $patient->first_name ?? '' }} {{ $patient->middle_name ?? '' }} {{ $patient->last_name ?? '' }} {{ $patient->suffix ?? '' }}</td>
                     <td>{{ $patient->birth_date ? $patient->birth_date->format('M d, Y') : 'N/A' }}</td>
-                    <td>{{ $patient->birth_date ? \Carbon\Carbon::parse($patient->birth_date)->age : 'N/A' }}</td>
+                    <td>{{ $patient->age ?? 'N/A' }}</td>
                     <td>{{ $patient->barangay->name ?? 'N/A' }}</td>
                     <td>{{ $patient->category->name ?? 'N/A' }}</td>
                     <td>{{ $patient->blood_pressure ?? 'N/A' }}</td>
                     <td>{{ $patient->sugar_level ?? 'N/A' }}</td>
                     <td>{{ $patient->contact_number ?? 'N/A' }}</td>
-                    <td>{{ ucfirst($patient->sex) ?? 'N/A' }}</td>
+                    <td>{{ ucfirst($patient->sex ?? 'N/A') }}</td>
                     <td>{{ $patient->height ?? 'N/A' }}</td>
                     <td>{{ $patient->weight ?? 'N/A' }}</td>
                     <td>{{ $patient->bmi ?? 'N/A' }}</td>
                     <td>{{ is_array($patient->medication_maintenance) ? implode(', ', $patient->medication_maintenance) : ($patient->medication_maintenance ?? 'N/A') }}</td>
+                    <td>{{ $consultation->created_at ? $consultation->created_at->format('M d, Y') : 'N/A' }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
     <div class="footer">
-        <p>Total Records: {{ $patients->count() }}</p>
+        <p>Total Records: {{ $consultations->count() }}</p>
     </div>
 </body>
 </html>
-
-
-

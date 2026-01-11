@@ -553,7 +553,7 @@ class PatientResource extends Resource
         return $table
             ->headerActions([
                 TablesAction::make('exportToCSV')
-                    ->label('Export CSV')
+                    ->label('Export')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->disabled(fn() => ! self::canCreate())
                     ->color('gray')
@@ -561,7 +561,7 @@ class PatientResource extends Resource
                         Select::make('category')
                             ->label('Export Category')
                             ->options([
-                                'patient_profiling' => 'Patients Profiling',
+                                'residents_profiling' => 'Residents Profiling',
                                 'maternal_child' => 'Maternal and Child Report',
                                 'children_adolescent' => 'Children and Adolescent Reports',
                                 'senior_citizens' => 'Senior Citizens Reports',
@@ -569,7 +569,15 @@ class PatientResource extends Resource
                                 'pwds' => 'Person with Disabilities Reports',
                             ])
                             ->required()
-                            ->default('patient_profiling')
+                            ->default('residents_profiling'),
+                        Select::make('format')
+                            ->label('Export Format')
+                            ->options([
+                                'csv' => 'CSV (Spreadsheet)',
+                                'pdf' => 'PDF (Document)',
+                            ])
+                            ->default('csv')
+                            ->required()
                     ])
                     ->action(function ($data) {
                         $query = Patient::query();
@@ -582,9 +590,9 @@ class PatientResource extends Resource
                         $title = '';
 
                         switch ($data['category']) {
-                            case 'patient_profiling':
-                                $reportTitle =  $brgy . 'patient_profiling';
-                                $title = 'Patients Information Records';
+                            case 'residents_profiling':
+                                $reportTitle =  $brgy . 'residents_profiling';
+                                $title = 'Residents Information Records';
                                 break;
                             case 'maternal_child':
                                 $query->where('category_id', Category::where('name', 'LIKE', '%maternal and child%')->value('id'));
@@ -629,6 +637,23 @@ class PatientResource extends Resource
                             return;
                         }
 
+                        $user = Auth::user();
+                        $barangay = $user->barangay_id ? Barangay::find($user->barangay_id) : null;
+
+                        // Handle PDF export
+                        if ($data['format'] === 'pdf') {
+                            $pdfService = app(PDFGenerationService::class);
+                            $pdf = $pdfService->generatePatientListPdf($patients, $title, $barangay);
+                            $filename = $reportTitle . '_' . date('Y-m-d_His') . '.pdf';
+                            
+                            return response()->streamDownload(
+                                fn () => print($pdf->output()),
+                                $filename,
+                                ['Content-Type' => 'application/pdf']
+                            );
+                        }
+
+                        // Handle CSV export
                         return response()->streamDownload(function () use ($patients, $data) {
                             $csv = fopen('php://output', 'w');
                             $user = Auth::user();

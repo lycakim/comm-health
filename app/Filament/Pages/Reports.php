@@ -200,6 +200,37 @@ class Reports extends Page implements HasTable
                     ->relationship('program', 'name')
                     ->preload(),
             ])
+            ->headerActions([
+                TablesAction::make('generate_data_report')
+                    ->label('Generate Data Report')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->disabled(fn() => is_null(Auth::user()->barangay_id) || Auth::user()->role === RoleEnum::MHO->value)
+                    ->color('gray')
+                    ->form([
+                        Select::make('report_type')
+                            ->label('Report Type')
+                            ->options([
+                                'resident-profiling' => 'Resident Profiling',
+                                'maternal-child' => 'Maternal and Child Report',
+                                'senior-citizens' => 'Senior Citizens Report',
+                                'family-planning' => 'Family Planning Report',
+                                'morbidity-mortality' => 'Morbidity and Mortality Report',
+                            ])
+                            ->required()
+                            ->default('resident-profiling'),
+                        Select::make('format')
+                            ->label('Export Format')
+                            ->options([
+                                'csv' => 'CSV (Spreadsheet)',
+                                'pdf' => 'PDF (Document)',
+                            ])
+                            ->default('csv')
+                            ->required()
+                    ])
+                    ->action(function ($data, $livewire) {
+                        return $livewire->generateReport($data['report_type'], $data['format']);
+                    }),
+            ])
             ->actions([
                 TableAction::make('view')
                     ->label('View Details')
@@ -413,13 +444,36 @@ class Reports extends Page implements HasTable
         })->toArray();
     }
 
-    public function generateReport(string $reportType)
+    public function generateReport(string $reportType, string $format = 'csv')
     {
         try {
             // Get data based on report type
             $data = $this->getReportData($reportType);
             
-            // Define filename
+            // Check if there's no data
+            if (empty($data['rows']) || count($data['rows']) === 0) {
+                Notification::make()
+                    ->title('No Data Available')
+                    ->body('There is no data available for this report. Please try a different report type or check back later.')
+                    ->warning()
+                    ->send();
+                return;
+            }
+            
+            // Handle PDF export
+            if ($format === 'pdf') {
+                $pdfService = app(PDFGenerationService::class);
+                $pdf = $pdfService->generateReportDataPdf($data, $reportType);
+                $filename = "{$reportType}_" . now()->format('Y-m-d_His') . '.pdf';
+                
+                return response()->streamDownload(
+                    fn () => print($pdf->output()),
+                    $filename,
+                    ['Content-Type' => 'application/pdf']
+                );
+            }
+            
+            // Handle CSV export
             $filename = "{$reportType}_" . now()->format('Y-m-d_His') . '.csv';
             
             // Return download
@@ -455,7 +509,7 @@ class Reports extends Page implements HasTable
     protected function getReportData(string $reportType)
     {
         return match($reportType) {
-            'patient-profiling' => $this->getPatientProfilingData(),
+            'resident-profiling' => $this->getPatientProfilingData(),
             'maternal-child' => $this->getMaternalChildData(),
             'senior-citizens' => $this->getSeniorCitizensData(),
             'family-planning' => $this->getFamilyPlanningData(),
@@ -470,7 +524,7 @@ class Reports extends Page implements HasTable
         
         return [
             'headers' => [
-                'Patient ID',
+                'Resident ID',
                 'First Name',
                 'Last Name',
                 'Date of Birth',
@@ -506,24 +560,23 @@ class Reports extends Page implements HasTable
         
         return [
             'headers' => [
-                'Patient ID',
+                'Resident ID',
                 'Full Name',
                 'Age',
                 'Contact Number',
                 'Number of Pregnancies',
                 'Number of Children',
-                'Last Prenatal Visit',
-                'Status'
+                'Last Prenatal Visit'
             ],
             'rows' => $patients->map(function ($patient) {
                 return [
                     $patient->id,
                     $patient->first_name . ' ' . $patient->last_name,
                     $patient->age,
+                    $patient->contact_number,
                     $patient->pregnancies?->count() ?? 0,
                     $patient->children?->count() ?? 0,
-                    $patient->last_prenatal_visit?->format('Y-m-d') ?? 'N/A',
-                    $patient->pregnancy_status ?? 'N/A'
+                    $patient->last_prenatal_visit?->format('Y-m-d') ?? 'N/A'
                 ];
             })->toArray()
         ];
@@ -537,7 +590,7 @@ class Reports extends Page implements HasTable
         
         return [
             'headers' => [
-                'Patient ID',
+                'Resident ID',
                 'Full Name',
                 'Age',
                 'Gender',
@@ -571,7 +624,7 @@ class Reports extends Page implements HasTable
         
         return [
             'headers' => [
-                'Patient ID',
+                'Resident ID',
                 'Full Name',
                 'Age',
                 'Contact Number',
@@ -647,7 +700,7 @@ class Reports extends Page implements HasTable
         return [
             'headers' => [
                 'Type',
-                'Patient ID',
+                'Resident ID',
                 'Full Name',
                 'Age',
                 'Gender',
