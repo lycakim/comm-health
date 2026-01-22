@@ -9,6 +9,26 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <style>
+            .photo-carousel-container {
+                width: 100%;
+                position: relative;
+            }
+            
+            .photo-carousel-track {
+                will-change: transform;
+                display: flex;
+                align-items: flex-start;
+            }
+            
+            .photo-item {
+                transition: transform 0.3s ease;
+            }
+            
+            .photo-item img {
+                will-change: transform;
+            }
+        </style>
     </head>
 <body class="antialiased bg-gray-100">
     <div class="min-h-screen flex flex-col">
@@ -139,6 +159,80 @@
                     </p>
                 </div>
             </div>
+
+            <!-- Photo Gallery Carousel Section -->
+            @if(isset($photos) && count($photos) > 0)
+            <div class="py-16 bg-gray-50 overflow-hidden">
+                <div class="mb-8 text-center">
+                    <h2 class="text-3xl font-bold text-emerald-600 mb-2">Our Community Health Activities</h2>
+                    <p class="text-gray-600">Capturing moments from our health programs and community outreach</p>
+                </div>
+                
+                <!-- Carousel Container -->
+                <div class="relative">
+                    <div class="photo-carousel-container overflow-hidden">
+                        <div class="photo-carousel-track flex gap-4" id="photoCarousel">
+                            <!-- First set of photos -->
+                            @foreach($photos as $index => $photo)
+                                @php
+                                    // Varied sizes based on index
+                                    $sizeClasses = [
+                                        ['w-32', 'h-48'],
+                                        ['w-40', 'h-56'],
+                                        ['w-48', 'h-64'],
+                                        ['w-56', 'h-64'],
+                                        ['w-36', 'h-52'],
+                                    ];
+                                    $sizeIndex = $index % count($sizeClasses);
+                                    $size = $sizeClasses[$sizeIndex];
+                                    
+                                    // Varied vertical offsets for scattered effect
+                                    $offsetClasses = ['mt-0', 'mt-4', 'mt-8', 'mt-12', 'mt-6'];
+                                    $offsetIndex = ($index * 3) % count($offsetClasses);
+                                    $offset = $offsetClasses[$offsetIndex];
+                                @endphp
+                                <div class="photo-item flex-shrink-0 {{ $offset }} {{ $size[0] }} {{ $size[1] }} group cursor-pointer">
+                                    <img 
+                                        src="{{ $photo }}" 
+                                        alt="Community Health Activity {{ $index + 1 }}"
+                                        class="w-full h-full object-cover rounded-lg shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110"
+                                        loading="lazy"
+                                    >
+                                </div>
+                            @endforeach
+                            
+                            <!-- Duplicate set for seamless infinite loop -->
+                            @foreach($photos as $index => $photo)
+                                @php
+                                    $sizeClasses = [
+                                        ['w-32', 'h-48'],
+                                        ['w-40', 'h-56'],
+                                        ['w-48', 'h-64'],
+                                        ['w-56', 'h-64'],
+                                        ['w-36', 'h-52'],
+                                    ];
+                                    $sizeIndex = $index % count($sizeClasses);
+                                    $size = $sizeClasses[$sizeIndex];
+                                    
+                                    $offsetClasses = ['mt-0', 'mt-4', 'mt-8', 'mt-12', 'mt-6'];
+                                    $offsetIndex = ($index * 3) % count($offsetClasses);
+                                    $offset = $offsetClasses[$offsetIndex];
+                                @endphp
+                                <div class="photo-item flex-shrink-0 {{ $offset }} {{ $size[0] }} {{ $size[1] }} group cursor-pointer">
+                                    <img 
+                                        src="{{ $photo }}" 
+                                        alt="Community Health Activity {{ $index + 1 }}"
+                                        class="w-full h-full object-cover rounded-lg shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110"
+                                        loading="lazy"
+                                    >
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <div class="py-12 bg-white">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h2 class="text-2xl font-bold text-emerald-600 mb-4">Disclaimer</h2>
@@ -172,5 +266,71 @@
     </div>
     @livewireScripts
     @stack('scripts')
+    
+    @if(isset($photos) && count($photos) > 0)
+    <script>
+        // Photo Carousel Infinite Scroll Animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const carousel = document.getElementById('photoCarousel');
+            if (!carousel) return;
+
+            const carouselContainer = carousel.parentElement;
+            let animationId;
+            let scrollPosition = 0;
+            const scrollSpeed = 0.5; // pixels per frame
+            let isPaused = false;
+
+            // Calculate the width of one set of photos
+            const firstSetWidth = carousel.children.length > 0 
+                ? Array.from(carousel.children).slice(0, carousel.children.length / 2)
+                    .reduce((sum, child) => sum + child.offsetWidth + 16, 0) // 16px for gap-4
+                : carousel.scrollWidth / 2;
+
+            function animate() {
+                if (!isPaused) {
+                    scrollPosition += scrollSpeed;
+                    
+                    // Reset position when we've scrolled one full set width
+                    if (scrollPosition >= firstSetWidth) {
+                        scrollPosition = 0;
+                    }
+                    
+                    carousel.style.transform = `translateX(-${scrollPosition}px)`;
+                }
+                
+                animationId = requestAnimationFrame(animate);
+            }
+
+            // Pause on hover
+            carouselContainer.addEventListener('mouseenter', () => {
+                isPaused = true;
+            });
+
+            carouselContainer.addEventListener('mouseleave', () => {
+                isPaused = false;
+            });
+
+            // Start animation
+            animate();
+
+            // Handle window resize
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    // Recalculate first set width on resize
+                    const newFirstSetWidth = carousel.children.length > 0 
+                        ? Array.from(carousel.children).slice(0, carousel.children.length / 2)
+                            .reduce((sum, child) => sum + child.offsetWidth + 16, 0)
+                        : carousel.scrollWidth / 2;
+                    
+                    if (scrollPosition >= newFirstSetWidth) {
+                        scrollPosition = 0;
+                    }
+                }, 250);
+            });
+        });
+    </script>
+    @endif
 </body>
 </html>

@@ -1,14 +1,38 @@
 <?php
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DynamicDashboardController;
 
 // Route::redirect('/', '/app')->name('login');
 Route::get('/', function () {
+    // Collect photos from landing-page directory
+    $photoPath = public_path('landing-page');
+    $photos = [];
+    
+    // Use Laravel's File facade for better cross-platform compatibility
+    if (File::exists($photoPath) && File::isDirectory($photoPath)) {
+        $files = File::files($photoPath);
+        $photoFiles = [];
+        
+        foreach ($files as $file) {
+            $fileName = $file->getFilename();
+            
+            // Match photo files with numeric suffix
+            if (preg_match('/^photo-(\d+)\.(jpg|jpeg|png|gif|webp)$/i', $fileName, $matches)) {
+                $photoFiles[(int)$matches[1]] = asset('landing-page/' . $fileName);
+            }
+        }
+        
+        // Sort by numeric key and convert to array
+        ksort($photoFiles);
+        $photos = array_values($photoFiles);
+    }
+    
     // return view('welcome');
-    return view('landing');
+    return view('landing', ['photos' => $photos]);
     // return view('sample');
 })->name('welcome');
 
