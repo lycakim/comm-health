@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 use App\Traits\HasUserTypeUrls;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use App\Services\PhilSMSService;
+use App\Services\SemaphoreService;
 use Filament\Forms\Components\Grid;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
@@ -430,7 +430,7 @@ class ProgramResource extends Resource
                         $program = $record;
                         $users = \App\Models\Patient::where('barangay_id', $program->barangay_id)->get();
 
-                        $smsService = app(\App\Services\PhilSMSService::class);
+                        $smsService = app(\App\Services\SemaphoreService::class);
 
                         $successCount = 0;
                         $failCount = 0;

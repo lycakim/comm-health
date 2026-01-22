@@ -38,14 +38,8 @@ return [
     // config/services.php
     'semaphore' => [
         'api_key' => env('SEMAPHORE_API_KEY'),
-        'sender_name' => env('SEMAPHORE_SENDER_NAME', 'SEMAPHORE'), // or leave empty
+        'sender_name' => env('SEMAPHORE_SENDER_NAME', 'CarmenMHO'),
         'base_url' => env('SEMAPHORE_BASE_URL', 'https://api.semaphore.co/api/v4'),
     ],
-
-    'philsms' => [
-        'api_token' => env('PHILSMS_API_TOKEN'),
-        'base_url' => env('PHILSMS_BASE_URL', 'https://dashboard.philsms.com/api/v3'),
-        'sender_id' => env('PHILSMS_SENDER_ID', 'Philsms'),
-    ]
 
 ];
