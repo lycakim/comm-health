@@ -72,8 +72,81 @@
                 </div>
             </div>
 
+            <!-- Photo Gallery Carousel Section -->
+            @if(isset($photos) && count($photos) > 0)
+            <div class="py-16 bg-gray-50 overflow-hidden">
+                <div class="mb-8 text-center">
+                    <h2 class="text-3xl font-bold text-emerald-600 mb-2">Our Community Health Activities</h2>
+                    <p class="text-gray-600">Capturing moments from our health programs and community outreach</p>
+                </div>
+                
+                <!-- Carousel Container -->
+                <div class="relative">
+                    <div class="photo-carousel-container overflow-hidden">
+                        <div class="photo-carousel-track flex gap-4" id="photoCarousel">
+                            <!-- First set of photos -->
+                            @foreach($photos as $index => $photo)
+                                @php
+                                    // Varied sizes based on index
+                                    $sizeClasses = [
+                                        ['w-32', 'h-48'],
+                                        ['w-40', 'h-56'],
+                                        ['w-48', 'h-64'],
+                                        ['w-56', 'h-64'],
+                                        ['w-36', 'h-52'],
+                                    ];
+                                    $sizeIndex = $index % count($sizeClasses);
+                                    $size = $sizeClasses[$sizeIndex];
+                                    
+                                    // Varied vertical offsets for scattered effect
+                                    $offsetClasses = ['mt-0', 'mt-4', 'mt-8', 'mt-12', 'mt-6'];
+                                    $offsetIndex = ($index * 3) % count($offsetClasses);
+                                    $offset = $offsetClasses[$offsetIndex];
+                                @endphp
+                                <div class="photo-item flex-shrink-0 {{ $offset }} {{ $size[0] }} {{ $size[1] }} group cursor-pointer">
+                                    <img 
+                                        src="{{ $photo }}" 
+                                        alt="Community Health Activity {{ $index + 1 }}"
+                                        class="w-full h-full object-cover rounded-lg shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110"
+                                        loading="lazy"
+                                    >
+                                </div>
+                            @endforeach
+                            
+                            <!-- Duplicate set for seamless infinite loop -->
+                            @foreach($photos as $index => $photo)
+                                @php
+                                    $sizeClasses = [
+                                        ['w-32', 'h-48'],
+                                        ['w-40', 'h-56'],
+                                        ['w-48', 'h-64'],
+                                        ['w-56', 'h-64'],
+                                        ['w-36', 'h-52'],
+                                    ];
+                                    $sizeIndex = $index % count($sizeClasses);
+                                    $size = $sizeClasses[$sizeIndex];
+                                    
+                                    $offsetClasses = ['mt-0', 'mt-4', 'mt-8', 'mt-12', 'mt-6'];
+                                    $offsetIndex = ($index * 3) % count($offsetClasses);
+                                    $offset = $offsetClasses[$offsetIndex];
+                                @endphp
+                                <div class="photo-item flex-shrink-0 {{ $offset }} {{ $size[0] }} {{ $size[1] }} group cursor-pointer">
+                                    <img 
+                                        src="{{ $photo }}" 
+                                        alt="Community Health Activity {{ $index + 1 }}"
+                                        class="w-full h-full object-cover rounded-lg shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110"
+                                        loading="lazy"
+                                    >
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Features Section -->
-            <div class="py-12 bg-gray-50">
+            <div class="py-12 bg-white">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex items-center justify-center gap-8">
                         <!-- MHO Administrators -->
@@ -150,7 +223,7 @@
             </div>
 
             <!-- Mission Section -->
-            <div class="py-12 bg-white">
+            <div class="py-12 bg-gray-50">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h2 class="text-2xl font-bold text-emerald-600 mb-4">Improving Healthcare Delivery</h2>
                     <p class="max-w-3xl mx-auto text-gray-600">
@@ -159,79 +232,6 @@
                     </p>
                 </div>
             </div>
-
-            <!-- Photo Gallery Carousel Section -->
-            @if(isset($photos) && count($photos) > 0)
-            <div class="py-16 bg-gray-50 overflow-hidden">
-                <div class="mb-8 text-center">
-                    <h2 class="text-3xl font-bold text-emerald-600 mb-2">Our Community Health Activities</h2>
-                    <p class="text-gray-600">Capturing moments from our health programs and community outreach</p>
-                </div>
-                
-                <!-- Carousel Container -->
-                <div class="relative">
-                    <div class="photo-carousel-container overflow-hidden">
-                        <div class="photo-carousel-track flex gap-4" id="photoCarousel">
-                            <!-- First set of photos -->
-                            @foreach($photos as $index => $photo)
-                                @php
-                                    // Varied sizes based on index
-                                    $sizeClasses = [
-                                        ['w-32', 'h-48'],
-                                        ['w-40', 'h-56'],
-                                        ['w-48', 'h-64'],
-                                        ['w-56', 'h-64'],
-                                        ['w-36', 'h-52'],
-                                    ];
-                                    $sizeIndex = $index % count($sizeClasses);
-                                    $size = $sizeClasses[$sizeIndex];
-                                    
-                                    // Varied vertical offsets for scattered effect
-                                    $offsetClasses = ['mt-0', 'mt-4', 'mt-8', 'mt-12', 'mt-6'];
-                                    $offsetIndex = ($index * 3) % count($offsetClasses);
-                                    $offset = $offsetClasses[$offsetIndex];
-                                @endphp
-                                <div class="photo-item flex-shrink-0 {{ $offset }} {{ $size[0] }} {{ $size[1] }} group cursor-pointer">
-                                    <img 
-                                        src="{{ $photo }}" 
-                                        alt="Community Health Activity {{ $index + 1 }}"
-                                        class="w-full h-full object-cover rounded-lg shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110"
-                                        loading="lazy"
-                                    >
-                                </div>
-                            @endforeach
-                            
-                            <!-- Duplicate set for seamless infinite loop -->
-                            @foreach($photos as $index => $photo)
-                                @php
-                                    $sizeClasses = [
-                                        ['w-32', 'h-48'],
-                                        ['w-40', 'h-56'],
-                                        ['w-48', 'h-64'],
-                                        ['w-56', 'h-64'],
-                                        ['w-36', 'h-52'],
-                                    ];
-                                    $sizeIndex = $index % count($sizeClasses);
-                                    $size = $sizeClasses[$sizeIndex];
-                                    
-                                    $offsetClasses = ['mt-0', 'mt-4', 'mt-8', 'mt-12', 'mt-6'];
-                                    $offsetIndex = ($index * 3) % count($offsetClasses);
-                                    $offset = $offsetClasses[$offsetIndex];
-                                @endphp
-                                <div class="photo-item flex-shrink-0 {{ $offset }} {{ $size[0] }} {{ $size[1] }} group cursor-pointer">
-                                    <img 
-                                        src="{{ $photo }}" 
-                                        alt="Community Health Activity {{ $index + 1 }}"
-                                        class="w-full h-full object-cover rounded-lg shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110"
-                                        loading="lazy"
-                                    >
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endif
 
             <div class="py-12 bg-white">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
