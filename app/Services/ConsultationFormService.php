@@ -75,7 +75,7 @@ class ConsultationFormService
                                 Section::make()
                                     ->schema([
                                         Select::make('patient_id')
-                                            ->label('Patient')
+                                            ->label('Resident')
                                             ->reactive()
                                             ->live()
                                             ->options(function () {
@@ -124,15 +124,15 @@ class ConsultationFormService
                                             ->disabledOn('edit')
                                             ->required(),
                                     ])->columns(3),
-                                
-                                // PATIENT INFORMATION PREVIEW
-                                Section::make('Patient Information')
+
+                                // RESIDENT INFORMATION PREVIEW
+                                Section::make('Resident Information')
                                     ->collapsible()
                                     ->schema([
-                                        Fieldset::make('Patient')
+                                        Fieldset::make('Resident')
                                             ->schema([
                                                 Placeholder::make('patient_name')
-                                                    ->label('Patient Name')
+                                                    ->label('Resident Name')
                                                     ->content(function (Get $get) {
                                                         $patientId = $get('patient_id');
                                                         if (!$patientId) return '-';
@@ -304,10 +304,10 @@ class ConsultationFormService
                                     ->visible(fn (Get $get) => (bool) $get('patient_id'))
                                     ->headerActions([
                                         Action::make('editPatient')
-                                            ->label('Edit Patient Info')
+                                            ->label('Edit Resident Info')
                                             ->color('gray')
                                             ->icon('heroicon-o-pencil-square')
-                                            ->modalHeading('Update Patient Information')
+                                            ->modalHeading('Update Resident Information')
                                             ->fillForm(function (Get $get) {
                                                 $patientId = $get('patient_id');
                                                 $patient = Patient::find($patientId);
@@ -332,7 +332,7 @@ class ConsultationFormService
                                                 ]) : [];
                                             })
                                             ->form([
-                                                Fieldset::make('Patient Information')
+                                                Fieldset::make('Resident Information')
                                                     ->schema([
                                                         TextInput::make('first_name')->label('First Name')->required(),
                                                         TextInput::make('last_name')->label('Last Name')->required(),
