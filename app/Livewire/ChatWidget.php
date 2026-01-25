@@ -196,6 +196,14 @@ class ChatWidget extends Component
                 $this->unreadCounts[$userId] = 0;
             }
         }
+        
+        // Update hasUnreadMessages based on total count
+        $this->hasUnreadMessages = $this->getTotalUnreadCount() > 0;
+    }
+
+    public function getTotalUnreadCount(): int
+    {
+        return array_sum($this->unreadCounts);
     }
 
     public function markMessagesAsRead(int $userId): void

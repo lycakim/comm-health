@@ -200,9 +200,9 @@
                     box-shadow: 0 4px 12px rgba(0, 168, 107, 0.3);">
             
             <!-- Unread Message Badge -->
-            @if($hasUnreadMessages && !$isChatOpen)
-                <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
-                    !
+            @if($this->getTotalUnreadCount() > 0 && !$isChatOpen)
+                <span style="position: absolute; top: -4px; right: -4px; background-color: #dc2626; color: white; border-radius: 9999px; min-width: 20px; height: 20px; padding: 0 6px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); z-index: 10;">
+                    {{ $this->getTotalUnreadCount() > 99 ? '99+' : $this->getTotalUnreadCount() }}
                 </span>
             @endif
             
