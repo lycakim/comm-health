@@ -15,11 +15,7 @@ class ChildrenChartService
 
     public function __construct()
     {
-        $this->childrenCategoryId = Category::where('name', 'child')
-            ->orWhere('name', 'Child')
-            ->orWhere('name', 'children')
-            ->orWhere('name', 'Children')
-            ->first()?->id;
+        $this->childrenCategoryId = Category::findByAge(5)?->id;
     }
 
     /**

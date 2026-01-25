@@ -190,22 +190,18 @@ class PatientResource extends Resource
                                     ->preload()
                                     ->searchable()
                                     ->required(fn (Get $get) => $get('relationship_to_head_of_family') !== 'other'),
-                                Select::make('category_id')
-                                    ->label('Category')
+                                Select::make('sex')
+                                    ->label('Gender')
                                     ->searchable()
-                                    ->columnSpan(2)
+                                    ->live()
                                     ->lazy()
-                                    ->options(
-                                        Category::query()
-                                            ->get()
-                                            ->mapWithKeys(fn ($category) => [
-                                                $category->id => $category->description 
-                                                    ? "{$category->name} - {$category->description}"
-                                                    : $category->name
-                                            ])
-                                            ->toArray()
-                                    )
-                                    ->preload(),
+                                    ->preload()
+                                    ->columnSpan(2)
+                                    ->options([
+                                        'male' => 'Male',
+                                        'female' => 'Female',
+                                    ])
+                                    ->required(),
                                 TextInput::make('relationship_to_head_of_family_other')
                                     ->label('Please specify relationship')
                                     ->columnSpan(1)
@@ -250,18 +246,16 @@ class PatientResource extends Resource
                                     ->firstDayOfWeek(7)
                                     ->maxDate(now())
                                     ->rule('before_or_equal:' . now()->format('Y-m-d'))
-                                    ->reactive()
+                                    ->live()
                                     ->debounce(500)
                                     ->afterStateUpdated(function (callable $set, Get $get, $state) {
                                         if ($state) {
                                             $age = Carbon::parse($state)->age;
                                             $set('age', $age);
                                             
-                                            // Auto-assign category based on age
+                                            // Auto-assign category based on age (always update when birthdate changes)
                                             $categoryId = self::getCategoryIdByAge($age);
-                                            if ($categoryId && !$get('category_id')) {
-                                                $set('category_id', $categoryId);
-                                            }
+                                            $set('category_id', $categoryId);
                                         } else {
                                             $set('age', null);
                                         }
@@ -276,15 +270,21 @@ class PatientResource extends Resource
                                         }
                                         return null;
                                     }),
-                                Select::make('sex')
-                                    ->label('Gender')
+                                Select::make('category_id')
+                                    ->label('Category')
                                     ->searchable()
-                                    ->live()
-                                    ->options([
-                                        'male' => 'Male',
-                                        'female' => 'Female',
-                                    ])
-                                    ->required(),
+                                    ->lazy()
+                                    ->options(
+                                        Category::query()
+                                            ->get()
+                                            ->mapWithKeys(fn ($category) => [
+                                                $category->id => $category->description 
+                                                    ? "{$category->name} - {$category->description}"
+                                                    : $category->name
+                                            ])
+                                            ->toArray()
+                                    )
+                                    ->preload(),
                                 Select::make('civil_status')
                                     ->label('Civil Status')
                                     ->searchable()
@@ -937,26 +937,11 @@ class PatientResource extends Resource
     }
 
     /**
-     * Get category ID based on age
-     * Children & Adolescents: 0-18 years -> Child category
-     * Senior Citizen: 60+ years -> Senior Citizen category
-     * Adult: 19-59 years -> no auto-assignment
+     * Get category ID based on age. Uses categories' age_min/age_max (dynamic).
      */
     protected static function getCategoryIdByAge(int $age): ?int
     {
-        if ($age >= 0 && $age <= 18) {
-            // Children & Adolescents
-            return Category::where('name', 'LIKE', '%child%')
-                ->orWhere('is_child', true)
-                ->value('id');
-        } elseif ($age >= 60) {
-            // Senior Citizen
-            return Category::where('name', 'LIKE', '%senior citizen%')
-                ->orWhere('name', 'LIKE', '%senior%')
-                ->value('id');
-        }
-        
-        // Adult (19-59) - no auto-assignment
-        return null;
+        $category = Category::findByAge($age);
+        return $category?->id;
     }
 }

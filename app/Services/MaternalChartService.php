@@ -15,9 +15,7 @@ class MaternalChartService
 
     public function __construct()
     {
-        $this->maternalCategoryId = Category::where('name', 'maternal')
-            ->orWhere('name', 'Maternal')
-            ->first()?->id;
+        $this->maternalCategoryId = Category::findMaternal()?->id;
     }
 
     /**

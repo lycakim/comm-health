@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources;
 
-use Dom\Text;
 use Filament\Forms;
 use App\Models\User;
 use Filament\Tables;
@@ -58,20 +57,32 @@ class CategoryResource extends Resource
                                     Rule::unique('categories', 'name')->ignore($record?->id),
                                 ];
                             }),
+                        TextInput::make('age_min')
+                            ->label('Age range (min)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(150)
+                            ->helperText('Optional. Min age (years) for auto-assignment. Leave empty for no lower bound.')
+                            ->placeholder('e.g. 0'),
+                        TextInput::make('age_max')
+                            ->label('Age range (max)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(150)
+                            ->helperText('Optional. Max age (years). Leave empty for no upper bound (e.g. 60+).')
+                            ->placeholder('e.g. 2')
+                            ->rules(fn (Get $get) => [
+                                Rule::when(
+                                    $get('age_min') !== null && $get('age_min') !== '' && $get('age_max') !== null && $get('age_max') !== '',
+                                    'gte:' . (int) $get('age_min')
+                                ),
+                            ]),
                         Textarea::make('description'),
                         Section::make()
                             ->schema([
-                                ToggleButtons::make('is_child')
-                                    ->label('Is Child Category?')
-                                    ->live()
-                                    ->default(false)
-                                    ->disabled(fn (Get $get) => $get('is_maternal'))
-                                    ->grouped()
-                                    ->boolean(),
                                 ToggleButtons::make('is_maternal')
                                     ->live()
                                     ->default(false)
-                                    ->disabled(fn (Get $get) => $get('is_child'))
                                     ->label('Is Maternal Category?')
                                     ->grouped()
                                     ->boolean(),
@@ -81,7 +92,7 @@ class CategoryResource extends Resource
                                     ->grouped()
                                     ->boolean(),
                             ])
-                            ->columns(3),
+                            ->columns(2),
                     ])
             ]);
     }
@@ -91,15 +102,19 @@ class CategoryResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')->searchable(),
-                TextColumn::make('description')->searchable(),
+                TextColumn::make('age_range_display')
+                    ->label('Age range')
+                    ->badge()
+                    ->color(fn ($state) => $state ? 'success' : 'gray')
+                    ->formatStateUsing(fn ($state) => $state ?? '—'),
+                TextColumn::make('description')->searchable()->limit(40),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()
-                    ->visible(fn (Category $record) => !$record->is_active),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -14,14 +14,18 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            ['name' => 'Child', 'is_child' => true, 'is_maternal' => false],
-            ['name' => 'Senior Citizen', 'is_child' => false, 'is_maternal' => false],
-            ['name' => 'Maternal', 'is_child' => false, 'is_maternal' => true],
-            ['name' => 'Chronic Conditions', 'is_child' => false, 'is_maternal' => false],
+            ['name' => 'Baby', 'age_min' => 0, 'age_max' => 2, 'is_maternal' => false],
+            ['name' => 'Children and Adolescents', 'age_min' => 3, 'age_max' => 20, 'is_maternal' => false],
+            ['name' => 'Senior Citizen', 'age_min' => 60, 'age_max' => null, 'is_maternal' => false],
+            ['name' => 'Maternal', 'age_min' => null, 'age_max' => null, 'is_maternal' => true],
+            ['name' => 'Chronic Conditions', 'age_min' => null, 'age_max' => null, 'is_maternal' => false],
         ];
 
         foreach ($categories as $category) {
-            Category::create($category);
+            Category::updateOrCreate(
+                ['name' => $category['name']],
+                $category
+            );
         }
     }
 }

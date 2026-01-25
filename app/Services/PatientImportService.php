@@ -248,21 +248,12 @@ class PatientImportService
     }
 
     /**
-     * Get category ID based on age
+     * Get category ID based on age. Uses categories' age_min/age_max (dynamic).
      */
     protected function getCategoryIdByAge(int $age): ?int
     {
-        if ($age >= 0 && $age <= 18) {
-            return Category::where('name', 'LIKE', '%child%')
-                ->orWhere('is_child', true)
-                ->value('id');
-        } elseif ($age >= 60) {
-            return Category::where('name', 'LIKE', '%senior citizen%')
-                ->orWhere('name', 'LIKE', '%senior%')
-                ->value('id');
-        }
-
-        return null;
+        $category = Category::findByAge($age);
+        return $category?->id;
     }
 
     /**

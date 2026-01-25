@@ -15,11 +15,7 @@ class SeniorCitizenChartService
 
     public function __construct()
     {
-        $this->seniorCitizenCategoryId = Category::where('name', 'senior citizen')
-            ->orWhere('name', 'Senior Citizen')
-            ->orWhere('name', 'Senior')
-            ->orWhere('name', 'senior')
-            ->first()?->id;
+        $this->seniorCitizenCategoryId = Category::findByAge(60)?->id;
     }
 
     /**
