@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;
 
 class Program extends Model
 {
@@ -29,6 +30,11 @@ class Program extends Model
     public function barangay(): BelongsTo
     {
         return $this->belongsTo(Barangay::class);
+    }
+
+    public function coordinatorUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'coordinator', 'id');
     }
 
     public function getActivitylogOptions(): LogOptions

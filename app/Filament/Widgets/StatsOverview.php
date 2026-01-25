@@ -116,7 +116,7 @@ class StatsOverview extends BaseWidget
         
         // BHW/Midwife stats - filtered by assigned barangay
         return [
-            Stat::make('Registered Patients', $totalPatients)
+            Stat::make('Registered Residents', $totalPatients)
                 ->description($barangayId ? '+' . $patientIncrease . '% from last month' : 'No barangay assigned')
                 ->descriptionIcon($patientIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->chart([10, 12, 13, 14, 15, 12]) // Replace with actual data points

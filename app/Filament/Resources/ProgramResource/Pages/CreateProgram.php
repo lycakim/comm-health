@@ -22,6 +22,14 @@ class CreateProgram extends CreateRecord
         return $this->getResource()::getUrl('index');
     }
     
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        // Ensure coordinator is set to current user
+        $data['coordinator'] = Auth::id();
+        
+        return $data;
+    }
+    
     protected function afterCreate(): void
     {
         $recipients = User::whereIn('role', [
