@@ -243,6 +243,9 @@ class PDFGenerationService
 
     public function generateReferralPdf(Referral $referral, Patient $patient, Consultation $consultation): \Barryvdh\DomPDF\PDF
     {
+        // Eager load the user relationship to avoid N+1 queries
+        $referral->load('user');
+        
         $html = view('pdf.referral-form', [
             'referral' => $referral,
             'patient' => $patient,

@@ -142,7 +142,7 @@
         </tr>
         <tr>
             <td colspan="4" style="padding-top:15px;">
-                <b>Referral by:</b> {{ $data['referral_by'] ?? 'JACLYN ROSE ZAPPHRIE S. SABLAS RHM II' }}<br>
+                <b>Referred by:</b> {{ $referral->user->name ?? ($data['referral_by'] ?? '') }}<br>
                 License #: {{ $data['license_no'] ?? '-' }}
             </td>
         </tr>

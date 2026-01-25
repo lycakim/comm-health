@@ -8,50 +8,70 @@
 @theme {
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    
+    /* Set base font size in theme */
+    --font-size-xs: 0.875rem;
+    --font-size-sm: 1rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
 }
 
-:root {
-    font-size: 20px !important;
+@layer base {
+    html {
+        font-size: 20px;
+    }
+    
+    body {
+        font-size: 1rem;
+    }
+
+    span, p, a, label, div {
+        font-size: 1rem !important;
+    }
+
 }
 
-/* Filament-specific font size improvements */
-.fi-body {
-    font-size: 1rem !important;
-}
+@layer components {
+    .filament-app,
+    .fi-body {
+        font-size: 1rem !important;
+    }
 
-.fi-section-header-heading,
-.fi-section-header-description {
-    font-size: 1.125rem !important;
-}
+    .fi-section-header-heading,
+    .fi-section-header-description {
+        font-size: 1.125rem !important;
+    }
 
-.fi-input-label,
-.fi-field-wrapper-label {
-    font-size: 0.9375rem !important;
-}
+    .fi-input-label,
+    .fi-field-wrapper-label {
+        font-size: 0.9375rem !important;
+    }
 
-.fi-input input,
-.fi-input textarea,
-.fi-select select {
-    font-size: 1rem !important;
-}
+    .fi-input input,
+    .fi-input textarea,
+    .fi-select select {
+        font-size: 1rem !important;
+    }
 
-.fi-table th,
-.fi-table td {
-    font-size: 0.9375rem !important;
-}
+    .fi-table th,
+    .fi-table td {
+        font-size: 0.9375rem !important;
+    }
 
-.fi-modal-heading {
-    font-size: 1.25rem !important;
-}
+    .fi-modal-heading {
+        font-size: 1.25rem !important;
+    }
 
-.fi-modal-description {
-    font-size: 1rem !important;
-}
+    .fi-modal-description {
+        font-size: 1rem !important;
+    }
 
-.fi-widget-stat-value {
-    font-size: 1.5rem !important;
-}
+    .fi-widget-stat-value {
+        font-size: 1.5rem !important;
+    }
 
-.fi-widget-stat-label {
-    font-size: 0.9375rem !important;
+    .fi-widget-stat-label {
+        font-size: 0.9375rem !important;
+    }
 }
