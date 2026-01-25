@@ -46,6 +46,7 @@ class Consultation extends Model
         'tt5_date' => 'date',
         'tt_imm' => 'date',
         'disabilities' => 'json',
+        'laboratories' => 'json',
         'child_weight' => 'decimal:2',
         'weight' => 'decimal:2',
         'height' => 'decimal:2',

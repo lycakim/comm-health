@@ -37,6 +37,7 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use App\Services\ConsultationFormOptionServices;
+use App\Models\Laboratory;
 
 class ConsultationFormService
 {
@@ -1190,6 +1191,53 @@ class ConsultationFormService
                                     ->hidden(fn (Get $get) => ! $get('referral_reason') || $get('referral_reason') !== 'Other')
                                     ->required(fn (Get $get) => $get('referral_reason') === 'Other')
                                     ->maxLength(65535),
+
+                                CheckboxList::make('referral_services')
+                                    ->label('Services to be provided by the receiving facility')
+                                    ->options([
+                                        'Consultation' => 'Consultation',
+                                        'Laboratory Exam' => 'Laboratory Exam',
+                                        'Imaging Exam' => 'Imaging Exam',
+                                        'In-Patient Care' => 'In-Patient Care',
+                                        'Medication' => 'Medication',
+                                        'Others' => 'Others',
+                                    ])
+                                    ->columns(2)
+                                    ->required(),
+                                    
+                                CheckboxList::make('laboratories')
+                                    ->hintAction(function () {
+                                        return Action::make('add-new-laboratory')
+                                            ->icon('heroicon-o-plus')
+                                            ->label('Add New Laboratory')
+                                            ->form([
+                                                TextInput::make('name')
+                                                    ->label('Laboratory Name')
+                                                    ->required(),
+                                            ])
+                                            ->action(function (array $data) {
+                                                $laboratory = Laboratory::create($data);
+                                                return $laboratory;
+                                            });
+                                    })
+                                    ->label('Laboratories')
+                                    ->searchable()
+                                    ->disabled(fn (Get $get) => ! $get('barangay_id'))
+                                    ->options(function (Get $get) {
+                                        $options = Laboratory::query()
+                                            ->pluck('name', 'id')
+                                            ->sort()
+                                            ->toArray();
+
+                                        if (empty($options)) {
+                                            // Return a "disabled" option if no laboratories found
+                                            return ['' => 'No laboratory available, try to add one'];
+                                        }
+
+                                        return $options;
+                                    })
+                                    ->bulkToggleable()
+                                    ->columns(2),
                                 
                                 ToggleButtons::make('urgency')
                                     ->required()
@@ -1202,6 +1250,7 @@ class ConsultationFormService
                                     ->inline(),
                                 
                                 ToggleButtons::make('surgical_operation')
+                                    ->label('Surgical Operation?')
                                     ->boolean()
                                     ->default(false)
                                     ->live()

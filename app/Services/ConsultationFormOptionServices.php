@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Laboratory;
+
 class ConsultationFormOptionServices
 {
     public static function getDisabilitiesOptions()
@@ -22,5 +24,14 @@ class ConsultationFormOptionServices
             'Out of School Youth' => 'Out of School Youth',
             'Working' => 'Working',
         ];
+    }
+
+    public static function getLaboratoryOptions()
+    {
+        return Laboratory::query()
+            ->orderBy('name')
+            ->get()
+            ->pluck('name', 'id')
+            ->toArray();
     }
 }

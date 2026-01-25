@@ -58,14 +58,21 @@ class CategoryResource extends Resource
                                 ];
                             }),
                         TextInput::make('age_min')
-                            ->label('Age range (min)')
+                            ->label('Age range (min years)')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(150)
                             ->helperText('Optional. Min age (years) for auto-assignment. Leave empty for no lower bound.')
                             ->placeholder('e.g. 0'),
+                        TextInput::make('age_min_months')
+                            ->label('Age range (min months)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(11)
+                            ->helperText('Optional. Additional months for min age (0-11).')
+                            ->placeholder('e.g. 6'),
                         TextInput::make('age_max')
-                            ->label('Age range (max)')
+                            ->label('Age range (max years)')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(150)
@@ -77,6 +84,13 @@ class CategoryResource extends Resource
                                     'gte:' . (int) $get('age_min')
                                 ),
                             ]),
+                        TextInput::make('age_max_months')
+                            ->label('Age range (max months)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(11)
+                            ->helperText('Optional. Additional months for max age (0-11).')
+                            ->placeholder('e.g. 3'),
                         Textarea::make('description'),
                         Section::make()
                             ->schema([

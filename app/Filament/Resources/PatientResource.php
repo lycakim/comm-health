@@ -276,23 +276,40 @@ class PatientResource extends Resource
                                     ->debounce(500)
                                     ->afterStateUpdated(function (callable $set, Get $get, $state) {
                                         if ($state) {
-                                            $age = Carbon::parse($state)->age;
-                                            $set('age', $age);
+                                            $birthDate = Carbon::parse($state);
                                             
-                                            // Auto-assign category based on age (always update when birthdate changes)
-                                            $categoryId = self::getCategoryIdByAge($age);
+                                            // Calculate age in years for category assignment and storage
+                                            $ageInYears = $birthDate->age;
+                                            $set('age', $ageInYears);
+                                            
+                                            // Auto-assign category based on age in years (always update when birthdate changes)
+                                            $categoryId = self::getCategoryIdByAge($ageInYears);
                                             $set('category_id', $categoryId);
                                         } else {
                                             $set('age', null);
                                         }
                                     }),
                                 TextInput::make('age')
-                                    ->label('Age (Years)')
+                                    ->label('Age')
                                     ->disabled()
                                     ->dehydrated(true)
                                     ->formatStateUsing(function ($record) {
                                         if ($record && $record->birth_date) {
-                                            return Carbon::parse($record->birth_date)->age;
+                                            $birthDate = Carbon::parse($record->birth_date);
+                                            $now = Carbon::now();
+                                            
+                                            $years = $birthDate->diffInYears($now);
+                                            $months = $birthDate->copy()->addYears($years)->diffInMonths($now);
+                                            
+                                            $parts = [];
+                                            if ($years > 0) {
+                                                $parts[] = $years . ' ' . ($years === 1 ? 'year' : 'years');
+                                            }
+                                            if ($months > 0) {
+                                                $parts[] = $months . ' ' . ($months === 1 ? 'month' : 'months');
+                                            }
+                                            
+                                            return !empty($parts) ? implode(' ', $parts) : '0 months';
                                         }
                                         return null;
                                     }),
@@ -743,7 +760,25 @@ class PatientResource extends Resource
                     ->color(fn (string $state): string => SexEnum::tryFrom($state)?->getColor() ?? 'gray'),
                 TextColumn::make('age')
                     ->getStateUsing(function ($record) {
-                        return Carbon::parse($record->birth_date)->age;
+                        if (!$record->birth_date) {
+                            return null;
+                        }
+                        
+                        $birthDate = Carbon::parse($record->birth_date);
+                        $now = Carbon::now();
+                        
+                        $years = $birthDate->diffInYears($now);
+                        $months = $birthDate->copy()->addYears($years)->diffInMonths($now);
+                        
+                        $parts = [];
+                        if ($years > 0) {
+                            $parts[] = $years . ' ' . ($years === 1 ? 'year' : 'years');
+                        }
+                        if ($months > 0) {
+                            $parts[] = $months . ' ' . ($months === 1 ? 'month' : 'months');
+                        }
+                        
+                        return !empty($parts) ? implode(' ', $parts) : '0 months';
                     })
                     ->label('Age'),
                 TextColumn::make('barangay.name')

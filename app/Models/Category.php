@@ -17,6 +17,8 @@ class Category extends Model
         'is_maternal' => 'boolean',
         'age_min' => 'integer',
         'age_max' => 'integer',
+        'age_min_months' => 'integer',
+        'age_max_months' => 'integer',
     ];
 
     public function patients(): HasMany
@@ -36,19 +38,48 @@ class Category extends Model
         return true;
     }
 
-    /** Human-readable age range (e.g. "0–2", "60+", "3–20"). */
+    /** Human-readable age range (e.g. "0–2", "60+", "3–20", "0y 6m–2y 3m"). */
     public function getAgeRangeDisplayAttribute(): ?string
     {
         if ($this->age_min === null && $this->age_max === null) {
             return null;
         }
-        if ($this->age_min === null) {
-            return $this->age_max . ' and below';
+        
+        $formatAge = function($years, $months) {
+            $parts = [];
+            if ($years !== null && $years > 0) {
+                $parts[] = $years . 'y';
+            }
+            if ($months !== null && $months > 0) {
+                $parts[] = $months . 'm';
+            }
+            return !empty($parts) ? implode(' ', $parts) : '0';
+        };
+        
+        $minStr = null;
+        $maxStr = null;
+        
+        if ($this->age_min !== null || $this->age_min_months !== null) {
+            $minStr = $formatAge($this->age_min ?? 0, $this->age_min_months ?? 0);
         }
-        if ($this->age_max === null) {
-            return $this->age_min . '+';
+        
+        if ($this->age_max !== null || $this->age_max_months !== null) {
+            $maxStr = $formatAge($this->age_max ?? 0, $this->age_max_months ?? 0);
         }
-        return $this->age_min . '–' . $this->age_max;
+        
+        if ($minStr === null && $maxStr === null) {
+            return null;
+        }
+        
+        if ($minStr === null) {
+            return $maxStr . ' and below';
+        }
+        
+        if ($maxStr === null) {
+            return $minStr . '+';
+        }
+        
+        return $minStr . '–' . $maxStr;
     }
 
     /**

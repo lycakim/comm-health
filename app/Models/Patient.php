@@ -81,7 +81,27 @@ class Patient extends Model
     protected function calculatedAge(): Attribute
     {
         return Attribute::make(
-            get: fn() => $this->birth_date ? Carbon::parse($this->birth_date)->age : null,
+            get: function() {
+                if (!$this->birth_date) {
+                    return null;
+                }
+                
+                $birthDate = Carbon::parse($this->birth_date);
+                $now = Carbon::now();
+                
+                $years = $birthDate->diffInYears($now);
+                $months = $birthDate->copy()->addYears($years)->diffInMonths($now);
+                
+                $parts = [];
+                if ($years > 0) {
+                    $parts[] = $years . ' ' . ($years === 1 ? 'year' : 'years');
+                }
+                if ($months > 0) {
+                    $parts[] = $months . ' ' . ($months === 1 ? 'month' : 'months');
+                }
+                
+                return !empty($parts) ? implode(' ', $parts) : '0 months';
+            },
         );
     }
 
