@@ -159,26 +159,40 @@ class ConsultationResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make('referralDetails')
-                    ->extraModalFooterActions(fn($record) => [
-                        $record->referral 
-                            ? Tables\Actions\Action::make('print')
-                                ->label('Print')
-                                ->icon('heroicon-o-printer')
-                                ->color('primary')
-                                ->action(function ($record) {
-                                    $referral = $record->referral;
-                                    $pdfService = new PDFGenerationService();
+                // Tables\Actions\ViewAction::make('referralDetails')
+                //     ->extraModalFooterActions(fn($record) => [
+                //         $record->referral 
+                //             ? Tables\Actions\Action::make('print')
+                //                 ->label('Print')
+                //                 ->icon('heroicon-o-printer')
+                //                 ->color('primary')
+                //                 ->action(function ($record) {
+                //                     $referral = $record->referral;
+                //                     $pdfService = new PDFGenerationService();
                                     
-                                    $pdf = $pdfService->generateReferralPdf($referral, $record->patient, $record);
+                //                     $pdf = $pdfService->generateReferralPdf($referral, $record->patient, $record);
                                     
-                                    return response()->streamDownload(function () use ($pdf) {
-                                        echo $pdf->output();
-                                    }, "referral-{$referral->ref_id}.pdf");
-                                })
-                            : null,
-                    ]),
-                Tables\Actions\EditAction::make()
+                //                     return response()->streamDownload(function () use ($pdf) {
+                //                         echo $pdf->output();
+                //                     }, "referral-{$referral->ref_id}.pdf");
+                //                 })
+                //             : null,
+                //     ]),
+                // Tables\Actions\Action::make('view'),
+                Tables\Actions\Action::make('download_referral_pdf')
+                    ->label('Download Referral PDF')
+                    ->icon('heroicon-o-printer')
+                    ->color('primary')
+                    ->visible(fn($record) => $record->referral)
+                    ->action(function ($record) {
+                        $referral = $record->referral;
+                        $pdfService = new PDFGenerationService();
+                        $pdf = $pdfService->generateReferralPdf($referral, $record->patient, $record);
+
+                        return response()->streamDownload(function () use ($pdf) {
+                            echo $pdf->output();
+                        }, "referral-{$referral->ref_id}.pdf");
+                    })
                     ->color('warning'),
                 Tables\Actions\Action::make('create_referral')
                     ->label(fn($record) => $record->referral ? 'Referred' : 'Create Referral')

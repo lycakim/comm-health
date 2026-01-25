@@ -172,14 +172,40 @@ class PatientResource extends Resource
                                 //     ->columnSpanFull(),
                                 TextInput::make('first_name')
                                     ->required()
-                                    ->placeholder('Juan'),
+                                    ->placeholder('Juan')
+                                    ->live(onBlur: false)
+                                    ->debounce(500),
                                 TextInput::make('middle_name')
                                     ->hint('optional')
-                                    ->placeholder('Manuel'),
+                                    ->placeholder('Manuel')
+                                    ->live(onBlur: false)
+                                    ->debounce(500),
                                 TextInput::make('last_name')
                                     ->required()
-                                    ->placeholder('Dela Cruz'),
+                                    ->placeholder('Dela Cruz')
+                                    ->live(onBlur: false)
+                                    ->debounce(500),
                                 TextInput::make('suffix')->hint('Jr., Sr., II, III, etc.'),
+                                ViewField::make('matching_patients')
+                                    ->label('Matching Existing Patients')
+                                    ->dehydrated(false)
+                                    ->view('filament.forms.components.patient-name-autocomplete')
+                                    ->visible(fn (Get $get) => 
+                                        (strlen(trim($get('first_name') ?? '')) >= 2) ||
+                                        (strlen(trim($get('middle_name') ?? '')) >= 2) ||
+                                        (strlen(trim($get('last_name') ?? '')) >= 2)
+                                    )
+                                    ->viewData(fn (Get $get) => [
+                                        'matchingPatients' => self::searchMatchingPatients(
+                                            $get('first_name'),
+                                            $get('middle_name'),
+                                            $get('last_name')
+                                        ),
+                                        'currentFirstName' => $get('first_name'),
+                                        'currentMiddleName' => $get('middle_name'),
+                                        'currentLastName' => $get('last_name'),
+                                    ])
+                                    ->columnSpanFull(),
                                 Select::make('relationship_to_head_of_family')
                                     ->label('Relationship to the Head of the Family')
                                     // ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'other' ? 2 : 'full')
@@ -943,5 +969,75 @@ class PatientResource extends Resource
     {
         $category = Category::findByAge($age);
         return $category?->id;
+    }
+
+    /**
+     * Search for matching patients based on name fields.
+     * Returns up to 15 most relevant matches.
+     */
+    public static function searchMatchingPatients(?string $firstName = null, ?string $middleName = null, ?string $lastName = null): \Illuminate\Database\Eloquent\Collection
+    {
+        // Only search if at least one name field has at least 2 characters
+        $hasSearchableInput = false;
+        $searchTerms = [];
+        
+        if (!empty($firstName) && strlen(trim($firstName)) >= 2) {
+            $hasSearchableInput = true;
+            $searchTerms['first_name'] = trim($firstName);
+        }
+        
+        if (!empty($middleName) && strlen(trim($middleName)) >= 2) {
+            $hasSearchableInput = true;
+            $searchTerms['middle_name'] = trim($middleName);
+        }
+        
+        if (!empty($lastName) && strlen(trim($lastName)) >= 2) {
+            $hasSearchableInput = true;
+            $searchTerms['last_name'] = trim($lastName);
+        }
+        
+        if (!$hasSearchableInput) {
+            return collect();
+        }
+        
+        $query = Patient::query()
+            ->select('id', 'first_name', 'middle_name', 'last_name', 'suffix', 'birth_date', 'barangay_id')
+            ->with('barangay:id,name');
+        
+        // Apply user permission filtering (barangay scope)
+        $user = self::currentUser();
+        if ($user && !in_array($user->role, [RoleEnum::MHO, RoleEnum::ADMIN]) && $user->barangay_id) {
+            $query->where('barangay_id', $user->barangay_id);
+        }
+        
+        // Build search query with OR conditions across name fields
+        $query->where(function ($q) use ($searchTerms) {
+            foreach ($searchTerms as $field => $value) {
+                $q->orWhere($field, 'LIKE', '%' . $value . '%');
+            }
+        });
+        
+        // Order by relevance: prioritize matches where multiple fields match
+        // Count how many fields match for each patient
+        $matchCountSql = '';
+        $bindings = [];
+        foreach ($searchTerms as $field => $value) {
+            if (!empty($matchCountSql)) {
+                $matchCountSql .= ' + ';
+            }
+            $matchCountSql .= "CASE WHEN {$field} LIKE ? THEN 1 ELSE 0 END";
+            $bindings[] = '%' . $value . '%';
+        }
+        
+        if (!empty($matchCountSql)) {
+            $query->orderByRaw("({$matchCountSql}) DESC", $bindings);
+        }
+        
+        // Secondary ordering by last name, then first name
+        $query->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'asc')
+            ->limit(15);
+        
+        return $query->get();
     }
 }
