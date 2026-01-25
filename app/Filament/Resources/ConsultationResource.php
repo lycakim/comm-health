@@ -380,6 +380,24 @@ class ConsultationResource extends Resource
                             Forms\Components\Textarea::make('hpi_notes')
                                 ->maxLength(65535),
 
+                            Forms\Components\CheckboxList::make('laboratories')
+                                ->label('Laboratories')
+                                ->searchable()
+                                ->options(function () {
+                                    $options = \App\Models\Laboratory::query()
+                                        ->pluck('name', 'id')
+                                        ->sort()
+                                        ->toArray();
+
+                                    if (empty($options)) {
+                                        return ['' => 'No laboratory available, try to add one'];
+                                    }
+
+                                    return $options;
+                                })
+                                ->bulkToggleable()
+                                ->columns(2),
+
                             Textarea::make('notes')
                                 ->label('Additional Notes')
                                 ->rows(3)
@@ -430,6 +448,7 @@ class ConsultationResource extends Resource
                                 'action_taken'              => $data['action_taken'] ?? null,
                                 'impression'                => $data['impression'] ?? null,
                                 'hpi_notes'                 => $data['hpi_notes'] ?? null,
+                                'laboratories'              => $data['laboratories'] ?? null,
                                 'receiving_provider_notes'  => $data['notes'] ?? null,
                                 'user_id'                   => Auth::id(),
                                 'created_at'                => now(),

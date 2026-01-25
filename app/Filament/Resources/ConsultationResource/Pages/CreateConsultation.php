@@ -68,6 +68,7 @@ class CreateConsultation extends CreateRecord
             'impression',
             'hpi_notes',
             'notes',
+            'laboratories', // Exclude laboratories from consultation data as it goes to referral
         ]);
     }
 
@@ -137,6 +138,7 @@ class CreateConsultation extends CreateRecord
             'action_taken'              => $data['action_taken'] ?? null,
             'impression'                => $data['impression'] ?? null,
             'hpi_notes'                 => $data['hpi_notes'] ?? null,
+            'laboratories'              => $data['laboratories'] ?? null,
             'receiving_provider_notes'  => $data['notes'] ?? null,
             'user_id'                   => Auth::id(),
             'created_at'                => $currentDate,
@@ -280,10 +282,37 @@ class CreateConsultation extends CreateRecord
                 if ($record && $record->referral()->exists()) {
                     $referral = $record->referral;
 
-                    // Open the View modal for this record
+                    // Show success notification with action to open PDF
+                    Notification::make()
+                        ->title('Consultation Created!')
+                        ->body('Consultation has been created and saved.')
+                        ->success()
+                        ->actions([
+                            \Filament\Notifications\Actions\Action::make('viewPdf')
+                                ->label('Open Referral PDF')
+                                ->button()
+                                ->url(route('referral.pdf', ['consultation' => $record->id]))
+                                ->openUrlInNewTab(),
+                        ])
+                        ->send();
+
+                    // Open PDF in new tab automatically using JavaScript
+                    $pdfUrl = route('referral.pdf', ['consultation' => $record->id]);
+                    
+                    // Dispatch browser event to open PDF in new tab
+                    $this->dispatch('open-pdf-in-new-tab', url: $pdfUrl);
+                    
+                    // Redirect to index page
                     $this->redirect(
-                        static::getResource()::getUrl('view', ['record' => $record->id])
+                        static::getResource()::getUrl('index')
                     );
+                } else {
+                    // No referral, just show success notification
+                    Notification::make()
+                        ->title('Consultation Created!')
+                        ->body('Consultation has been created and saved.')
+                        ->success()
+                        ->send();
                 }
             })
             ->keyBindings(['mod+s']);

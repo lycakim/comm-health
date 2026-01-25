@@ -38,6 +38,7 @@ use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use App\Services\ConsultationFormOptionServices;
 use App\Models\Laboratory;
+use App\Enums\RoleEnum;
 
 class ConsultationFormService
 {
@@ -78,8 +79,15 @@ class ConsultationFormService
                                             ->reactive()
                                             ->live()
                                             ->options(function () {
-                                                return Patient::query()
-                                                    ->get()
+                                                $user = Auth::user();
+                                                $query = Patient::query();
+                                                
+                                                // Filter by barangay for BHW users
+                                                if ($user && $user->role == RoleEnum::BHW && $user->barangay_id) {
+                                                    $query->where('barangay_id', $user->barangay_id);
+                                                }
+                                                
+                                                return $query->get()
                                                     ->mapWithKeys(function ($patient) {
                                                         return [$patient->id => $patient->first_name . ' ' . $patient->last_name];
                                                     })
@@ -1191,19 +1199,6 @@ class ConsultationFormService
                                     ->hidden(fn (Get $get) => ! $get('referral_reason') || $get('referral_reason') !== 'Other')
                                     ->required(fn (Get $get) => $get('referral_reason') === 'Other')
                                     ->maxLength(65535),
-
-                                CheckboxList::make('referral_services')
-                                    ->label('Services to be provided by the receiving facility')
-                                    ->options([
-                                        'Consultation' => 'Consultation',
-                                        'Laboratory Exam' => 'Laboratory Exam',
-                                        'Imaging Exam' => 'Imaging Exam',
-                                        'In-Patient Care' => 'In-Patient Care',
-                                        'Medication' => 'Medication',
-                                        'Others' => 'Others',
-                                    ])
-                                    ->columns(2)
-                                    ->required(),
                                     
                                 CheckboxList::make('laboratories')
                                     ->hintAction(function () {
@@ -1216,25 +1211,28 @@ class ConsultationFormService
                                                     ->required(),
                                             ])
                                             ->action(function (array $data) {
-                                                $laboratory = Laboratory::create($data);
+                                                $laboratory = Laboratory::create([
+                                                    'name' => $data['name'],
+                                                    'user_id' => Auth::id(),
+                                                ]);
                                                 return $laboratory;
                                             });
                                     })
                                     ->label('Laboratories')
                                     ->searchable()
-                                    ->disabled(fn (Get $get) => ! $get('barangay_id'))
-                                    ->options(function (Get $get) {
-                                        $options = Laboratory::query()
+                                    ->options(function () {
+                                        return Laboratory::query()
                                             ->pluck('name', 'id')
                                             ->sort()
                                             ->toArray();
-
-                                        if (empty($options)) {
-                                            // Return a "disabled" option if no laboratories found
-                                            return ['' => 'No laboratory available, try to add one'];
+                                    })
+                                    ->helperText(function (Get $get) {
+                                        // Must inform to add new laboratory if the list is empty
+                                        $laboratories = Laboratory::all();
+                                        if ($laboratories->isEmpty()) {
+                                            return 'No laboratories found. Please add new laboratory.';
                                         }
-
-                                        return $options;
+                                        return null;
                                     })
                                     ->bulkToggleable()
                                     ->columns(2),

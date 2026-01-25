@@ -19,6 +19,7 @@ class Referral extends Model
         'surgical_operation' => 'boolean',
         'drug_allergy' => 'boolean',
         'date_completed' => 'datetime',
+        'laboratories' => 'json',
     ];
 
     protected $appends = ['resolved_patient'];

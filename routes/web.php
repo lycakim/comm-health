@@ -47,6 +47,22 @@ Route::get('/register', function () {
 Route::redirect('profile', '/commhealth/settings')->name('profile');
 
 Route::middleware(['auth'])->group(function () {
+    // Referral PDF route
+    Route::get('/referral-pdf/{consultation}', function ($consultation) {
+        $consultation = \App\Models\Consultation::with(['referral', 'patient'])->findOrFail($consultation);
+        
+        if (!$consultation->referral) {
+            abort(404, 'Referral not found for this consultation');
+        }
+        
+        $pdfService = new \App\Services\PDFGenerationService();
+        $pdf = $pdfService->generateReferralPdf($consultation->referral, $consultation->patient, $consultation);
+        
+        return response($pdf->output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="referral-' . $consultation->referral->ref_id . '.pdf"');
+    })->name('referral.pdf');
+    
     // MHO Routes
     Route::prefix('commhealth/mho')->middleware('check.user.type:mho')->group(function () {
         Route::get('/dashboard', [DynamicDashboardController::class, 'mho'])->name('commhealth.mho.dashboard');
