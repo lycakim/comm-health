@@ -467,7 +467,7 @@ class ProgramResource extends Resource
                             $message .= "\nPalihug mangadto sa takdang oras aron matagaan og hustong serbisyo.";
                             $message .= "\nDaghang salamat ug kita-kits!";
 
-                            $result = $smsService->sendSMS($user->contact_number, $message);
+                            $result = $smsService->sendSMSWithRateLimit($user->contact_number, $message);
 
                             if ($result['success']) {
                                 $successCount++;

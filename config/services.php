@@ -40,6 +40,9 @@ return [
         'api_key' => env('SEMAPHORE_API_KEY'),
         'sender_name' => env('SEMAPHORE_SENDER_NAME', 'CarmenMHO'),
         'base_url' => env('SEMAPHORE_BASE_URL', 'https://api.semaphore.co/api/v4'),
+        'max_requests_per_minute' => env('SEMAPHORE_MAX_REQUESTS_PER_MINUTE', 30),
+        'delay_between_requests' => env('SEMAPHORE_DELAY_BETWEEN_REQUESTS', 2000), // milliseconds
+        'max_concurrent_requests' => env('SEMAPHORE_MAX_CONCURRENT_REQUESTS', 1),
     ],
 
 ];
