@@ -12,6 +12,11 @@
                         @click="tab = 'tab2'" :alpine-active="'tab === \'tab2\''">
                         Report Template
                     </x-filament::tabs.item>
+                    
+                    <x-filament::tabs.item 
+                        @click="tab = 'tab3'" :alpine-active="'tab === \'tab3\''">
+                        Generated Reports
+                    </x-filament::tabs.item>
                 </div>
             </x-filament::tabs>
         </div>
@@ -41,12 +46,15 @@
                 </p>
 
                 <div class="flex justify-between mt-6">
-                    <x-filament::button color="gray" icon="heroicon-o-eye">
+                    <x-filament::button 
+                        color="gray" 
+                        icon="heroicon-o-eye"
+                        wire:click="previewReport('patient-profiling')">
                         Preview
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="generateReport('patient-profiling')">
+                        wire:click="generateReport('patient-profiling', 'pdf')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -70,12 +78,15 @@
                 </p>
 
                 <div class="flex justify-between mt-6">
-                    <x-filament::button color="gray" icon="heroicon-o-eye">
+                    <x-filament::button 
+                        color="gray" 
+                        icon="heroicon-o-eye"
+                        wire:click="previewReport('maternal-child')">
                         Preview
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="generateReport('maternal-child')">
+                        wire:click="generateReport('maternal-child', 'pdf')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -99,12 +110,15 @@
                 </p>
 
                 <div class="flex justify-between mt-6">
-                    <x-filament::button color="gray" icon="heroicon-o-eye">
+                    <x-filament::button 
+                        color="gray" 
+                        icon="heroicon-o-eye"
+                        wire:click="previewReport('senior-citizens')">
                         Preview
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="generateReport('senior-citizens')">
+                        wire:click="generateReport('senior-citizens', 'pdf')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -128,12 +142,15 @@
                 </p>
 
                 <div class="flex justify-between mt-6">
-                    <x-filament::button color="gray" icon="heroicon-o-eye">
+                    <x-filament::button 
+                        color="gray" 
+                        icon="heroicon-o-eye"
+                        wire:click="previewReport('family-planning')">
                         Preview
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="generateReport('family-planning')">
+                        wire:click="generateReport('family-planning', 'pdf')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -157,17 +174,23 @@
                 </p>
 
                 <div class="flex justify-between mt-6">
-                    <x-filament::button color="gray" icon="heroicon-o-eye">
+                    <x-filament::button 
+                        color="gray" 
+                        icon="heroicon-o-eye"
+                        wire:click="previewReport('morbidity-mortality')">
                         Preview
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="generateReport('morbidity-mortality')">
+                        wire:click="generateReport('morbidity-mortality', 'pdf')">
                         Generate Report
                     </x-filament::button>
                 </div>
             </div>
         </div>
+    </div>
+    <div x-show="tab === 'tab3'" x-cloak>
+        {{ $this->generatedReportsTable }}
     </div>
     <style>
         /* Additional custom animations if needed */

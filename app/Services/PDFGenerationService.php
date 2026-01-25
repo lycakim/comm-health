@@ -9,6 +9,7 @@ use App\Models\Referral;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PDFGenerationService
 {
@@ -345,6 +346,7 @@ class PDFGenerationService
     {
         $templateMap = [
             'patient-profiling' => 'pdf.reports.patient-profiling',
+            'resident-profiling' => 'pdf.reports.patient-profiling',
             'maternal-child' => 'pdf.reports.maternal-child',
             'senior-citizens' => 'pdf.reports.senior-citizens',
             'family-planning' => 'pdf.reports.family-planning',
@@ -365,5 +367,38 @@ class PDFGenerationService
                 'isHtml5ParserEnabled' => true,
                 'isRemoteEnabled' => true,
             ]);
+    }
+
+    /**
+     * Save report to storage and return file metadata
+     *
+     * @param string $content File content (PDF output or CSV content)
+     * @param string $reportType Report type identifier
+     * @param string $format File format ('pdf' or 'csv')
+     * @param string $filename Original filename
+     * @return array File metadata including path, filename, and size
+     */
+    public function saveReportToStorage(string $content, string $reportType, string $format, string $filename): array
+    {
+        // Create directory structure: reports/{report_type}/{year}/{month}/
+        $year = now()->format('Y');
+        $month = now()->format('m');
+        $directory = "reports/{$reportType}/{$year}/{$month}";
+
+        // Ensure directory exists
+        Storage::disk('public')->makeDirectory($directory);
+
+        // Store the file
+        $filePath = "{$directory}/{$filename}";
+        Storage::disk('public')->put($filePath, $content);
+
+        // Get file size
+        $fileSize = Storage::disk('public')->size($filePath);
+
+        return [
+            'file_path' => $filePath,
+            'file_name' => $filename,
+            'file_size' => $fileSize,
+        ];
     }
 }
