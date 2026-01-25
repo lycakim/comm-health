@@ -54,10 +54,15 @@ class Reports extends Page implements HasTable
     public static function canAccess(): bool
     {
         return in_array(self::currentUser()->role, [
-            RoleEnum::ADMIN,
-            RoleEnum::MHO,
-            RoleEnum::BHW,
+            // RoleEnum::ADMIN,
+            // RoleEnum::MHO,
+            // RoleEnum::BHW,
         ]);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
     }
 
     protected function getHeaderActions(): array

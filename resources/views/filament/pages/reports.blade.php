@@ -34,7 +34,7 @@
                 
                 <div class="flex justify-between">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-200">
-                        Patient Profiling Report
+                        Resident Profiling Report
                     </h3>
                     <x-filament::badge icon="heroicon-m-calendar">
                         Monthly
@@ -54,7 +54,7 @@
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="generateReport('patient-profiling', 'pdf')">
+                        wire:click="openGenerateReportModal('patient-profiling', 'monthly')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -86,7 +86,7 @@
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="generateReport('maternal-child', 'pdf')">
+                        wire:click="openGenerateReportModal('maternal-child', 'quarterly')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -118,7 +118,7 @@
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="generateReport('senior-citizens', 'pdf')">
+                        wire:click="openGenerateReportModal('senior-citizens', 'quarterly')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -150,7 +150,7 @@
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="generateReport('family-planning', 'pdf')">
+                        wire:click="openGenerateReportModal('family-planning', 'quarterly')">
                         Generate Report
                     </x-filament::button>
                 </div>
@@ -182,7 +182,7 @@
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="generateReport('morbidity-mortality', 'pdf')">
+                        wire:click="openGenerateReportModal('morbidity-mortality', 'quarterly')">
                         Generate Report
                     </x-filament::button>
                 </div>

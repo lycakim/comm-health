@@ -38,7 +38,7 @@
                 
                 <div class="flex justify-between">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-200">
-                        Patient Profiling Report
+                        Resident Profiling Report
                     </h3>
                     <x-filament::badge icon="heroicon-m-calendar">
                         Monthly
