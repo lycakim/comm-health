@@ -55,7 +55,7 @@
                       dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600">
                 
                 <h3 class="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-200">
-                  Program Calendar
+                  Health Program Calendar
                 </h3>
                 
                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 transition-colors duration-200">

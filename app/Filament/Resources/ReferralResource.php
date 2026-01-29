@@ -595,6 +595,12 @@ class ReferralResource extends Resource
                     ->schema([
                         Forms\Components\Fieldset::make()
                             ->schema([
+                                Forms\Components\DateTimePicker::make('date_referred')
+                                    ->label('Date & Time Referred')
+                                    ->default(now())
+                                    ->required()
+                                    ->displayFormat('M d, Y h:i A')
+                                    ->timezone('Asia/Manila'),
                                 Forms\Components\ToggleButtons::make('urgency')
                                     ->required()
                                     ->options([

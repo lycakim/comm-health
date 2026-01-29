@@ -49,67 +49,87 @@ class IndexPatients extends ListRecords
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('info')
                 ->form([
-                    FileUpload::make('file')
-                        ->label('Excel File')
+                    FileUpload::make('files')
+                        ->label('Excel/CSV Files')
                         ->disk('public')
                         ->directory('imports')
                         ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'text/csv'])
+                        ->multiple()
                         ->required()
-                        ->helperText('Upload an Excel file (.xlsx, .xls) or CSV file with patient data. Download the template for the correct format.'),
+                        ->helperText('Upload one or more Excel files (.xlsx, .xls) or CSV files with patient data. Download the template for the correct format.'),
                 ])
                 ->action(function (array $data) {
                     try {
-                        // Get the full path to the uploaded file
-                        // FileUpload stores files relative to the disk root
-                        $filePath = null;
+                        $files = is_array($data['files']) ? $data['files'] : [$data['files']];
+                        $totalSuccess = 0;
+                        $totalFailed = 0;
+                        $allErrors = [];
                         
-                        // Try public disk first
-                        if (Storage::disk('public')->exists($data['file'])) {
-                            $filePath = Storage::disk('public')->path($data['file']);
-                        }
-                        // Try local disk
-                        elseif (Storage::disk('local')->exists($data['file'])) {
-                            $filePath = Storage::disk('local')->path($data['file']);
-                        }
-                        // Try default disk
-                        elseif (Storage::exists($data['file'])) {
-                            $filePath = Storage::path($data['file']);
-                        }
-                        // Try direct path
-                        else {
-                            $possiblePaths = [
-                                storage_path('app/public/' . $data['file']),
-                                storage_path('app/private/' . $data['file']),
-                                storage_path('app/' . $data['file']),
-                            ];
+                        foreach ($files as $file) {
+                            // Get the full path to the uploaded file
+                            $filePath = null;
                             
-                            foreach ($possiblePaths as $path) {
-                                if (file_exists($path)) {
-                                    $filePath = $path;
-                                    break;
+                            // Try public disk first
+                            if (Storage::disk('public')->exists($file)) {
+                                $filePath = Storage::disk('public')->path($file);
+                            }
+                            // Try local disk
+                            elseif (Storage::disk('local')->exists($file)) {
+                                $filePath = Storage::disk('local')->path($file);
+                            }
+                            // Try default disk
+                            elseif (Storage::exists($file)) {
+                                $filePath = Storage::path($file);
+                            }
+                            // Try direct path
+                            else {
+                                $possiblePaths = [
+                                    storage_path('app/public/' . $file),
+                                    storage_path('app/private/' . $file),
+                                    storage_path('app/' . $file),
+                                ];
+                                
+                                foreach ($possiblePaths as $path) {
+                                    if (file_exists($path)) {
+                                        $filePath = $path;
+                                        break;
+                                    }
                                 }
+                            }
+                            
+                            if (!$filePath || !file_exists($filePath)) {
+                                $allErrors[] = ['file' => $file, 'message' => 'File not found'];
+                                $totalFailed++;
+                                continue;
+                            }
+                            
+                            try {
+                                $import = new PatientsImport();
+                                Excel::import($import, $filePath);
+                                
+                                $results = $import->getResults();
+                                $totalSuccess += $results['success'];
+                                $totalFailed += $results['failed'];
+                                
+                                if (!empty($results['errors'])) {
+                                    $allErrors = array_merge($allErrors, $results['errors']);
+                                }
+                            } catch (\Exception $e) {
+                                $totalFailed++;
+                                $allErrors[] = ['file' => basename($filePath), 'message' => $e->getMessage()];
+                            }
+                            
+                            // Clean up the uploaded file after import
+                            if (Storage::disk('public')->exists($file)) {
+                                Storage::disk('public')->delete($file);
+                            } elseif (Storage::disk('local')->exists($file)) {
+                                Storage::disk('local')->delete($file);
                             }
                         }
                         
-                        if (!$filePath || !file_exists($filePath)) {
-                            throw new \Exception('Uploaded file not found. Please try uploading again. File: ' . ($data['file'] ?? 'unknown'));
-                        }
-                        
-                        $import = new PatientsImport();
-                        Excel::import($import, $filePath);
-                        
-                        // Clean up the uploaded file after import
-                        if (Storage::disk('public')->exists($data['file'])) {
-                            Storage::disk('public')->delete($data['file']);
-                        } elseif (Storage::disk('local')->exists($data['file'])) {
-                            Storage::disk('local')->delete($data['file']);
-                        }
-                        
-                        $results = $import->getResults();
-                        
-                        $message = "Successfully imported {$results['success']} resident(s).";
-                        if ($results['failed'] > 0) {
-                            $message .= " {$results['failed']} failed.";
+                        $message = "Successfully imported {$totalSuccess} resident(s) from " . count($files) . " file(s).";
+                        if ($totalFailed > 0) {
+                            $message .= " {$totalFailed} failed.";
                         }
                         
                         Notification::make()
@@ -119,14 +139,17 @@ class IndexPatients extends ListRecords
                             ->send();
                         
                         // Show errors if any
-                        if (!empty($results['errors'])) {
-                            $errorDetails = collect($results['errors'])->take(5)->map(function ($error) {
-                                return "Row {$error['row']}: {$error['message']}";
+                        if (!empty($allErrors)) {
+                            $errorDetails = collect($allErrors)->take(10)->map(function ($error) {
+                                $file = $error['file'] ?? 'Unknown file';
+                                $row = isset($error['row']) ? "Row {$error['row']}" : '';
+                                $message = $error['message'] ?? 'Unknown error';
+                                return $row ? "{$file} - {$row}: {$message}" : "{$file}: {$message}";
                             })->implode("\n");
                             
                             Notification::make()
                                 ->title('Import Errors')
-                                ->body($errorDetails . (count($results['errors']) > 5 ? "\n... and " . (count($results['errors']) - 5) . " more" : ''))
+                                ->body($errorDetails . (count($allErrors) > 10 ? "\n... and " . (count($allErrors) - 10) . " more" : ''))
                                 ->warning()
                                 ->persistent()
                                 ->send();

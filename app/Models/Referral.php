@@ -18,6 +18,7 @@ class Referral extends Model
     protected $casts = [
         'surgical_operation' => 'boolean',
         'drug_allergy' => 'boolean',
+        'date_referred' => 'datetime',
         'date_completed' => 'datetime',
         'laboratories' => 'json',
     ];

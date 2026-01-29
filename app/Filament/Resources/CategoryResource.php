@@ -91,7 +91,6 @@ class CategoryResource extends Resource
                             ->maxValue(11)
                             ->helperText('Optional. Additional months for max age (0-11).')
                             ->placeholder('e.g. 3'),
-                        Textarea::make('description'),
                         Section::make()
                             ->schema([
                                 ToggleButtons::make('is_maternal')
@@ -121,7 +120,6 @@ class CategoryResource extends Resource
                     ->badge()
                     ->color(fn ($state) => $state ? 'success' : 'gray')
                     ->formatStateUsing(fn ($state) => $state ?? '—'),
-                TextColumn::make('description')->searchable()->limit(40),
             ])
             ->filters([
                 //

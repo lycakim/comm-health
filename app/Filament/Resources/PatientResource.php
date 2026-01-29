@@ -364,6 +364,7 @@ class PatientResource extends Resource
                                     ->default(function () {
                                         return Auth::user()->barangay_id;
                                     })
+                                    ->disabled(fn () => (bool) Auth::user()->barangay_id)
                                     ->live(),
                                 Select::make('purok_id')
                                     ->label('Purok')
@@ -781,10 +782,11 @@ class PatientResource extends Resource
                         return !empty($parts) ? implode(' ', $parts) : '0 months';
                     })
                     ->label('Age'),
-                TextColumn::make('barangay.name')
-                    ->label('Assigned Barangay')
+                TextColumn::make('purok.name')
+                    ->label('Purok')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(fn ($state, $record) => $state ? $state . ($record->barangay ? ' (' . $record->barangay->name . ')' : '') : 'N/A'),
                 SelectColumn::make('category_id')
                     ->label('Category')
                     ->options(

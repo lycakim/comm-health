@@ -120,6 +120,11 @@ class CreateReferral extends CreateRecord
             $schema = $this->form->getSchema();
             
             foreach ($schema as $component) {
+                // Guard against null components or components without getName method
+                if ($component === null || !method_exists($component, 'getName')) {
+                    continue;
+                }
+                
                 if ($component->getName() === $key && method_exists($component, 'getRelationship')) {
                     $relationship = $component->getRelationship();
                     $relatedModel = $component->getRelationship()->getRelated();

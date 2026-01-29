@@ -74,11 +74,7 @@ class PatientImportService
             'birth_date'            => ['required', 'date', 'before_or_equal:today'],
             'sex'                   => 'required|in:male,female',
             'civil_status'          => ['required', 'string', 'regex:/^[A-Za-z\s\.\-]+$/'],
-            'contact_number'        => ['nullable', 'string', function ($attribute, $value, $fail) {
-                if (!empty($value) && !preg_match('/^(09\d{9}|9\d{9}|639\d{9})$/', $value)) {
-                    $fail('The contact number format is invalid.');
-                }
-            }],
+            'contact_number'        => ['nullable', 'string'], // Accept any string format, normalize will handle it
             'barangay'              => ['required', 'string', 'regex:/^[A-Za-z\s\.\-]+$/'],
             'purok'                 => ['nullable', 'string', 'regex:/^[A-Za-z0-9\s\.\-]*$/'],
             'category'              => ['nullable', 'string', 'regex:/^[A-Za-z\s\.\-]+$/'],
@@ -230,21 +226,39 @@ class PatientImportService
             return null;
         }
         
-        $clean = preg_replace('/\D/', '', $contact);
+        // Remove all non-digit characters except +
+        $clean = preg_replace('/[^\d+]/', '', $contact);
 
         if (empty($clean)) {
             return null;
         }
 
-        if (str_starts_with($clean, '09')) {
-            return '63' . substr($clean, 1);
+        // Handle +63 format (international)
+        if (str_starts_with($clean, '+63')) {
+            $clean = '63' . substr($clean, 3);
+        }
+        
+        // Remove + if present
+        $clean = str_replace('+', '', $clean);
+
+        // Handle 63XXXXXXXXXX format (international without +)
+        if (str_starts_with($clean, '63') && strlen($clean) == 12) {
+            // Convert to local format: 09XXXXXXXXX
+            return '0' . substr($clean, 2);
         }
 
-        if (str_starts_with($clean, '9')) {
-            return '63' . $clean;
+        // Handle 09XXXXXXXXX format (local) - keep as is
+        if (str_starts_with($clean, '09') && strlen($clean) == 11) {
+            return $clean;
         }
 
-        return $clean;
+        // Handle 9XXXXXXXXX format - prepend 0
+        if (str_starts_with($clean, '9') && strlen($clean) == 10) {
+            return '0' . $clean;
+        }
+
+        // Return as string (even if invalid format, per doc requirement)
+        return (string) $clean;
     }
 
     /**

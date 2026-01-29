@@ -247,10 +247,39 @@ class PDFGenerationService
         // Eager load the user relationship to avoid N+1 queries
         $referral->load('user');
         
+        // Build data array for PDF template
+        $referralDate = $referral->date_referred ?? $referral->created_at ?? now();
+        $data = [
+            'referred_to' => $referral->referred_to ?? 'CARMEN MHO',
+            'referred_address' => 'ISING CARMEN',
+            'date' => $referralDate->format('M d, Y'),
+            'time' => $referralDate->format('H:i A'),
+            'chief_complaints' => $referral->chief_complaint ?? $consultation->chief_complaint ?? 'N/A',
+            'medical_history' => $consultation->notes ?? 'N/A',
+            'referral_by' => $referral->user->name ?? '',
+            'license_no' => '-',
+            // Recipient information (from referral if available)
+            'recipient_name' => $referral->receiving_provider_name ?? '',
+            'recipient_age' => '',
+            'recipient_sex' => '',
+            'recipient_date' => $referral->date_completed ? $referral->date_completed->format('M d, Y') : '',
+            'recipient_diagnosis' => '',
+            'recipient_medical_history' => '',
+            'recommendation' => $referral->receiving_provider_notes ?? '',
+            'recipient_signature' => '',
+            'recipient_hospital' => '',
+            'recipient_contact' => '',
+            // Acknowledgement
+            'ack_patient' => $patient->first_name . ' ' . $patient->last_name,
+            'ack_hospital' => $referral->referred_to ?? 'CARMEN MHO',
+            'ack_date' => $referralDate->format('M d, Y'),
+        ];
+        
         $html = view('pdf.referral-form', [
             'referral' => $referral,
             'patient' => $patient,
             'consultation' => $consultation,
+            'data' => $data,
         ])->render();
 
         return Pdf::loadHTML($html)

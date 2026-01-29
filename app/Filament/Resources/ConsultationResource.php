@@ -180,9 +180,10 @@ class ConsultationResource extends Resource
                 //     ]),
                 // Tables\Actions\Action::make('view'),
                 Tables\Actions\Action::make('download_referral_pdf')
-                    ->label('Download Referral PDF')
+                    ->label('')
                     ->icon('heroicon-o-printer')
                     ->color('primary')
+                    ->tooltip('Download Referral PDF')
                     ->visible(fn($record) => $record->referral)
                     ->action(function ($record) {
                         $referral = $record->referral;
@@ -195,7 +196,7 @@ class ConsultationResource extends Resource
                     })
                     ->color('warning'),
                 Tables\Actions\Action::make('create_referral')
-                    ->label(fn($record) => $record->referral ? 'Referred' : 'Create Referral')
+                    ->label(fn($record) => $record->referral ? 'View Details' : 'Create Referral')
                     ->icon(fn($record) => $record->referral ? 'heroicon-o-eye' : 'heroicon-o-plus')
                     ->color(fn($record) => $record->referral ? 'info' : 'success')
                     ->modalHeading(fn($record) => $record->referral

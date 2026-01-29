@@ -108,7 +108,7 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
         $this->eventType = $eventType;
 
         if ($eventType === 'program') {
-            $program = Program::with(['category', 'barangay'])->find($event['id']);
+            $program = Program::with(['category', 'barangay', 'coordinatorUser'])->find($event['id']);
             
             if (!$program) {
                 return;
@@ -137,27 +137,36 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
                 ->schema([
                     Section::make()
                         ->schema([
-                            TextEntry::make('program_start_date')
-                                ->label('Start Date')
-                                ->date('M d, Y')
-                                ->placeholder('N/A'),
-                            TextEntry::make('program_end_date')
-                                ->label('End Date')
-                                ->date('M d, Y')
-                                ->placeholder('N/A'),
+                            TextEntry::make('name')
+                                ->label('Program Name')
+                                ->weight('bold')
+                                ->size('lg'),
+                            TextEntry::make('date_range')
+                                ->label('Date Range')
+                                ->formatStateUsing(function ($record) {
+                                    $start = $record->program_start_date ? $record->program_start_date->format('M d, Y') : 'N/A';
+                                    $end = $record->program_end_date ? $record->program_end_date->format('M d, Y') : 'N/A';
+                                    return "{$start} to {$end}";
+                                }),
                             TextEntry::make('program_start_time')
                                 ->label('Start Time')
-                                ->dateTime('H:i A'),
+                                ->dateTime('H:i A')
+                                ->placeholder('N/A'),
                             TextEntry::make('program_end_time')
                                 ->label('End Time')
-                                ->dateTime('H:i A'),
+                                ->dateTime('H:i A')
+                                ->placeholder('N/A'),
+                            TextEntry::make('barangay.name')
+                                ->label('Barangay')
+                                ->formatStateUsing(fn ($state) => $state ? ucfirst($state) : 'N/A'),
+                            TextEntry::make('coordinatorUser.name')
+                                ->label('Coordinator')
+                                ->formatStateUsing(fn ($state) => $state ? $state : 'N/A')
+                                ->placeholder('N/A'),
                             TextEntry::make('category.name')
                                 ->label('Category')
                                 ->badge()
                                 ->color(fn () => 'primary')
-                                ->formatStateUsing(fn ($state) => $state ? ucfirst($state) : 'N/A'),
-                            TextEntry::make('barangay.name')
-                                ->label('Barangay')
                                 ->formatStateUsing(fn ($state) => $state ? ucfirst($state) : 'N/A'),
                             TextEntry::make('description')
                                 ->label('Description')

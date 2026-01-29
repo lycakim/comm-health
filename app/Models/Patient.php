@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use App\Models\Purok;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
@@ -19,6 +20,7 @@ class Patient extends Model
 
     protected $casts = [
         'birth_date' => 'date',
+        'age' => 'integer',
         'pregnant' => 'boolean',
         'ip' => 'boolean',
         'with_fence' => 'boolean',
@@ -42,6 +44,11 @@ class Patient extends Model
     public function barangay(): BelongsTo
     {
         return $this->belongsTo(Barangay::class);
+    }
+
+    public function purok(): BelongsTo
+    {
+        return $this->belongsTo(Purok::class);
     }
 
     public function category(): BelongsTo
@@ -111,13 +118,13 @@ class Patient extends Model
 
         static::creating(function ($patient) {
             if ($patient->birth_date) {
-                $patient->age = Carbon::parse($patient->birth_date)->age;
+                $patient->age = (int) Carbon::parse($patient->birth_date)->age;
             }
         });
 
         static::updating(function ($patient) {
             if ($patient->birth_date) {
-                $patient->age = Carbon::parse($patient->birth_date)->age;
+                $patient->age = (int) Carbon::parse($patient->birth_date)->age;
             }
         });
     }

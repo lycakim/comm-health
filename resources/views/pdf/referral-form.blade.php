@@ -91,7 +91,7 @@
         </tr>
         <tr>
             <td class="label">Address:</td>
-            <td colspan="3">{{ $patient->baragay->name ?? 'N/A' }}</td>
+            <td colspan="3">{{ $patient->barangay?->name ?? ($patient->purok?->name . ($patient->barangay ? ', ' . $patient->barangay->name : '') ?? 'N/A') }}</td>
         </tr>
         <tr>
             <td class="label">Chief Complaints:</td>
