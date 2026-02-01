@@ -249,14 +249,39 @@
             let userNotificationChannel = null;
             const currentUserId = @js(auth()->id());
             
-            // Debug Echo connection
+            // Debug Echo connection and get socket ID
+            const updateSocketId = () => {
+                const socketId = window.Echo?.connector?.pusher?.connection?.socket_id;
+                if (socketId) {
+                    console.log('📡 Socket ID:', socketId);
+                    // Update Livewire component with socket ID
+                    const component = Livewire.find(@js($this->getId()));
+                    if (component) {
+                        component.call('setSocketId', socketId);
+                    }
+                }
+            };
+
             window.Echo.connector.pusher.connection.bind('connected', () => {
                 console.log('✅ Connected to Reverb');
+                updateSocketId();
+            });
+
+            // Update socket ID when it changes (on reconnection)
+            window.Echo.connector.pusher.connection.bind('state_change', (states) => {
+                if (states.current === 'connected') {
+                    updateSocketId();
+                }
             });
 
             window.Echo.connector.pusher.connection.bind('error', (err) => {
                 console.error('❌ Reverb connection error:', err);
             });
+
+            // Try to get socket ID immediately if already connected
+            if (window.Echo?.connector?.pusher?.connection?.state === 'connected') {
+                updateSocketId();
+            }
             
             // Subscribe to user notification channel
             if (currentUserId) {

@@ -19,6 +19,7 @@ class ChatWidget extends Component
     public bool $isChatOpen = false;
     public bool $hasUnreadMessages = false;
     public string $viewMode = 'users'; // 'users' or 'messages'
+    public ?string $socketId = null; // Store socket ID for broadcasting
 
     public function mount(): void
     {
@@ -243,7 +244,14 @@ class ChatWidget extends Component
         $this->loadMessages();
         
         // Broadcast to other users
-        broadcast(new MessageSent($chat))->toOthers();
+        // Set socket ID in request headers if available (for toOthers() to work)
+        if ($this->socketId) {
+            request()->headers->set('X-Socket-ID', $this->socketId);
+            broadcast(new MessageSent($chat))->toOthers();
+        } else {
+            // If no socket ID, broadcast normally (sender will see it locally anyway)
+            broadcast(new MessageSent($chat));
+        }
 
         // Dispatch event for scrolling
         $this->dispatch('message-sent');
@@ -295,6 +303,11 @@ class ChatWidget extends Component
         $ids = [Auth::id(), $this->selectedUserId];
         sort($ids);
         return implode('-', $ids);
+    }
+
+    public function setSocketId(?string $socketId): void
+    {
+        $this->socketId = $socketId;
     }
     
     public function render()
