@@ -48,40 +48,23 @@ class MaternalChartService
             return $query->where('barangay_id', $user->barangay_id);
         })->orderBy('name')->get();
         
-        $maleData = [];
-        $femaleData = [];
+        $totalData = [];
         
         foreach ($puroks as $purok) {
-            $maleCount = Patient::where('purok_id', $purok->id)
+            $totalCount = Patient::where('purok_id', $purok->id)
                 ->where('category_id', $this->maternalCategoryId)
-                ->where('sex', 'male')
                 ->whereYear('created_at', $year)
                 ->whereMonth('created_at', $month)
                 ->count();
             
-            $femaleCount = Patient::where('purok_id', $purok->id)
-                ->where('category_id', $this->maternalCategoryId)
-                ->where('sex', 'female')
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->count();
-            
-            $maleData[] = $maleCount;
-            $femaleData[] = $femaleCount;
+            $totalData[] = $totalCount;
         }
         
         return [
             'datasets' => [
                 [
-                    'label' => 'Male',
-                    'data' => $maleData,
-                    'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
-                    'borderColor' => 'rgb(59, 130, 246)',
-                    'borderWidth' => 1,
-                ],
-                [
-                    'label' => 'Female',
-                    'data' => $femaleData,
+                    'label' => 'Total Maternal Patients (Female)',
+                    'data' => $totalData,
                     'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
                     'borderColor' => 'rgb(236, 72, 153)',
                     'borderWidth' => 1,
@@ -103,40 +86,23 @@ class MaternalChartService
             }
         )->orderBy('name')->get();
         
-        $maleData = [];
-        $femaleData = [];
+        $totalData = [];
         
         foreach ($barangays as $barangay) {
-            $maleCount = Patient::where('barangay_id', $barangay->id)
+            $totalCount = Patient::where('barangay_id', $barangay->id)
                 ->where('category_id', $this->maternalCategoryId)
-                ->where('sex', 'male')
                 ->whereYear('created_at', $year)
                 ->whereMonth('created_at', $month)
                 ->count();
             
-            $femaleCount = Patient::where('barangay_id', $barangay->id)
-                ->where('category_id', $this->maternalCategoryId)
-                ->where('sex', 'female')
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->count();
-            
-            $maleData[] = $maleCount;
-            $femaleData[] = $femaleCount;
+            $totalData[] = $totalCount;
         }
         
         return [
             'datasets' => [
                 [
-                    'label' => 'Male',
-                    'data' => $maleData,
-                    'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
-                    'borderColor' => 'rgb(59, 130, 246)',
-                    'borderWidth' => 1,
-                ],
-                [
-                    'label' => 'Female',
-                    'data' => $femaleData,
+                    'label' => 'Total Maternal Patients (Female)',
+                    'data' => $totalData,
                     'backgroundColor' => 'rgba(236, 72, 153, 0.5)',
                     'borderColor' => 'rgb(236, 72, 153)',
                     'borderWidth' => 1,

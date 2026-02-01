@@ -37,6 +37,7 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
         
         // Fetch Programs
         $programs = Program::query()
+            ->with(['category', 'barangay', 'coordinatorUser'])
             ->when(
                 $user->role !== RoleEnum::MHO->value,
                 function ($query) use ($user) {
@@ -58,16 +59,32 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
                     });
             })
             ->get()
-            ->map(fn (Program $event) => [
-                'id' => $event->id,
-                'title' => $event->name,
-                'start' => $event->program_start_date,
-                'end' => $event->program_end_date,
-                'color' => '#10b981', // Green for programs
-                'extendedProps' => [
-                    'type' => 'program'
-                ]
-            ]);
+            ->map(function (Program $event) {
+                $startDate = $event->program_start_date ? $event->program_start_date->format('M d, Y') : 'N/A';
+                $endDate = $event->program_end_date ? $event->program_end_date->format('M d, Y') : 'N/A';
+                $startTime = $event->program_start_time ? \Carbon\Carbon::parse($event->program_start_time)->format('g:i A') : 'N/A';
+                $endTime = $event->program_end_time ? \Carbon\Carbon::parse($event->program_end_time)->format('g:i A') : 'N/A';
+                
+                return [
+                    'id' => $event->id,
+                    'title' => $event->name,
+                    'start' => $event->program_start_date,
+                    'end' => $event->program_end_date,
+                    'color' => '#10b981', // Green for programs
+                    'extendedProps' => [
+                        'type' => 'program',
+                        'name' => $event->name,
+                        'description' => $event->description ?? 'No description available.',
+                        'startDate' => $startDate,
+                        'endDate' => $endDate,
+                        'startTime' => $startTime,
+                        'endTime' => $endTime,
+                        'barangay' => $event->barangay->name ?? 'N/A',
+                        'category' => $event->category->name ?? 'N/A',
+                        'coordinator' => $event->coordinatorUser->name ?? 'N/A',
+                    ]
+                ];
+            });
 
         // Fetch Consultations
         $consultations = Consultation::query()

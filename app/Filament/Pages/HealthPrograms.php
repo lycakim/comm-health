@@ -17,6 +17,9 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
 
 class HealthPrograms extends Page implements HasTable
 {
@@ -129,7 +132,55 @@ class HealthPrograms extends Page implements HasTable
             ])
             ->actions([
                 ViewAction::make()
-                    ->visible(fn () => $isBHWOrMidwife),
+                    ->visible(fn () => $isBHWOrMidwife)
+                    ->modalHeading(fn ($record) => $record->name ?? 'Program Details')
+                    ->infolist(fn (Infolist $infolist) => $infolist
+                        ->schema([
+                            Section::make('Program Information')
+                                ->schema([
+                                    TextEntry::make('name')
+                                        ->label('Program Name')
+                                        ->weight('bold')
+                                        ->size('lg')
+                                        ->columnSpanFull(),
+                                    TextEntry::make('category.name')
+                                        ->label('Category')
+                                        ->badge()
+                                        ->color('primary')
+                                        ->formatStateUsing(fn ($state) => $state ? ucfirst($state) : 'N/A'),
+                                    TextEntry::make('barangay.name')
+                                        ->label('Barangay')
+                                        ->formatStateUsing(fn ($state) => $state ? ucfirst($state) : 'N/A'),
+                                    TextEntry::make('coordinatorUser.name')
+                                        ->label('Coordinator')
+                                        ->formatStateUsing(fn ($state) => $state ? $state : 'N/A')
+                                        ->placeholder('N/A'),
+                                    TextEntry::make('program_start_date')
+                                        ->label('Start Date')
+                                        ->date('F d, Y')
+                                        ->placeholder('N/A'),
+                                    TextEntry::make('program_end_date')
+                                        ->label('End Date')
+                                        ->date('F d, Y')
+                                        ->placeholder('N/A'),
+                                    TextEntry::make('program_start_time')
+                                        ->label('Start Time')
+                                        ->formatStateUsing(fn ($state) => $state ? Carbon::parse($state)->format('g:i A') : 'N/A')
+                                        ->placeholder('N/A'),
+                                    TextEntry::make('program_end_time')
+                                        ->label('End Time')
+                                        ->formatStateUsing(fn ($state) => $state ? Carbon::parse($state)->format('g:i A') : 'N/A')
+                                        ->placeholder('N/A'),
+                                    TextEntry::make('description')
+                                        ->label('Description')
+                                        ->columnSpanFull()
+                                        ->placeholder('No description available.')
+                                        ->html()
+                                        ->prose(),
+                                ])
+                                ->columns(3),
+                        ])
+                    ),
                 // button for sending sms to all patients in the barangay
                 Action::make('send_sms')
                     ->label('Send SMS')
