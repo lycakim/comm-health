@@ -8,6 +8,7 @@ use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Database\Eloquent\Builder;
 
 class ActivityLogsWidget extends BaseWidget
 {
@@ -31,7 +32,7 @@ class ActivityLogsWidget extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(ActivityLog::query()->latest()->limit(10))
+            ->query(ActivityLog::query()->with('createdBy')->latest()->limit(10))
             ->columns([
                 TextColumn::make('description')
                     ->label('Description')
@@ -46,7 +47,14 @@ class ActivityLogsWidget extends BaseWidget
                         return $state->name . ' (' . $role . ')';
                     })
                     ->label('User')
-                    ->searchable(),
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('createdBy', function (Builder $q) use ($search) {
+                            $searchLower = strtolower($search);
+                            $q->where('name', 'like', "%{$search}%")
+                              ->orWhere('email', 'like', "%{$search}%")
+                              ->orWhere('role', 'like', "%{$searchLower}%");
+                        });
+                    }),
                 TextColumn::make('created_at')
                     ->label('Date & Time')
                     ->formatStateUsing(fn($state) => $state->format('M d, Y g:i A'))
