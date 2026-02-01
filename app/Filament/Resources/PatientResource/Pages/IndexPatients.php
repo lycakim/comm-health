@@ -13,7 +13,6 @@ use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Maatwebsite\Excel\Facades\Excel;
 
 class IndexPatients extends ListRecords
 {
@@ -41,7 +40,7 @@ class IndexPatients extends ListRecords
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('gray')
                 ->action(function () {
-                    return Excel::download(new PatientTemplateExport(), 'patient_import_template_' . date('Y-m-d') . '.xlsx');
+                    return PatientTemplateExport::download('patient_import_template_' . date('Y-m-d') . '.xlsx');
                 });
 
             $actions[] = Actions\Action::make('importPatients')
@@ -105,7 +104,7 @@ class IndexPatients extends ListRecords
                             
                             try {
                                 $import = new PatientsImport();
-                                Excel::import($import, $filePath);
+                                $import->import($filePath);
                                 
                                 $results = $import->getResults();
                                 $totalSuccess += $results['success'];

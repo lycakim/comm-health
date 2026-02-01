@@ -49,7 +49,7 @@
         <!-- Main Content -->
         <main class="flex-grow">
             <!-- Hero Section -->
-            <div class="bg-white py-12">
+            <div class="bg-white py-8">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="text-center">
                         <h1 class="text-3xl font-extrabold text-emerald-600 sm:text-4xl">
@@ -74,7 +74,7 @@
 
             <!-- Photo Gallery Carousel Section -->
             @if(isset($photos) && count($photos) > 0)
-            <div class="py-16 bg-gray-50 overflow-hidden">
+            <div class="py-8 bg-gray-50 overflow-hidden">
                 <div class="mb-8 text-center">
                     <h2 class="text-3xl font-bold text-emerald-600 mb-2">Our Community Health Activities</h2>
                     <p class="text-gray-600">Capturing moments from our health programs and community outreach</p>

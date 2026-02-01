@@ -3,17 +3,20 @@
 namespace App\Imports;
 
 use App\Services\PatientImportService;
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDateConverter;
 
-class PatientsImport implements ToCollection, WithHeadingRow, WithChunkReading
+class PatientsImport
 {
     protected PatientImportService $importService;
+
     protected array $errors = [];
+
     protected int $successCount = 0;
+
     protected int $failedCount = 0;
+
+    protected int $chunkSize = 100;
 
     public function __construct()
     {
@@ -21,77 +24,106 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithChunkReading
     }
 
     /**
-     * @param Collection $rows
+     * Import patients from an Excel or CSV file.
      */
-    public function collection(Collection $rows)
+    public function import(string $filePath): array
     {
-        foreach ($rows as $index => $row) {
-            $rowNumber = $index + 2; // +2 because index starts at 0 and we skip header
-            
-            try {
-                // Convert collection row to array
-                $rowArray = $row->toArray();
-                
-                // Normalize the row keys (Excel may have spaces or different casing)
-                $normalizedRow = $this->normalizeRow($rowArray);
-                
-                // Normalize date format if present (accept yyyy-mm-dd or yyyy/mm/dd)
-                // Excel may send dates as Carbon instances or datetime strings
-                if (isset($normalizedRow['birth_date']) && !empty($normalizedRow['birth_date'])) {
-                    // If it's already a Carbon instance or DateTime, convert to string
-                    if ($normalizedRow['birth_date'] instanceof \DateTime || $normalizedRow['birth_date'] instanceof \Carbon\Carbon) {
-                        $normalizedRow['birth_date'] = $normalizedRow['birth_date']->format('Y-m-d');
-                    } else {
-                        // Convert string dates (handle both / and - separators)
-                        $normalizedRow['birth_date'] = str_replace('/', '-', (string)$normalizedRow['birth_date']);
-                        // Extract just the date part if it's a datetime string
-                        if (preg_match('/^(\d{4}-\d{2}-\d{2})/', $normalizedRow['birth_date'], $matches)) {
-                            $normalizedRow['birth_date'] = $matches[1];
-                        }
+        $this->errors = [];
+        $this->successCount = 0;
+        $this->failedCount = 0;
+
+        $spreadsheet = IOFactory::load($filePath);
+        $sheet = $spreadsheet->getActiveSheet();
+        $highestRow = $sheet->getHighestRow();
+        $highestColumn = $sheet->getHighestDataColumn();
+
+        if ($highestRow < 2) {
+            return $this->getResults();
+        }
+
+        // First row as headers
+        $headerRow = $sheet->rangeToArray('A1:' . $highestColumn . '1', null, true, true, false)[0];
+
+        $currentRowNumber = 2;
+        for ($rowIndex = 2; $rowIndex <= $highestRow; $rowIndex += $this->chunkSize) {
+            $chunkEnd = min($rowIndex + $this->chunkSize - 1, $highestRow);
+            $rows = $sheet->rangeToArray(
+                'A' . $rowIndex . ':' . $highestColumn . $chunkEnd,
+                null,
+                true,
+                true,
+                false
+            );
+
+            foreach ($rows as $row) {
+                $assoc = [];
+                foreach ($headerRow as $i => $key) {
+                    $assoc[trim((string) $key)] = $row[$i] ?? null;
+                }
+                // Skip completely empty rows
+                if (array_filter($assoc, fn ($v) => $v !== null && $v !== '') === []) {
+                    $currentRowNumber++;
+                    continue;
+                }
+                $this->processRow($assoc, $currentRowNumber);
+                $currentRowNumber++;
+            }
+        }
+
+        return $this->getResults();
+    }
+
+    /**
+     * Process a single row (normalize, validate, create).
+     */
+    protected function processRow(array $rowArray, int $rowNumber): void
+    {
+        try {
+            $normalizedRow = $this->normalizeRow($rowArray);
+
+            if (isset($normalizedRow['birth_date']) && ! empty($normalizedRow['birth_date'])) {
+                if ($normalizedRow['birth_date'] instanceof \DateTime || $normalizedRow['birth_date'] instanceof \Carbon\Carbon) {
+                    $normalizedRow['birth_date'] = $normalizedRow['birth_date']->format('Y-m-d');
+                } else {
+                    $normalizedRow['birth_date'] = str_replace('/', '-', (string) $normalizedRow['birth_date']);
+                    if (preg_match('/^(\d{4}-\d{2}-\d{2})/', $normalizedRow['birth_date'], $matches)) {
+                        $normalizedRow['birth_date'] = $matches[1];
                     }
                 }
-                
-                // Use reflection to access protected methods
-                $reflection = new \ReflectionClass($this->importService);
-                
-                // Call validateRow method
-                $validateMethod = $reflection->getMethod('validateRow');
-                $validateMethod->setAccessible(true);
-                $validated = $validateMethod->invoke($this->importService, $normalizedRow, $rowNumber);
-                
-                // Call createPatient method
-                $createMethod = $reflection->getMethod('createPatient');
-                $createMethod->setAccessible(true);
-                $createMethod->invoke($this->importService, $validated);
-                
-                $this->successCount++;
-            } catch (\Exception $e) {
-                $this->failedCount++;
-                $this->errors[] = [
-                    'row' => $rowNumber,
-                    'message' => $e->getMessage(),
-                    'data' => $rowArray ?? $row->toArray(),
-                ];
             }
+
+            $reflection = new \ReflectionClass($this->importService);
+            $validateMethod = $reflection->getMethod('validateRow');
+            $validateMethod->setAccessible(true);
+            $validated = $validateMethod->invoke($this->importService, $normalizedRow, $rowNumber);
+
+            $createMethod = $reflection->getMethod('createPatient');
+            $createMethod->setAccessible(true);
+            $createMethod->invoke($this->importService, $validated);
+
+            $this->successCount++;
+        } catch (\Exception $e) {
+            $this->failedCount++;
+            $this->errors[] = [
+                'row' => $rowNumber,
+                'message' => $e->getMessage(),
+                'data' => $rowArray,
+            ];
         }
     }
 
     /**
-     * Normalize row keys to match expected format
-     * Handles various Excel header formats (spaces, underscores, case variations)
+     * Normalize row keys to match expected format.
      */
     protected function normalizeRow(array $row): array
     {
         $normalized = [];
-        
-        // Normalize all keys to lowercase with underscores for comparison
         $normalizedKeys = [];
         foreach ($row as $key => $value) {
-            $normalizedKey = strtolower(str_replace([' ', '-'], '_', trim($key)));
-            $normalizedKeys[$normalizedKey] = $key; // Store original key
+            $normalizedKey = strtolower(str_replace([' ', '-'], '_', trim((string) $key)));
+            $normalizedKeys[$normalizedKey] = $key;
         }
-        
-        // Map normalized keys to standard keys
+
         $keyMap = [
             'first_name' => ['first_name', 'firstname'],
             'middle_name' => ['middle_name', 'middlename'],
@@ -111,88 +143,62 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithChunkReading
             'place_of_birth' => ['place_of_birth', 'placeofbirth'],
             'educational_attainment' => ['educational_attainment', 'educationalattainment'],
         ];
-        
+
         foreach ($keyMap as $standardKey => $variations) {
             foreach ($variations as $variation) {
                 if (isset($normalizedKeys[$variation])) {
                     $originalKey = $normalizedKeys[$variation];
                     $value = $row[$originalKey];
-                    
-                    // Special handling for birth_date - convert Excel serial number to date
-                    if ($standardKey === 'birth_date' && !empty($value)) {
+
+                    if ($standardKey === 'birth_date' && ! empty($value)) {
                         $value = $this->convertExcelDate($value);
                     }
-                    
-                    // Special handling for contact_number - always treat as string
-                    if ($standardKey === 'contact_number' && !empty($value)) {
-                        // Convert to string to preserve leading zeros and handle numeric values from Excel
+                    if ($standardKey === 'contact_number' && ! empty($value)) {
                         $value = (string) $value;
                     }
-                    
+
                     $normalized[$standardKey] = $value;
                     break;
                 }
             }
         }
-        
+
         return $normalized;
     }
 
     /**
-     * Convert Excel date (serial number or various formats) to Y-m-d string
+     * Convert Excel date (serial number or various formats) to Y-m-d string.
      */
     protected function convertExcelDate($value): string
     {
-        // If already a DateTime/Carbon instance
         if ($value instanceof \DateTime || $value instanceof \Carbon\Carbon) {
             return $value->format('Y-m-d');
         }
-        
-        // If it's a numeric value (Excel serial date)
+
         if (is_numeric($value)) {
-            // Excel stores dates as days since 1900-01-01 (with some quirks)
-            // Use PhpSpreadsheet's date helper
             try {
-                $date = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value);
+                $date = ExcelDateConverter::excelToDateTimeObject($value);
                 return $date->format('Y-m-d');
             } catch (\Exception $e) {
-                // Fallback: treat as string
-                return (string)$value;
+                return (string) $value;
             }
         }
-        
-        // If it's a string, try to parse it
+
         if (is_string($value)) {
             $value = str_replace('/', '-', trim($value));
-            
-            // Extract date part if it's a datetime string
             if (preg_match('/^(\d{4}-\d{2}-\d{2})/', $value, $matches)) {
                 return $matches[1];
             }
-            
-            // Try parsing with Carbon for other formats
             try {
                 return \Carbon\Carbon::parse($value)->format('Y-m-d');
             } catch (\Exception $e) {
-                return $value; // Return as-is and let validation catch it
+                return $value;
             }
         }
-        
-        return (string)$value;
+
+        return (string) $value;
     }
 
-
-    /**
-     * Chunk size for processing
-     */
-    public function chunkSize(): int
-    {
-        return 100;
-    }
-
-    /**
-     * Get import results
-     */
     public function getResults(): array
     {
         return [

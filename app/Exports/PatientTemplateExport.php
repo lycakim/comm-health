@@ -3,88 +3,83 @@
 namespace App\Exports;
 
 use App\Services\PatientImportService;
-use Maatwebsite\Excel\Concerns\FromArray;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class PatientTemplateExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
+class PatientTemplateExport
 {
     /**
-     * @return array
+     * Build the spreadsheet (headers, sample row, column widths).
      */
-    public function array(): array
+    public function spreadsheet(): Spreadsheet
     {
-        // Return sample data row (barangay excluded - uses current user's barangay)
-        return [
-            [
-                'Juan',
-                'Manuel',
-                'Dela Cruz',
-                'Jr.',
-                '1990-01-15',
-                'male',
-                'Single',
-                '09123456789',
-                'Sample Purok',
-                '',
-                'Farmer',
-                '120/80',
-                '90',
-                '170',
-                '70',
-                'Manila',
-                'College Graduate',
-            ],
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = PatientImportService::getTemplateHeaders();
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+
+        // Sample data row
+        $sampleRow = [
+            'Juan',
+            'Manuel',
+            'Dela Cruz',
+            'Jr.',
+            '1990-01-15',
+            'male',
+            'Single',
+            '09123456789',
+            'Sample Purok',
+            '',
+            'Farmer',
+            '120/80',
+            '90',
+            '170',
+            '70',
+            'Manila',
+            'College Graduate',
         ];
-    }
+        $col = 'A';
+        foreach ($sampleRow as $value) {
+            $sheet->setCellValue($col . '2', $value);
+            $col++;
+        }
 
-    /**
-     * @return array
-     */
-    public function headings(): array
-    {
-        return PatientImportService::getTemplateHeaders();
-    }
-
-    /**
-     * @param Worksheet $sheet
-     * @return array
-     */
-    public function styles(Worksheet $sheet)
-    {
-        // Return empty array - no styling (normal template)
-        return [];
-    }
-
-    /**
-     * @return array
-     */
-    public function columnWidths(): array
-    {
-        return [
-            'A' => 15, // first_name
-            'B' => 15, // middle_name
-            'C' => 15, // last_name
-            'D' => 10, // suffix
-            'E' => 15, // birth_date
-            'F' => 10, // sex
-            'G' => 15, // civil_status
-            'H' => 15, // contact_number
-            'I' => 15, // purok
-            'J' => 20, // category
-            'K' => 20, // occupation
-            'L' => 15, // blood_pressure
-            'M' => 15, // sugar_level
-            'N' => 10, // height
-            'O' => 10, // weight
-            'P' => 25, // place_of_birth
-            'Q' => 20, // educational_attainment
+        // Column widths
+        $widths = [
+            'A' => 15, 'B' => 15, 'C' => 15, 'D' => 10, 'E' => 15,
+            'F' => 10, 'G' => 15, 'H' => 15, 'I' => 15, 'J' => 20,
+            'K' => 20, 'L' => 15, 'M' => 15, 'N' => 10, 'O' => 10,
+            'P' => 25, 'Q' => 20,
         ];
+        foreach ($widths as $column => $width) {
+            $sheet->getColumnDimension($column)->setWidth($width);
+        }
+
+        return $spreadsheet;
+    }
+
+    /**
+     * Return a streamed download response for the template.
+     */
+    public static function download(string $filename): StreamedResponse
+    {
+        $export = new self();
+        $spreadsheet = $export->spreadsheet();
+        $writer = new Xlsx($spreadsheet);
+
+        $response = new StreamedResponse(function () use ($writer) {
+            $writer->save('php://output');
+        });
+
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
+
+        return $response;
     }
 }
-

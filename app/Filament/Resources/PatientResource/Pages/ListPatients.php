@@ -17,7 +17,6 @@ use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\PatientResource;
 use App\Enums\RoleEnum;
 use Filament\Tables\Table;
-use Maatwebsite\Excel\Facades\Excel;
 
 class ListPatients extends ListRecords
 {
@@ -40,7 +39,7 @@ class ListPatients extends ListRecords
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('gray')
                 ->action(function () {
-                    return Excel::download(new PatientTemplateExport(), 'resident_import_template_' . date('Y-m-d') . '.xlsx');
+                    return PatientTemplateExport::download('resident_import_template_' . date('Y-m-d') . '.xlsx');
                 });
 
             $actions[] = Actions\Action::make('importPatients')
@@ -104,7 +103,7 @@ class ListPatients extends ListRecords
                             
                             try {
                                 $import = new PatientsImport();
-                                Excel::import($import, $filePath);
+                                $import->import($filePath);
                                 
                                 $results = $import->getResults();
                                 $totalSuccess += $results['success'];
