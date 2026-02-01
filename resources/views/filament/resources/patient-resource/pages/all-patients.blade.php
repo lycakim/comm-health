@@ -26,7 +26,7 @@
                 </h3>
                 
                 <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 mt-1 transition-colors duration-200">
-                    {{ $barangay->patients_count }} {{ Str::plural('patient', $barangay->patients_count) }}
+                    {{ $barangay->patients_count }} {{ Str::plural('resident', $barangay->patients_count) }}
                 </p>
             </a>
         @endforeach
