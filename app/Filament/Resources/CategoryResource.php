@@ -133,6 +133,7 @@ class CategoryResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
+            ->defaultSort('created_at', 'desc')
             ->modifyQueryUsing(function (Builder $query) {
                 $query->latest();
             });

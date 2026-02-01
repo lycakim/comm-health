@@ -937,6 +937,7 @@ class PatientResource extends Resource
                 ]),
             ])
             ->defaultPaginationPageOption(25) // Reduce from 50/100
+            ->defaultSort('created_at', 'desc')
             ->deferLoading() // Defer table loading
             ->persistFiltersInSession() // Cache filters
             ->persistSearchInSession() // Cache search

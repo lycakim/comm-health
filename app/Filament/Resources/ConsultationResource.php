@@ -712,6 +712,7 @@ class ConsultationResource extends Resource
                         );
                     }),
             ])
+            ->defaultSort('created_at', 'desc')
             // Polling removed for better performance - refresh manually if needed
             ->deferLoading()
             ->modifyQueryUsing(function (Builder $query) {
