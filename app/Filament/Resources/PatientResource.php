@@ -794,18 +794,8 @@ class PatientResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->formatStateUsing(fn ($state) => $state ?? 'N/A'),
-                SelectColumn::make('category_id')
+                TextColumn::make('category.name')
                     ->label('Category')
-                    ->options(
-                        Category::query()
-                            ->get()
-                            ->mapWithKeys(fn ($category) => [
-                                $category->id => $category->description 
-                                    ? "{$category->name} - {$category->description}"
-                                    : $category->name
-                            ])
-                            ->toArray()
-                    )
                     ->searchable()
                     ->sortable(),
                 // Add column who imported the resident/patient this column only visible to MHO and admin
