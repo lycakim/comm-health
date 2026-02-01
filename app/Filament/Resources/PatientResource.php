@@ -782,11 +782,16 @@ class PatientResource extends Resource
                         return !empty($parts) ? implode(' ', $parts) : '0 months';
                     })
                     ->label('Age'),
+                TextColumn::make('barangay.name')
+                    ->label('Barangay')
+                    ->searchable()
+                    ->sortable()
+                    ->visible(fn () => in_array(self::currentUser()->role, [RoleEnum::MHO, RoleEnum::ADMIN])),
                 TextColumn::make('purok.name')
                     ->label('Purok')
                     ->searchable()
                     ->sortable()
-                    ->formatStateUsing(fn ($state, $record) => $state ? $state . ($record->barangay ? ' (' . $record->barangay->name . ')' : '') : 'N/A'),
+                    ->formatStateUsing(fn ($state) => $state ?? 'N/A'),
                 SelectColumn::make('category_id')
                     ->label('Category')
                     ->options(
@@ -940,26 +945,7 @@ class PatientResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->deferLoading() // Defer table loading
             ->persistFiltersInSession() // Cache filters
-            ->persistSearchInSession() // Cache search
-            // Polling removed for better performance - refresh manually if needed
-            ->modifyQueryUsing(function (Builder $query) {
-                $user = self::currentUser();
-                
-                if (in_array($user->role, [
-                    RoleEnum::MHO,
-                    RoleEnum::ADMIN
-                ])) {
-                    return;
-                }
-                
-                // BHW/Midwife: filter by barangay_id, if null show empty
-                if (is_null($user->barangay_id)) {
-                    $query->whereRaw('1 = 0');
-                    return;
-                }
-
-                $query->where('barangay_id', $user->barangay_id);
-            });
+            ->persistSearchInSession();
     }
 
     public static function getRelations(): array
@@ -974,7 +960,7 @@ class PatientResource extends Resource
         return [
             'index' => Pages\IndexPatients::route('/'),
             'all' => Pages\AllPatients::route('/all'),
-            'list' => Pages\ListPatients::route('/list/{barangay?}'),
+            'list' => Pages\ListPatients::route('/list'),
             'create' => Pages\CreatePatient::route('/create'),
             'edit' => Pages\EditPatient::route('/{record}/edit'),
             'view' => Pages\ViewPatient::route('/{record}/view'),

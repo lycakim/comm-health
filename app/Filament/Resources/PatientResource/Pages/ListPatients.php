@@ -15,6 +15,8 @@ use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\PatientResource;
+use App\Enums\RoleEnum;
+use Filament\Tables\Table;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ListPatients extends ListRecords
@@ -172,33 +174,37 @@ class ListPatients extends ListRecords
     // IMPORTANT: Override this method to control the default create action
     protected static bool $shouldRegisterNavigation = true;
 
+    /**
+     * Get barangay ID from Filament table filter in URL
+     */
+    protected function getBarangayFromTableFilter(): ?int
+    {
+        // Get the table filters from the URL
+        $tableFilters = request()->query('tableFilters', []);
+        
+        // Check if barangay_id filter is set
+        if (isset($tableFilters['barangay_id']['value'])) {
+            $barangayId = $tableFilters['barangay_id']['value'];
+            return is_numeric($barangayId) ? (int) $barangayId : null;
+        }
+        
+        return null;
+    }
+
     public function getSubheading(): string|Htmlable|null
     {
-        $barangayFromRoute = request()->route('barangay');
+        $barangayId = $this->getBarangayFromTableFilter();
 
-        if ($barangayFromRoute) {
-            $barangay = Barangay::where('id', $barangayFromRoute)->first();
+        if ($barangayId) {
+            $barangay = Barangay::find($barangayId);
 
             if (!$barangay) {
                 return 'View and manage resident records across all barangays';
             }
             
-            return 'View and manage resident records across barangay ' . $barangay->name;
+            return 'View and manage resident records in ' . $barangay->name;
         }
         
         return 'View and manage resident records across all barangays';
-    }
-
-    protected function getTableQuery(): Builder
-    {
-        $query = parent::getTableQuery();
-        
-        $barangayFromRoute = request()->route('barangay');
-        
-        if ($barangayFromRoute === 'all' || is_null($barangayFromRoute)) {
-            return $query;
-        }
-
-        return $query->where('barangay_id', $barangayFromRoute);
     }
 }

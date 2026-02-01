@@ -1,6 +1,6 @@
 <x-filament-panels::page>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
-        <a href="{{ \App\Filament\Resources\PatientResource::getUrl('list', ['barangay' => 'all']) }}"
+        <a href="{{ \App\Filament\Resources\PatientResource::getUrl('list') }}"
             class="barangay-card group block p-4 rounded-lg border transition-all duration-200 ease-in-out
                     bg-white hover:bg-green-50 border-gray-200 hover:border-green-300 hover:shadow-md
                     dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600
@@ -15,7 +15,7 @@
             </p>
         </a>
         @foreach($barangays as $barangay)
-            <a href="{{ \App\Filament\Resources\PatientResource::getUrl('list', ['barangay' => $barangay->id]) }}"
+            <a href="{{ \App\Filament\Resources\PatientResource::getUrl('list') }}?tableFilters[barangay_id][value]={{ $barangay->id }}"
                class="barangay-card group block p-4 rounded-lg border transition-all duration-200 ease-in-out
                       bg-white hover:bg-green-50 border-gray-200 hover:border-green-300 hover:shadow-md
                       dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600
