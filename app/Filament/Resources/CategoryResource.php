@@ -26,7 +26,7 @@ use App\Filament\Resources\CategoryResource\RelationManagers;
 
 class CategoryResource extends Resource
 {
-    use HasUserTypeUrls;
+    // use HasUserTypeUrls;
 
     protected static ?string $model = Category::class;
 

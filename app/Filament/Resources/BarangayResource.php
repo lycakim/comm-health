@@ -28,7 +28,7 @@ use App\Filament\Resources\BarangayResource\RelationManagers\UsersRelationManage
 
 class BarangayResource extends Resource
 {
-    use HasUserTypeUrls;
+    // use HasUserTypeUrls;
 
     protected static ?string $model = Barangay::class;
 

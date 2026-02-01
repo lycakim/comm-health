@@ -30,7 +30,7 @@ use App\Filament\Resources\ConsultationResource\RelationManagers\ReferralsRelati
 
 class ConsultationResource extends Resource
 {
-    use HasUserTypeUrls;
+    // use HasUserTypeUrls;
 
     protected static ?string $model = Consultation::class;
 

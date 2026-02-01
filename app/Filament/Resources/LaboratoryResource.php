@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Auth;
 
 class LaboratoryResource extends Resource
 {
-    use HasUserTypeUrls;
+    // use HasUserTypeUrls;
 
     protected static ?string $model = Laboratory::class;
 

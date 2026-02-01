@@ -42,7 +42,7 @@ use Filament\Infolists\Components\Section as InfolistSection;
 
 class ProgramResource extends Resource
 {
-    use HasUserTypeUrls;
+    // use HasUserTypeUrls;
     
     protected static ?string $model = Program::class;
 

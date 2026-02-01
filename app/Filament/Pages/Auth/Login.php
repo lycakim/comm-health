@@ -241,22 +241,8 @@ class Login extends BaseLogin
 
     protected function handleSuccessfulLogin($user): ?LoginResponse
     {
-        if (!$user || !$user->user_type) {
-            $this->redirect('/commhealth');
-            return null;
-        }
-
-        // Redirect to user-type specific dashboard
-        $redirectUrl = match($user->user_type) {
-            'mho' => '/commhealth/mho/dashboard',
-            'bhw' => '/commhealth/bhw/dashboard',
-            'midwife' => '/commhealth/midwife/dashboard',
-            'resident' => '/commhealth/resident/dashboard',
-            'admin' => '/commhealth/admin/dashboard',
-            default => '/commhealth/dashboard'
-        };
-
-        $this->redirect($redirectUrl);
-        return null;
+        // Redirect to the main Filament dashboard
+        // Role-based access is handled by canAccess() methods in Resources and Pages
+        return app(LoginResponse::class);
     }
 }

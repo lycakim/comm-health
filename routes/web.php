@@ -63,6 +63,9 @@ Route::middleware(['auth'])->group(function () {
             ->header('Content-Disposition', 'inline; filename="referral-' . $consultation->referral->ref_id . '.pdf"');
     })->name('referral.pdf');
     
+    // User-type specific routes (disabled to prevent conflicts with Filament navigation)
+    // Filament handles role-based access through canAccess() methods in Resources and Pages
+    /*
     // MHO Routes
     Route::prefix('commhealth/mho')->middleware('check.user.type:mho')->group(function () {
         Route::get('/dashboard', [DynamicDashboardController::class, 'mho'])->name('commhealth.mho.dashboard');
@@ -86,26 +89,24 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [DynamicDashboardController::class, 'admin'])->name('commhealth.admin.dashboard');
         Route::get('/{resource?}/{record?}', [DynamicDashboardController::class, 'handleAdminRoutes'])->where('resource', '.*');
     });
+    */
     
-    // Fallback redirect
+    // Fallback redirect to Filament dashboard
     Route::get('/commhealth', function () {
         $user = Auth::user();
         
-        if (!$user || !$user->user_type) {
+        if (!$user) {
             return redirect('/commhealth/login');
         }
         
-        return redirect(match($user->user_type) {
-            'mho' => '/commhealth/mho/dashboard',
-            'bhw' => '/commhealth/bhw/dashboard',
-            'rhu' => '/commhealth/rhu/dashboard',
-            'admin' => '/commhealth/admin/dashboard',
-            default => '/commhealth/login'
-        });
+        // Redirect to the Filament dashboard page
+        return redirect('/commhealth/dashboard');
     });
 });
 
-// Redirect any unauthorized access
+// Redirect any unauthorized access to user-type specific routes (disabled)
+// Uncomment if you enable the user-type specific dashboard routes above
+/*
 Route::get('/commhealth/{userType}/{path?}', function ($userType) {
     if (!Auth::check()) {
         return redirect('/commhealth/login');
@@ -113,12 +114,14 @@ Route::get('/commhealth/{userType}/{path?}', function ($userType) {
     
     $user = Auth::user();
     
+    // Only redirect if accessing user-type specific routes
     if ($user->user_type !== $userType) {
-        return redirect("/commhealth/{$user->user_type}/dashboard");
+        return redirect("/commhealth/dashboard");
     }
     
     return redirect("/commhealth/{$userType}/dashboard");
-})->where('userType', 'mho|bhw|rhu|admin')->where('path', '.*');
+})->where('userType', 'mho|bhw|rhu|admin|midwife|resident')->where('path', '.*');
+*/
 
 Route::get('/test-sms', function () {
     $semaphore = new \App\Services\SemaphoreService();

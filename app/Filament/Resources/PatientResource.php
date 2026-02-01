@@ -16,7 +16,7 @@ use App\Models\Category;
 use Filament\Forms\Form;
 use App\Models\Occupation;
 use Filament\Tables\Table;
-use App\Traits\HasUserTypeUrls;
+// use App\Traits\HasUserTypeUrls;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Radio;
 use Illuminate\Support\Facades\Auth;
@@ -53,7 +53,8 @@ use Illuminate\Support\Facades\Storage;
 
 class PatientResource extends Resource
 {
-    use HasUserTypeUrls;
+    // Removed HasUserTypeUrls trait - using standard Filament navigation
+    // use HasUserTypeUrls;
 
     protected static ?string $model = Patient::class;
 
@@ -73,12 +74,13 @@ class PatientResource extends Resource
 
     protected static ?string $description = 'View and manage residents records';
 
-    public function mount(): void
-    {
-        if (self::currentUser()->isMHO()) {
-            $this->redirect(PatientResource::getUrl('all'));
-        }
-    }
+    // Removed custom mount redirect - let Filament handle navigation naturally
+    // public function mount(): void
+    // {
+    //     if (self::currentUser()->isMHO()) {
+    //         $this->redirect(PatientResource::getUrl('all'));
+    //     }
+    // }
 
     public static function getNavigationSort(): ?int
     {

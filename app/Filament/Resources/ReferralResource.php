@@ -32,7 +32,7 @@ use App\Filament\Resources\ReferralResource\RelationManagers;
 
 class ReferralResource extends Resource
 {
-    use HasUserTypeUrls;
+    // use HasUserTypeUrls;
     
     protected static ?string $model = Referral::class;
 

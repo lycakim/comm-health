@@ -25,7 +25,7 @@ use App\Filament\Resources\AnnouncementResource\RelationManagers;
 
 class AnnouncementResource extends Resource
 {
-    use HasUserTypeUrls;
+    // use HasUserTypeUrls;
 
     protected static ?string $model = Announcement::class;
 
