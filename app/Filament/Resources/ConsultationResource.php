@@ -52,6 +52,7 @@ class ConsultationResource extends Resource
             RoleEnum::ADMIN,
             RoleEnum::MHO,
             RoleEnum::BHW,
+            RoleEnum::MIDWIFE,
         ]);
     }
 

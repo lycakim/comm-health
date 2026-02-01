@@ -47,7 +47,6 @@ class SMSBalance extends Page implements HasTable
     {
         return in_array(self::currentUser()->role, [
             RoleEnum::BHW,
-            RoleEnum::MIDWIFE,
             RoleEnum::ADMIN,
         ]);
     }

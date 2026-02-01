@@ -62,10 +62,7 @@ class Feedback extends Page implements HasInfolists
 
     public static function shouldRegisterNavigation(): bool
     {
-        return !in_array(self::currentUser()->role, [
-            RoleEnum::MHO,
-            RoleEnum::BHW,
-        ]);
+        return false;
     }
 
     public static function currentUser(): ?User

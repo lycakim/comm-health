@@ -20,7 +20,7 @@ class ChildrenChartService
 
     /**
      * Get children patients by barangay or purok for a specific month and year
-     * Based on user role: BHW = Purok, MHW = Barangay
+     * Based on user role: BHW/Midwife = Purok, MHW = Barangay
      */
     public function getChildrenPatientsByBarangay(int $year, int $month, ?string $userRole = null): array
     {
@@ -31,7 +31,7 @@ class ChildrenChartService
         $user = auth()->user();
         $role = $userRole ?? $user?->role;
         
-        if ($user->isBHW()) {
+        if ($user->isBHW() || $user->isMidwife()) {
             return $this->getChildrenPatientsByPurok($year, $month, $user);
         }
         
@@ -39,7 +39,7 @@ class ChildrenChartService
     }
 
     /**
-     * Get children patients by purok (for BHW users)
+     * Get children patients by purok (for BHW/Midwife users)
      */
     private function getChildrenPatientsByPurok(int $year, int $month, $user): array
     {

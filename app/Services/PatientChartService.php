@@ -12,15 +12,15 @@ class PatientChartService
 {
     /**
      * Get patient count by barangay or purok for a specific month and year
-     * Based on user role: BHW = Purok, MHW = Barangay
+     * Based on user role: BHW/Midwife = Purok, MHW = Barangay
      */
     public function getPatientsByBarangay(int $year, int $month, ?string $userRole = null, string $genderFilter = 'all'): array
     {
         $user = auth()->user();
         $role = $userRole ?? $user?->role;
         
-        // Determine if we're filtering by purok (BHW) or barangay (MHW)
-        if ($user->isBHW()) {
+        // Determine if we're filtering by purok (BHW/Midwife) or barangay (MHW)
+        if ($user->isBHW() || $user->isMidwife()) {
             return $this->getPatientsByPurok($year, $month, $user, $genderFilter);
         }
         
@@ -29,7 +29,7 @@ class PatientChartService
     }
 
     /**
-     * Get patients by purok (for BHW users)
+     * Get patients by purok (for BHW/Midwife users)
      * Optimized: Uses single aggregated query instead of N queries per purok
      */
     private function getPatientsByPurok(int $year, int $month, $user, string $genderFilter = 'all'): array
