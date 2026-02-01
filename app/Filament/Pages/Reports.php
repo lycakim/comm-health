@@ -375,7 +375,7 @@ class Reports extends Page implements HasTable
                 
                 TextColumn::make('date')
                     ->label('Consultation Date')
-                    ->date('M d, Y')
+                    ->dateTime('M d, Y h:i A')
                     ->sortable()
                     ->placeholder('No Date'),
             ])

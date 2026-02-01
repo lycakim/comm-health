@@ -103,7 +103,7 @@
         </tr>
         <tr>
             <td class="label">HPI:</td>
-            <td colspan="3">{{ $consultation->hpi_notes ?? 'N/A' }}</td>
+            <td colspan="3">{{ $referral->hpi_notes ?? $consultation->hpi_notes ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="label">Surgical Operation:</td>
@@ -128,11 +128,11 @@
         </tr>
         <tr>
             <td class="label">Impression:</td>
-            <td colspan="3">{{ $consultation->impression ?? 'N/A' }}</td>
+            <td colspan="3">{{ $referral->impression ?? $consultation->impression ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="label">Action Taken:</td>
-            <td colspan="3">{{ $consultation->action_taken ?? 'N/A' }}</td>
+            <td colspan="3">{{ $referral->action_taken ?? $consultation->action_taken ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="label">Reason for Referral:</td>

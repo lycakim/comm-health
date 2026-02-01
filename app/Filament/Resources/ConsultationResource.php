@@ -90,7 +90,8 @@ class ConsultationResource extends Resource
                             });
                     }),
                 Tables\Columns\TextColumn::make('date')
-                    ->dateTime()
+                    ->label('Date and Time')
+                    ->dateTime('M d, Y h:i A')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')

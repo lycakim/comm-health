@@ -821,23 +821,29 @@ class ConsultationFormService
                                                     ->label('With Disability?')
                                                     ->boolean()
                                                     ->reactive()
+                                                    ->default(false)
                                                     ->required()
                                                     ->inline(),
                                                 ToggleButtons::make('philhealth')
                                                     ->label('With Philhealth?')
                                                     ->boolean()
+                                                    ->default(false)
+                                                    ->required()
                                                     ->inline(),
                                                 ToggleButtons::make('member_of_4ps')
                                                     ->label('4Ps member?')
                                                     ->boolean()
+                                                    ->default(false)
                                                     ->inline(),
                                                 ToggleButtons::make('nhts_member')
                                                     ->label('NHTS Member?')
                                                     ->boolean()
+                                                    ->default(false)
                                                     ->inline(),
                                                 ToggleButtons::make('birth_plan')
                                                     ->label('Birth planned?')
                                                     ->boolean()
+                                                    ->default(false)
                                                     ->inline(),
                                                 // ToggleButtons::make('type')
                                                 //     ->inline()

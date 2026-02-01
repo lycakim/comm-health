@@ -282,6 +282,9 @@ class CreateConsultation extends CreateRecord
                 if ($record && $record->referral()->exists()) {
                     $referral = $record->referral;
 
+                    // Generate PDF URL - use direct URL path for reliability
+                    $pdfUrl = url('/referral-pdf/' . $record->id);
+
                     // Show success notification with action to open PDF
                     Notification::make()
                         ->title('Consultation Created!')
@@ -291,13 +294,12 @@ class CreateConsultation extends CreateRecord
                             \Filament\Notifications\Actions\Action::make('viewPdf')
                                 ->label('Open Referral PDF')
                                 ->button()
-                                ->url(route('referral.pdf', ['consultation' => $record->id]))
+                                ->url($pdfUrl)
                                 ->openUrlInNewTab(),
                         ])
                         ->send();
 
                     // Open PDF in new tab automatically using JavaScript
-                    $pdfUrl = route('referral.pdf', ['consultation' => $record->id]);
                     
                     // Dispatch browser event to open PDF in new tab
                     $this->dispatch('open-pdf-in-new-tab', url: $pdfUrl);
