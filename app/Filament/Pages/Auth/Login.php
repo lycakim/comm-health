@@ -81,6 +81,13 @@ class Login extends BaseLogin
 
         $user = Auth::user();
         
+        // Double check is_active after authentication (in case it changed)
+        if ($user && ($user->is_active ?? true) === false) {
+            Auth::logout();
+            $this->addError('email', 'Your account is inactive and cannot login.');
+            $this->throwFailureValidationException();
+        }
+        
         // Check if user can login directly (bypass OTP)
         if (method_exists($user, 'canLoginDirectly') && $user->canLoginDirectly()) {
             // return app(LoginResponse::class);
@@ -104,6 +111,14 @@ class Login extends BaseLogin
 
     protected function attemptAuthentication(array $data): bool
     {
+        // First check if user exists and is active before attempting authentication
+        $user = User::where('email', $data['email'])->first();
+        
+        if ($user && ($user->is_active ?? true) === false) {
+            $this->addError('email', 'Your account is inactive and cannot login.');
+            return false;
+        }
+        
         return Auth::attempt([
             'email' => $data['email'],
             'password' => $data['password'],
@@ -113,7 +128,7 @@ class Login extends BaseLogin
     protected function sendOtp(string $email): void
     {
         $user = User::where('email', $email)->first();
-        if ($user) {
+        if ($user && ($user->is_active ?? true) !== false) {
             $otp = $this->generateOtpCode();
             $this->storeOtpCode($user, $otp);
             $this->sendOtpEmail($user, $otp);
@@ -158,6 +173,15 @@ class Login extends BaseLogin
 
         if ($this->validateOtpCode($this->userEmail, $code)) {
             $user = User::where('email', $this->userEmail)->first();
+            
+            // Check if user is active before logging in
+            if ($user && ($user->is_active ?? true) === false) {
+                $this->cleanupOtpCode($this->userEmail);
+                $this->showOtpForm = false;
+                $this->addError('email', 'Your account is inactive and cannot login.');
+                return null;
+            }
+            
             Auth::login($user);
 
             Auth::user()->update([

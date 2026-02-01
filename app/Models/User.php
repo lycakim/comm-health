@@ -44,6 +44,7 @@ class User extends Authenticatable implements CanLoginDirectly
             'password'          => 'hashed',
             'role'              => RoleEnum::class,
             'privacy_accepted_at' => 'datetime',
+            'is_active'        => 'boolean',
         ];
     }
 
