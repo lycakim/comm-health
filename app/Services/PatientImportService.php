@@ -65,26 +65,31 @@ class PatientImportService
             }
         }
         
-        // Setup validation rules for string columns (names, etc., should be strict [letters, space, dot, dash])
+        // Normalize contact_number to string before validation (Excel may read as numeric)
+        if (isset($row['contact_number']) && !empty($row['contact_number'])) {
+            $row['contact_number'] = (string) $row['contact_number'];
+        }
+        
+        // Setup validation rules - only required: first_name, middle_name, last_name, sex, civil_status, birth_date
         $validator = Validator::make($row, [
             'first_name'            => ['required', 'regex:/^[A-Za-z\s\.\-]+$/', 'max:255'],
+            'middle_name'           => ['required', 'regex:/^[A-Za-z\s\.\-]+$/', 'max:255'],
             'last_name'             => ['required', 'regex:/^[A-Za-z\s\.\-]+$/', 'max:255'],
-            'middle_name'           => ['nullable', 'regex:/^[A-Za-z\s\.\-]+$/', 'max:255'],
             'suffix'                => ['nullable', 'regex:/^[A-Za-z0-9\.\s]+$/', 'max:10'],
             'birth_date'            => ['required', 'date', 'before_or_equal:today'],
             'sex'                   => 'required|in:male,female',
             'civil_status'          => ['required', 'string', 'regex:/^[A-Za-z\s\.\-]+$/'],
             'contact_number'        => ['nullable', 'string'], // Accept any string format, normalize will handle it
-            'barangay'              => ['required', 'string', 'regex:/^[A-Za-z\s\.\-]+$/'],
             'purok'                 => ['nullable', 'string', 'regex:/^[A-Za-z0-9\s\.\-]*$/'],
-            'category'              => ['nullable', 'string', 'regex:/^[A-Za-z\s\.\-]+$/'],
-            'occupation'            => ['nullable', 'string', 'regex:/^[A-Za-z\s\.\-]+$/'],
-            'blood_pressure'        => ['nullable', 'string', 'regex:/^\d{2,3}\/\d{2,3}$/'],
+            'category'              => ['nullable', 'string', 'regex:/^[A-Za-z\s\.\-]*$/'],
+            'occupation'            => ['nullable', 'string', 'regex:/^[A-Za-z\s\.\-]*$/'],
+            'blood_pressure'        => ['nullable', 'string'],
             'sugar_level'           => ['nullable', 'numeric'],
             'height'                => ['nullable', 'numeric', 'min:0'],
             'weight'                => ['nullable', 'numeric', 'min:0'],
+            'place_of_birth'        => ['nullable', 'string'],
+            'educational_attainment' => ['nullable', 'string'],
         ], [
-            'barangay.required' => 'Barangay is required and must be a valid name.',
             'birth_date.date' => 'The birth date must be a valid date in format YYYY-MM-DD or YYYY/MM/DD.',
         ]);
 
@@ -103,43 +108,41 @@ class PatientImportService
             }
         }
 
-        // Normalize contact number (only if not empty)
+        // Normalize contact number (only if not empty) - always treat as string
         if (!empty($validated['contact_number'])) {
-            $validated['contact_number'] = $this->normalizeContactNumber($validated['contact_number']);
+            // Ensure it's a string (Excel might read it as numeric)
+            $contactNumber = (string) $validated['contact_number'];
+            $validated['contact_number'] = $this->normalizeContactNumber($contactNumber);
         } else {
             $validated['contact_number'] = null;
         }
 
-        // Handle barangay string to id, or create if not exists (strict letters)
-        if (!empty($validated['barangay'])) {
-            $barangayName = trim($validated['barangay']);
-            $barangay = Barangay::whereRaw('BINARY `name` = ?', [$barangayName])->first();
-
-            if (!$barangay) {
-                // prevent duplicates by strict check (case-sensitive, strict chars already checked by validator)
-                $barangay = Barangay::create(['name' => $barangayName]);
-            }
-            $validated['barangay_id'] = $barangay->id;
-            unset($validated['barangay']);
-        } else {
-            throw new \Exception("Barangay must be provided as a string.");
+        // Always use current user's barangay_id when importing
+        $userBarangayId = Auth::user()->barangay_id;
+        if (!$userBarangayId) {
+            throw new \Exception("Current user has no assigned barangay. Cannot import patients without a barangay assignment.");
         }
+        $validated['barangay_id'] = $userBarangayId;
 
-        // Handle purok string to id, or create if not exists (optional)
+        // Handle purok string to id - save as null if not found (don't create)
         if (!empty($validated['purok'])) {
             $purokName = trim($validated['purok']);
+            $barangayId = $validated['barangay_id'];
+            
             $purok = Purok::whereRaw('BINARY `name` = ?', [$purokName])
-                ->where('barangay_id', $validated['barangay_id'])
+                ->where('barangay_id', $barangayId)
                 ->first();
 
-            if (!$purok) {
-                $purok = Purok::create([
-                    'name' => $purokName,
-                    'barangay_id' => $validated['barangay_id'],
-                ]);
+            if ($purok) {
+                $validated['purok_id'] = $purok->id;
+            } else {
+                // If not found, save as null
+                $validated['purok_id'] = null;
             }
-            $validated['purok_id'] = $purok->id;
             unset($validated['purok']);
+        } else {
+            // If purok not provided, save as null
+            $validated['purok_id'] = null;
         }
 
         // Handle occupation string to id, or create if not exists (optional)
@@ -159,23 +162,40 @@ class PatientImportService
             $validated['age'] = Carbon::parse($validated['birth_date'])->age;
         }
 
-        // Handle category string to id, or use auto-assign logic based on age if empty
+        // Handle category string to id - don't create new, leave blank if not found
+        // If category is empty, base it on birthdate. If both missing, leave null.
         if (!empty($validated['category'])) {
             $categoryName = trim($validated['category']);
             $category = Category::whereRaw('BINARY `name` = ?', [$categoryName])->first();
 
-            if (!$category) {
-                $category = Category::create(['name' => $categoryName]);
+            if ($category) {
+                $validated['category_id'] = $category->id;
             }
-            $validated['category_id'] = $category->id;
-        } elseif (!empty($validated['birth_date']) && isset($validated['age'])) {
-            // Auto-assign category based on age if not provided
+            // If category not found, leave blank (don't create)
+        }
+        
+        // If category is empty but birthdate exists, auto-assign based on age
+        if (empty($validated['category_id']) && !empty($validated['birth_date']) && isset($validated['age'])) {
             $validated['category_id'] = $this->getCategoryIdByAge($validated['age']);
         }
         
+        // If both category and birthdate are missing, leave null (already handled above)
+        
+        // Handle blood pressure - if empty, use normal (120/80)
+        if (empty($validated['blood_pressure'])) {
+            $validated['blood_pressure'] = '120/80';
+        } else {
+            // Validate format if provided
+            $bp = trim($validated['blood_pressure']);
+            if (!preg_match('/^\d{2,3}\/\d{2,3}$/', $bp)) {
+                // If format is invalid, use normal
+                $validated['blood_pressure'] = '120/80';
+            }
+        }
+
         // Always remove 'category' and other non-database keys to prevent SQL errors
         // These are converted to their ID equivalents above
-        unset($validated['category'], $validated['barangay'], $validated['purok'], $validated['occupation']);
+        unset($validated['category'], $validated['purok'], $validated['occupation']);
 
         // Final safety check: remove any keys that don't exist as columns in the patients table
         // This prevents SQL errors if any unexpected keys slip through
@@ -218,13 +238,17 @@ class PatientImportService
     }
 
     /**
-     * Normalize contact number to standard format
+     * Normalize contact number to proper mobile number format (09XXXXXXXXX)
+     * Always returns as string. Handles various formats including (9123456789)
      */
     protected function normalizeContactNumber(?string $contact): ?string
     {
         if (empty($contact)) {
             return null;
         }
+        
+        // Ensure it's a string (handle numeric values from Excel)
+        $contact = (string) $contact;
         
         // Remove all non-digit characters except +
         $clean = preg_replace('/[^\d+]/', '', $contact);
@@ -241,23 +265,34 @@ class PatientImportService
         // Remove + if present
         $clean = str_replace('+', '', $clean);
 
-        // Handle 63XXXXXXXXXX format (international without +)
+        // Handle 63XXXXXXXXXX format (international without +, 12 digits)
         if (str_starts_with($clean, '63') && strlen($clean) == 12) {
             // Convert to local format: 09XXXXXXXXX
             return '0' . substr($clean, 2);
         }
 
-        // Handle 09XXXXXXXXX format (local) - keep as is
+        // Handle 09XXXXXXXXX format (local, 11 digits) - keep as is
         if (str_starts_with($clean, '09') && strlen($clean) == 11) {
             return $clean;
         }
 
-        // Handle 9XXXXXXXXX format - prepend 0
+        // Handle 9XXXXXXXXX format (10 digits starting with 9) - prepend 0
+        // This handles (9123456789) format after removing parentheses
         if (str_starts_with($clean, '9') && strlen($clean) == 10) {
             return '0' . $clean;
         }
 
-        // Return as string (even if invalid format, per doc requirement)
+        // Handle 0XXXXXXXXX format (11 digits starting with 0) - keep as is if valid
+        if (str_starts_with($clean, '0') && strlen($clean) == 11) {
+            return $clean;
+        }
+
+        // For any other format, try to normalize to 09XXXXXXXXX if it's 10 digits
+        if (strlen($clean) == 10 && is_numeric($clean)) {
+            return '0' . $clean;
+        }
+
+        // Return as string (preserve original if can't normalize, but ensure it's a string)
         return (string) $clean;
     }
 
@@ -276,6 +311,7 @@ class PatientImportService
     public static function getTemplateHeaders(): array
     {
         // The column names in the template must reflect that we expect string names, not IDs, for foreigns
+        // Barangay is excluded - always uses current user's barangay_id
         return [
             'first_name',
             'middle_name',
@@ -285,7 +321,6 @@ class PatientImportService
             'sex',
             'civil_status',
             'contact_number',
-            'barangay',
             'purok',
             'category',
             'occupation',

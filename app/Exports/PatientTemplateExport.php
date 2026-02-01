@@ -19,7 +19,7 @@ class PatientTemplateExport implements FromArray, WithHeadings, WithStyles, With
      */
     public function array(): array
     {
-        // Return sample data row
+        // Return sample data row (barangay excluded - uses current user's barangay)
         return [
             [
                 'Juan',
@@ -30,7 +30,6 @@ class PatientTemplateExport implements FromArray, WithHeadings, WithStyles, With
                 'male',
                 'Single',
                 '09123456789',
-                'Sample Barangay',
                 'Sample Purok',
                 '',
                 'Farmer',
@@ -58,42 +57,8 @@ class PatientTemplateExport implements FromArray, WithHeadings, WithStyles, With
      */
     public function styles(Worksheet $sheet)
     {
-        return [
-            // Style the header row
-            1 => [
-                'font' => [
-                    'bold' => true,
-                    'color' => ['rgb' => 'FFFFFF'],
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '4472C4'],
-                ],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical' => Alignment::VERTICAL_CENTER,
-                ],
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => '000000'],
-                    ],
-                ],
-            ],
-            // Style the sample row
-            2 => [
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'E7E6E6'],
-                ],
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => '000000'],
-                    ],
-                ],
-            ],
-        ];
+        // Return empty array - no styling (normal template)
+        return [];
     }
 
     /**
@@ -110,16 +75,15 @@ class PatientTemplateExport implements FromArray, WithHeadings, WithStyles, With
             'F' => 10, // sex
             'G' => 15, // civil_status
             'H' => 15, // contact_number
-            'I' => 20, // barangay
-            'J' => 15, // purok
-            'K' => 20, // category
-            'L' => 20, // occupation
-            'M' => 15, // blood_pressure
-            'N' => 15, // sugar_level
-            'O' => 10, // height
-            'P' => 10, // weight
-            'Q' => 25, // place_of_birth
-            'R' => 20, // educational_attainment
+            'I' => 15, // purok
+            'J' => 20, // category
+            'K' => 20, // occupation
+            'L' => 15, // blood_pressure
+            'M' => 15, // sugar_level
+            'N' => 10, // height
+            'O' => 10, // weight
+            'P' => 25, // place_of_birth
+            'Q' => 20, // educational_attainment
         ];
     }
 }

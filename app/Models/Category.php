@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Schema;
 
 class Category extends Model
 {
@@ -89,6 +90,12 @@ class Category extends Model
      */
     public static function findByAge(int $age): ?self
     {
+        // Check if age_min and age_max columns exist
+        if (!Schema::hasColumn((new static)->getTable(), 'age_min') || 
+            !Schema::hasColumn((new static)->getTable(), 'age_max')) {
+            return null;
+        }
+
         return static::query()
             ->where(function ($q) {
                 $q->whereNotNull('age_min')->orWhereNotNull('age_max');

@@ -298,8 +298,8 @@ class PatientResource extends Resource
                                             $birthDate = Carbon::parse($record->birth_date);
                                             $now = Carbon::now();
                                             
-                                            $years = $birthDate->diffInYears($now);
-                                            $months = $birthDate->copy()->addYears($years)->diffInMonths($now);
+                                            $years = (int) $birthDate->diffInYears($now);
+                                            $months = (int) $birthDate->copy()->addYears($years)->diffInMonths($now);
                                             
                                             $parts = [];
                                             if ($years > 0) {
@@ -768,8 +768,8 @@ class PatientResource extends Resource
                         $birthDate = Carbon::parse($record->birth_date);
                         $now = Carbon::now();
                         
-                        $years = $birthDate->diffInYears($now);
-                        $months = $birthDate->copy()->addYears($years)->diffInMonths($now);
+                        $years = (int) $birthDate->diffInYears($now);
+                        $months = (int) $birthDate->copy()->addYears($years)->diffInMonths($now);
                         
                         $parts = [];
                         if ($years > 0) {

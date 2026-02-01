@@ -101,7 +101,6 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithChunkReading
             'sex' => ['sex', 'gender'],
             'civil_status' => ['civil_status', 'civilstatus'],
             'contact_number' => ['contact_number', 'contactnumber', 'phone', 'phone_number'],
-            'barangay' => ['barangay', 'barangay_id', 'barangayid'],
             'purok' => ['purok', 'purok_id', 'purokid'],
             'category' => ['category', 'category_id', 'categoryid'],
             'occupation' => ['occupation', 'occupation_id', 'occupationid'],
@@ -122,6 +121,12 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithChunkReading
                     // Special handling for birth_date - convert Excel serial number to date
                     if ($standardKey === 'birth_date' && !empty($value)) {
                         $value = $this->convertExcelDate($value);
+                    }
+                    
+                    // Special handling for contact_number - always treat as string
+                    if ($standardKey === 'contact_number' && !empty($value)) {
+                        // Convert to string to preserve leading zeros and handle numeric values from Excel
+                        $value = (string) $value;
                     }
                     
                     $normalized[$standardKey] = $value;
