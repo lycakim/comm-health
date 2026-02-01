@@ -750,7 +750,7 @@ class ReferralResource extends Resource
                     })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Referred Time')
+                    ->label('Referred')
                     ->since()
                     ->searchable()
                     ->sortable(),
