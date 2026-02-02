@@ -35,16 +35,14 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
     {
         $user = Auth::user();
         
-        // Fetch Programs
+        // Fetch Programs - BHW/Midwife: filter by barangay; no barangay_id = no events
         $programs = Program::query()
             ->with(['category', 'barangay', 'coordinatorUser'])
             ->when(
-                $user->role !== RoleEnum::MHO->value,
+                in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]),
                 function ($query) use ($user) {
-                    $barangayId = $user->barangay_id;
-                    
-                    if ($barangayId) {
-                        $query->where('barangay_id', $barangayId);
+                    if ($user->barangay_id) {
+                        $query->where('barangay_id', $user->barangay_id);
                     } else {
                         $query->whereRaw('1 = 0');
                     }
@@ -86,16 +84,14 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
                 ];
             });
 
-        // Fetch Consultations
+        // Fetch Consultations - BHW/Midwife: filter by patient's barangay; no barangay_id = no events
         $consultations = Consultation::query()
             ->when(
-                $user->role !== RoleEnum::MHO->value,
+                in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]),
                 function ($query) use ($user) {
-                    $barangayId = $user->barangay_id;
-                    
-                    if ($barangayId) {
-                        $query->whereHas('patient', function ($q) use ($barangayId) {
-                            $q->where('barangay_id', $barangayId);
+                    if ($user->barangay_id) {
+                        $query->whereHas('patient', function ($q) use ($user) {
+                            $q->where('barangay_id', $user->barangay_id);
                         });
                     } else {
                         $query->whereRaw('1 = 0');

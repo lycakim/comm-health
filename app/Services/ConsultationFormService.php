@@ -82,8 +82,11 @@ class ConsultationFormService
                                                 $user = Auth::user();
                                                 $query = Patient::query();
                                                 
-                                                // Filter by barangay for BHW users
-                                                if ($user && $user->role == RoleEnum::BHW && $user->barangay_id) {
+                                                // Filter by barangay for BHW and Midwife
+                                                if ($user && (in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]))) {
+                                                    if (is_null($user->barangay_id)) {
+                                                        return [];
+                                                    }
                                                     $query->where('barangay_id', $user->barangay_id);
                                                 }
                                                 

@@ -36,6 +36,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Support\Htmlable;
 use Filament\Forms\Components\CheckboxList;
 use App\Services\PatientFormOptionsServices;
@@ -120,6 +121,36 @@ class PatientResource extends Resource
         
         // Other users (BHW, Midwife) need assigned barangay_id
         return !is_null($user->barangay_id);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $user = self::currentUser();
+        if ($user->isMHO() || $user->isAdmin()) {
+            return true;
+        }
+        if ($user->isBHW() || $user->isMidwife()) {
+            if (is_null($user->barangay_id)) {
+                return false;
+            }
+            return $record->barangay_id === $user->barangay_id;
+        }
+        return false;
+    }
+
+    public static function canView(Model $record): bool
+    {
+        $user = self::currentUser();
+        if ($user->isMHO() || $user->isAdmin()) {
+            return true;
+        }
+        if ($user->isBHW() || $user->isMidwife()) {
+            if (is_null($user->barangay_id)) {
+                return false;
+            }
+            return $record->barangay_id === $user->barangay_id;
+        }
+        return false;
     }
 
     public static function form(Form $form): Form
@@ -628,6 +659,18 @@ class PatientResource extends Resource
                     ->action(function ($data) {
                         $query = Patient::query();
                         $user = Auth::user();
+                        // BHW/Midwife: filter by barangay; no barangay_id = no export
+                        if ($user->isBHW() || $user->isMidwife()) {
+                            if (is_null($user->barangay_id)) {
+                                Notification::make()
+                                    ->title('No barangay assigned')
+                                    ->body('You must have an assigned barangay to export residents.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+                            $query->where('barangay_id', $user->barangay_id);
+                        }
                         $barangay = $user->barangay_id ? Barangay::find($user->barangay_id) : null;
                         $barangayName = $barangay ? $barangay->name : '';
                         $brgy = $barangayName ? 'barangay_' . strtolower($barangayName) . '_' : '';
@@ -937,7 +980,19 @@ class PatientResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->deferLoading() // Defer table loading
             ->persistFiltersInSession() // Cache filters
-            ->persistSearchInSession();
+            ->persistSearchInSession()
+            ->modifyQueryUsing(function (Builder $query) {
+                $user = self::currentUser();
+                if (!in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE])) {
+                    return;
+                }
+                // BHW/Midwife: no barangay_id = see no residents; with barangay_id = only their barangay
+                if (is_null($user->barangay_id)) {
+                    $query->whereRaw('1 = 0');
+                    return;
+                }
+                $query->where('barangay_id', $user->barangay_id);
+            });
     }
 
     public static function getRelations(): array
@@ -1020,9 +1075,12 @@ class PatientResource extends Resource
             ->select('id', 'first_name', 'middle_name', 'last_name', 'suffix', 'birth_date', 'barangay_id')
             ->with('barangay:id,name');
         
-        // Apply user permission filtering (barangay scope)
+        // Apply user permission filtering (barangay scope) for BHW/Midwife
         $user = self::currentUser();
-        if ($user && !in_array($user->role, [RoleEnum::MHO, RoleEnum::ADMIN]) && $user->barangay_id) {
+        if ($user && in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE])) {
+            if (is_null($user->barangay_id)) {
+                return collect();
+            }
             $query->where('barangay_id', $user->barangay_id);
         }
         

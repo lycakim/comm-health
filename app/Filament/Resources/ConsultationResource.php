@@ -69,6 +69,36 @@ class ConsultationResource extends Resource
         return !is_null($user->barangay_id);
     }
 
+    public static function canEdit($record): bool
+    {
+        $user = self::currentUser();
+        if ($user->isMHO() || $user->isAdmin()) {
+            return true;
+        }
+        if ($user->isBHW() || $user->isMidwife()) {
+            if (is_null($user->barangay_id)) {
+                return false;
+            }
+            return $record->patient && $record->patient->barangay_id === $user->barangay_id;
+        }
+        return false;
+    }
+
+    public static function canView($record): bool
+    {
+        $user = self::currentUser();
+        if ($user->isMHO() || $user->isAdmin()) {
+            return true;
+        }
+        if ($user->isBHW() || $user->isMidwife()) {
+            if (is_null($user->barangay_id)) {
+                return false;
+            }
+            return $record->patient && $record->patient->barangay_id === $user->barangay_id;
+        }
+        return false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form

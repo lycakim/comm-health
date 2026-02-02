@@ -336,10 +336,9 @@ class Reports extends Page implements HasTable
                 ->whereNotNull('program_id')
                 ->where('program_id', '>', 0)
                 ->when(
-                    Auth::user()->role !== RoleEnum::MHO->value,
+                    in_array(Auth::user()->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]),
                     function ($query) {
                         $barangayId = Auth::user()->barangay_id;
-                        
                         if ($barangayId) {
                             $query->whereHas('patient', function ($patientQuery) use ($barangayId) {
                                 $patientQuery->where('barangay_id', $barangayId);

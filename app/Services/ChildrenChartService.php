@@ -43,10 +43,20 @@ class ChildrenChartService
      */
     private function getChildrenPatientsByPurok(int $year, int $month, $user): array
     {
+        // BHW/Midwife with no barangay_id: see no data
+        if (!$user?->barangay_id) {
+            return [
+                'datasets' => [
+                    ['label' => 'Male', 'data' => [], 'backgroundColor' => 'rgba(59, 130, 246, 0.5)', 'borderColor' => 'rgb(59, 130, 246)', 'borderWidth' => 1],
+                    ['label' => 'Female', 'data' => [], 'backgroundColor' => 'rgba(236, 72, 153, 0.5)', 'borderColor' => 'rgb(236, 72, 153)', 'borderWidth' => 1],
+                ],
+                'labels' => [],
+            ];
+        }
         // Get puroks for the user's assigned barangay
-        $puroks = \App\Models\Purok::when($user?->barangay_id, function($query) use ($user) {
-            return $query->where('barangay_id', $user->barangay_id);
-        })->orderBy('name')->get();
+        $puroks = \App\Models\Purok::where('barangay_id', $user->barangay_id)
+            ->orderBy('name')
+            ->get();
         
         $maleData = [];
         $femaleData = [];

@@ -55,10 +55,9 @@ class HealthPrograms extends Page implements HasTable
             ->query(
                 Program::latest()
                     ->when(
-                        Auth::user()->role !== RoleEnum::MHO->value,
+                        in_array(Auth::user()->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]),
                         function ($query) {
                             $barangayId = Auth::user()->barangay_id;
-                            
                             if ($barangayId) {
                                 $query->where('barangay_id', $barangayId);
                             } else {

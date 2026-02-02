@@ -34,10 +34,14 @@ class PatientChartService
      */
     private function getPatientsByPurok(int $year, int $month, $user, string $genderFilter = 'all'): array
     {
+        // BHW/Midwife with no barangay_id: see no data
+        if (!$user?->barangay_id) {
+            return ['datasets' => [], 'labels' => []];
+        }
         // Get puroks for the user's assigned barangay
-        $puroks = \App\Models\Purok::when($user?->barangay_id, function($query) use ($user) {
-            return $query->where('barangay_id', $user->barangay_id);
-        })->orderBy('name')->get();
+        $puroks = \App\Models\Purok::where('barangay_id', $user->barangay_id)
+            ->orderBy('name')
+            ->get();
         
         if ($puroks->isEmpty()) {
             return ['datasets' => [], 'labels' => []];
