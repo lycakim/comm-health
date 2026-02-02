@@ -39,7 +39,7 @@ class ListPatients extends ListRecords
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('gray')
                 ->action(function () {
-                    return PatientTemplateExport::download('resident_import_template_' . date('Y-m-d') . '.xlsx');
+                    return PatientTemplateExport::download('resident_import_template_' . date('Y-m-d') . '.csv');
                 });
 
             $actions[] = Actions\Action::make('importPatients')

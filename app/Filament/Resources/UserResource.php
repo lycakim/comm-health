@@ -85,6 +85,7 @@ class UserResource extends Resource
                             ->password()
                             ->revealable()
                             ->columnSpanFull()
+                            ->autocomplete(false)
                             ->minLength(8)
                             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                             ->dehydrated(fn ($state) => filled($state))

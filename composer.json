@@ -14,7 +14,6 @@
         "laravel/framework": "^12.0",
         "laravel/reverb": "*",
         "laravel/tinker": "^2.10.1",
-        "phpoffice/phpspreadsheet": "^1.30",
         "parallax/filament-comments": "^1.5",
         "saade/filament-fullcalendar": "*",
         "spatie/laravel-activitylog": "*"
