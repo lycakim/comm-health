@@ -928,9 +928,13 @@ class PatientResource extends Resource
 
                             $record->account_user_id = $user->id;
                             $record->save();
+                            
+                            // Send email verification notification
+                            $user->sendEmailVerificationNotification();
                         
                             Notification::make()
                                 ->title('User created successfully')
+                                ->body('A verification email has been sent to the user. They must verify their email address before accessing their account.')
                                 ->success()
                                 ->send();
                         })

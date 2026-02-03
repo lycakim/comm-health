@@ -119,10 +119,62 @@ class Login extends BaseLogin
             return false;
         }
         
+        // Attempt authentication - Filament will handle redirecting unverified users
         return Auth::attempt([
             'email' => $data['email'],
             'password' => $data['password'],
         ], $data['remember'] ?? false);
+    }
+    
+    public function resendVerificationEmail(): void
+    {
+        try {
+            $data = $this->form->getState();
+            $email = $data['email'] ?? null;
+            
+            if (!$email) {
+                Notification::make()
+                    ->title('Email required')
+                    ->body('Please enter your email address first.')
+                    ->warning()
+                    ->send();
+                return;
+            }
+            
+            $user = User::where('email', $email)->first();
+            
+            if (!$user) {
+                Notification::make()
+                    ->title('User not found')
+                    ->body('No account found with this email address.')
+                    ->warning()
+                    ->send();
+                return;
+            }
+            
+            if ($user->hasVerifiedEmail()) {
+                Notification::make()
+                    ->title('Email already verified')
+                    ->body('Your email address is already verified. You can proceed to login.')
+                    ->info()
+                    ->send();
+                return;
+            }
+            
+            $user->sendEmailVerificationNotification();
+            
+            Notification::make()
+                ->title('Verification email sent')
+                ->body('A new verification link has been sent to your email address. Please check your inbox.')
+                ->success()
+                ->send();
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error')
+                ->body('An error occurred while sending the verification email. Please try again.')
+                ->danger()
+                ->send();
+        }
     }
 
     protected function sendOtp(string $email): void

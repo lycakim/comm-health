@@ -1,7 +1,7 @@
 <?php
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\RoleEnum;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Notifications\Notifiable;
@@ -10,7 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Afsakar\FilamentOtpLogin\Models\Contracts\CanLoginDirectly;
 use Spatie\Activitylog\Traits\LogsActivity;
 
-class User extends Authenticatable implements CanLoginDirectly
+class User extends Authenticatable implements CanLoginDirectly, MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, LogsActivity;

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Barangay;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Auth\Events\Verified;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Contracts\View\View;
 use App\Listeners\SetFreshLoginFlag;
@@ -15,6 +16,7 @@ use Illuminate\Support\ServiceProvider;
 use Filament\Support\Facades\FilamentView;
 use Filament\Http\Responses\Auth\LoginResponse;
 use App\Http\Responses\Auth\CustomLoginResponse;
+use App\Listeners\SetFreshLoginOnEmailVerification;
 use Filament\Pages\Auth\Register as FilamentRegister;
 use App\Http\Responses\Auth\CustomRegistrationResponse;
 use Filament\Http\Responses\Auth\Contracts\RegistrationResponse;
@@ -67,6 +69,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Set fresh login flag on login
         Event::listen(Login::class, SetFreshLoginFlag::class);
+
+        // Set fresh login flag on email verification
+        Event::listen(Verified::class, SetFreshLoginOnEmailVerification::class);
 
         // Clear the session flag on logout
         Event::listen(Logout::class, function () {

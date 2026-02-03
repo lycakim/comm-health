@@ -62,14 +62,24 @@
             </x-filament::button>
         </x-filament-panels::form>
 
-        <div class="text-center mt-6">
+        <div class="text-center mt-6 space-y-2">
             <p class="text-sm text-gray-600 dark:text-gray-400">
                 Doesn't have an account? 
                 <a href="{{ route('register') }}" class="text-green-600 hover:text-green-700 font-medium">
                     Sign Up
                 </a>
             </p>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                Need to verify your email? 
+                <button 
+                    type="button" 
+                    wire:click="resendVerificationEmail"
+                    class="text-green-600 hover:text-green-700 font-medium"
+                >
+                    Resend Verification Email
+                </button>
+            </p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
                 <a href="/" class="text-green-600 hover:text-green-700 font-medium">
                     Back to Home
                 </a>

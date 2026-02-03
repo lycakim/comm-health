@@ -12,6 +12,14 @@ class PrivacyModal extends Component
 
     public function mount()
     {
+        // Don't show modal on email verification pages or routes
+        if (request()->routeIs('verification.*') || 
+            request()->routeIs('filament.*.auth.email-verification.*') ||
+            str_contains(request()->path(), 'email-verification')) {
+            $this->showModal = false;
+            return;
+        }
+
         $user = Auth::user();
         
         if (!$user || $user->isAdmin()) {
@@ -27,11 +35,11 @@ class PrivacyModal extends Component
         if ($user->privacy_accepted_at) {
             $privacyAcceptedAt = $user->privacy_accepted_at;
             $now = now();
-            $hasAcceptedToday = $privacyAcceptedAt->isSameDay($now) && $privacyAcceptedAt->format('H:i:s') === $now->format('H:i:s');
+            $hasAcceptedToday = $privacyAcceptedAt->isSameDay($now);
         }
         
         // Show modal if it's a fresh login AND user hasn't accepted today
-        // Modal will persist across refreshes until user accepts
+        // Only show after successful verification and login, not during verification process
         if ($isFreshLogin && !$hasAcceptedToday) {
             $this->showModal = true;
             return;
