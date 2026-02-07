@@ -9,6 +9,8 @@ class EmailVerification extends BaseEmailVerificationPrompt
 {
     protected static string $view = 'filament.pages.auth.email-verification';
 
+    protected bool $hasTopbar = false;
+
     public function mount(): void
     {
         parent::mount();
