@@ -5,6 +5,7 @@ namespace App\Filament\Resources\PatientResource\Pages;
 use App\Filament\Resources\PatientResource;
 use App\Models\Patient;
 use App\Exports\PatientTemplateExport;
+use App\Services\ImportErrorSimplifier;
 use App\Imports\PatientsImport;
 use Filament\Actions;
 use Filament\Forms\Components\FileUpload;
@@ -137,12 +138,13 @@ class IndexPatients extends ListRecords
                             ->success()
                             ->send();
                         
-                        // Show errors if any
+                        // Show errors if any (simplified for elderly users)
                         if (!empty($allErrors)) {
                             $errorDetails = collect($allErrors)->take(10)->map(function ($error) {
-                                $file = $error['file'] ?? 'Unknown file';
-                                $row = isset($error['row']) ? "Row {$error['row']}" : '';
-                                $message = $error['message'] ?? 'Unknown error';
+                                $simplified = ImportErrorSimplifier::simplifyForDisplay($error);
+                                $file = $simplified['file'] ?? 'Unknown file';
+                                $row = isset($simplified['row']) ? "Row {$simplified['row']}" : '';
+                                $message = $simplified['message'];
                                 return $row ? "{$file} - {$row}: {$message}" : "{$file}: {$message}";
                             })->implode("\n");
                             
@@ -156,7 +158,7 @@ class IndexPatients extends ListRecords
                     } catch (\Exception $e) {
                         Notification::make()
                             ->title('Import Failed')
-                            ->body($e->getMessage())
+                            ->body(ImportErrorSimplifier::simplify($e->getMessage()))
                             ->danger()
                             ->persistent()
                             ->send();

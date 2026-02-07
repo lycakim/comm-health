@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\PatientResource;
 use App\Enums\RoleEnum;
+use App\Services\ImportErrorSimplifier;
 use Filament\Tables\Table;
 
 class ListPatients extends ListRecords
@@ -136,12 +137,13 @@ class ListPatients extends ListRecords
                             ->success()
                             ->send();
                         
-                        // Show errors if any
+                        // Show errors if any (simplified for elderly users)
                         if (!empty($allErrors)) {
                             $errorDetails = collect($allErrors)->take(10)->map(function ($error) {
-                                $file = $error['file'] ?? 'Unknown file';
-                                $row = isset($error['row']) ? "Row {$error['row']}" : '';
-                                $message = $error['message'] ?? 'Unknown error';
+                                $simplified = ImportErrorSimplifier::simplifyForDisplay($error);
+                                $file = $simplified['file'] ?? 'Unknown file';
+                                $row = isset($simplified['row']) ? "Row {$simplified['row']}" : '';
+                                $message = $simplified['message'];
                                 return $row ? "{$file} - {$row}: {$message}" : "{$file}: {$message}";
                             })->implode("\n");
                             
@@ -155,7 +157,7 @@ class ListPatients extends ListRecords
                     } catch (\Exception $e) {
                         Notification::make()
                             ->title('Import Failed')
-                            ->body($e->getMessage())
+                            ->body(ImportErrorSimplifier::simplify($e->getMessage()))
                             ->danger()
                             ->persistent()
                             ->send();
