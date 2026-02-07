@@ -32,8 +32,8 @@ class ListPatients extends ListRecords
                 ->icon('heroicon-o-plus');
         }
         
-        // Add import actions if user can create
-        if (PatientResource::canCreate()) {
+        // Add import actions only for BHW and Midwife
+        if (Auth::user()->isBHW() || Auth::user()->isMidwife()) {
             $actions[] = Actions\Action::make('downloadTemplate')
                 ->label('Download Template')
                 ->icon('heroicon-o-document-arrow-down')

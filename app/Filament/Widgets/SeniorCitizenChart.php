@@ -10,7 +10,10 @@ class SeniorCitizenChart extends ChartWidget
 {
     protected static ?string $heading = 'Senior Citizen Patient Statistics by Barangay';
 
+    protected static string $view = 'filament.widgets.chart-with-filters';
+
     public ?string $filter = null;
+    public ?string $genderFilter = 'all';
     public ?int $fiscalYear = null;
 
     protected $listeners = ['fiscalYearChanged' => 'updateFiscalYear'];
@@ -35,7 +38,7 @@ class SeniorCitizenChart extends ChartWidget
         
         // Parse the selected month and year from filter (format: "YYYY-MM")
         [$year, $month] = explode('-', $this->filter);
-        return $service->getSeniorCitizenPatientsByBarangay((int)$year, (int)$month);
+        return $service->getSeniorCitizenPatientsByBarangay((int)$year, (int)$month, null, $this->genderFilter ?? 'all');
     }
 
     protected function getType(): string
@@ -45,17 +48,38 @@ class SeniorCitizenChart extends ChartWidget
 
     protected function getFilters(): ?array
     {
+        return null;
+    }
+
+    public function getDateFilters(): array
+    {
         $filters = [];
-        
-        // Generate filters for the last 24 months
         for ($i = 0; $i < 24; $i++) {
             $date = now()->subMonths($i);
             $key = $date->format('Y-m');
             $label = $date->format('F Y');
             $filters[$key] = $label;
         }
-        
         return $filters;
+    }
+
+    public function getGenderFilters(): array
+    {
+        return [
+            'all' => '👥 All',
+            'male' => '👨 Male Only',
+            'female' => '👩 Female Only',
+        ];
+    }
+
+    public function updatedFilter($value): void
+    {
+        $this->cachedData = null;
+    }
+
+    public function updatedGenderFilter($value): void
+    {
+        $this->cachedData = null;
     }
 
     protected function getOptions(): array

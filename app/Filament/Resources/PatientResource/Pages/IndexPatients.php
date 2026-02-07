@@ -34,7 +34,7 @@ class IndexPatients extends ListRecords
                 ->icon('heroicon-o-plus'),
         ];
 
-        if (PatientResource::canCreate()) {
+        if (Auth::user()->isBHW() || Auth::user()->isMidwife()) {
             $actions[] = Actions\Action::make('downloadTemplate')
                 ->label('Download Template')
                 ->icon('heroicon-o-document-arrow-down')

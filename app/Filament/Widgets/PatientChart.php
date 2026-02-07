@@ -9,6 +9,8 @@ use Illuminate\Contracts\Support\Htmlable;
 class PatientChart extends ChartWidget
 {
     protected static ?string $heading = null;
+
+    protected static string $view = 'filament.widgets.chart-with-filters';
     
     public ?string $filter = null;
     public ?string $genderFilter = 'all';
@@ -51,36 +53,39 @@ class PatientChart extends ChartWidget
 
     protected function getFilters(): ?array
     {
+        return null;
+    }
+
+    public function getDateFilters(): array
+    {
         $filters = [];
-        
-        // Add gender filters
-        $filters['gender_all'] = '👥 All Patients';
-        $filters['gender_male'] = '👨 Male Only';
-        $filters['gender_female'] = '👩 Female Only';
-        $filters['gender_children'] = '👶 Children (0-17)';
-        $filters['divider'] = '─────────────';
-        
-        // Generate month filters
         for ($i = 0; $i < 24; $i++) {
             $date = now()->subMonths($i);
             $key = $date->format('Y-m');
             $label = $date->format('F Y');
             $filters[$key] = $label;
         }
-        
         return $filters;
+    }
+
+    public function getGenderFilters(): array
+    {
+        return [
+            'all' => '👥 All Patients',
+            'male' => '👨 Male Only',
+            'female' => '👩 Female Only',
+            'children' => '👶 Children (0-17)',
+        ];
     }
 
     public function updatedFilter($value): void
     {
-        // Handle gender filter
-        if (str_starts_with($value, 'gender_')) {
-            $this->genderFilter = str_replace('gender_', '', $value);
-            $this->filter = now()->format('Y-m'); // Reset to current month
-        } else {
-            // It's a month filter
-            $this->filter = $value;
-        }
+        $this->cachedData = null;
+    }
+
+    public function updatedGenderFilter($value): void
+    {
+        $this->cachedData = null;
     }
 
     protected function getOptions(): array

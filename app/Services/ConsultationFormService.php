@@ -819,7 +819,8 @@ class ConsultationFormService
                                                     ->default(false)
                                                     ->dehydrated(false)
                                                     ->reactive()
-                                                    ->live(),
+                                                    ->live()
+                                                    ->visible(fn () => Auth::user()->isBHW()),
                                                 ToggleButtons::make('disability')
                                                     ->label('With Disability?')
                                                     ->boolean()
