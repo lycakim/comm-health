@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Morbidity and Mortality Report</title>
+    <title>Referrals Report</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,11 +13,6 @@
         .header {
             text-align: center;
             margin-bottom: 20px;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: bold;
         }
         .header p {
             margin: 5px 0;
@@ -58,7 +53,7 @@
         <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">MUNICIPAL HEALTH OFFICE</p>
         <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">MUNICIPALITY OF {{ strtoupper($municipality ?? 'CARMEN') }}</p>
         <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">BARANGAY {{ strtoupper($barangayName ?? 'ALL BARANGAYS') }}</p>
-        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">{{ strtoupper($reportTitle ?? 'Morbidity and Mortality Report') }}</p>
+        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">{{ strtoupper($reportTitle ?? 'Referrals Report') }}</p>
         <p style="font-size: 10px; margin-bottom: 5px;">&nbsp;</p>
         <p style="font-size: 10px;">As of : {{ $dateTime ?? $date }}</p>
     </div>
@@ -66,24 +61,43 @@
     <table>
         <thead>
             <tr>
-                @foreach($headers as $header)
-                    <th>{{ $header }}</th>
-                @endforeach
+                <th>Reference ID</th>
+                <th>Patient Name</th>
+                <th>Age</th>
+                <th>Gender</th>
+                <th>Purok</th>
+                <th>Barangay</th>
+                <th>Urgency</th>
+                <th>Status</th>
+                <th>Referred To</th>
+                <th>Referred By</th>
+                <th>Date Referred</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($rows as $row)
+            @foreach($referrals as $referral)
+                @php
+                    $patient = $referral->patient ?? $referral->consultation?->patient;
+                @endphp
                 <tr>
-                    @foreach($row as $cell)
-                        <td>{{ $cell ?? 'N/A' }}</td>
-                    @endforeach
+                    <td>{{ $referral->id }}</td>
+                    <td>{{ $patient ? ($patient->first_name . ' ' . $patient->last_name) : 'N/A' }}</td>
+                    <td>{{ $patient?->age ?? 'N/A' }}</td>
+                    <td>{{ $patient?->sex ?? 'N/A' }}</td>
+                    <td>{{ $patient?->purok?->name ?? 'N/A' }}</td>
+                    <td>{{ $patient?->barangay?->name ?? 'N/A' }}</td>
+                    <td>{{ $referral->urgency }}</td>
+                    <td>{{ $referral->status }}</td>
+                    <td>{{ $referral->referred_to }}</td>
+                    <td>{{ $referral->user?->name ?? 'N/A' }}</td>
+                    <td>{{ $referral->date_referred ? $referral->date_referred->format('M d, Y H:i') : ($referral->created_at->format('M d, Y H:i')) }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
     <div class="footer">
-        <p>Total Records: {{ count($rows) }}</p>
+        <p>Total Records: {{ count($referrals) }}</p>
     </div>
 </body>
 </html>

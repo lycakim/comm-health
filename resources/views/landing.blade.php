@@ -62,10 +62,10 @@
 
                     <!-- Portal Buttons -->
                     <div class="mt-10 flex flex-wrap justify-center gap-4">
-                        <a href="#" class="px-6 py-3 border border-emerald-600 text-emerald-600 font-medium rounded-md hover:bg-emerald-50 transition-colors">
+                        <a href="{{ route('login') }}" class="px-6 py-3 border border-emerald-600 text-emerald-600 font-medium rounded-md hover:bg-emerald-50 transition-colors">
                             MHO Portal
                         </a>
-                        <a href="#" class="px-6 py-3 border border-emerald-600 text-emerald-600 font-medium rounded-md hover:bg-emerald-50 transition-colors">
+                        <a href="{{ route('login') }}" class="px-6 py-3 border border-emerald-600 text-emerald-600 font-medium rounded-md hover:bg-emerald-50 transition-colors">
                             Health Worker Portal
                         </a>
                     </div>
@@ -179,7 +179,7 @@
                                     <span class="text-gray-600">Access data visualization dashboard</span>
                                 </li>
                             </ul>
-                            <a href="#" class="w-full block text-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-colors">
+                            <a href="{{ route('login') }}" class="w-full block text-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-colors">
                                 Access MHO Portal
                             </a>
                         </div>
@@ -214,7 +214,7 @@
                                     <span class="text-gray-600">Report generation</span>
                                 </li>
                             </ul>
-                            <a href="#" class="w-full block text-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-colors">
+                            <a href="{{ route('login') }}" class="w-full block text-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-colors">
                                 Access Health Worker Portal
                             </a>
                         </div>
@@ -249,7 +249,7 @@
                 <div class="md:flex md:justify-between items-center">
                     <div class="mb-6 md:mb-0">
                         <div class="flex items-center">
-                            <img src="{{ asset('comm-health-logo-white.png') }}" alt="Comm Health Logo" class="h-8 w-auto">
+                            <img src="{{ asset('comm-health-icon.png') }}" alt="Comm Health Logo" class="h-12 w-auto">
                         </div>
                         <p class="mt-2 text-sm text-emerald-100">
                             Municipal Health Office of {{ config('app.location', 'Your Municipality') }}

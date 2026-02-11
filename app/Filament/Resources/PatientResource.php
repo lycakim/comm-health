@@ -654,10 +654,35 @@ class PatientResource extends Resource
                                 'pdf' => 'PDF (Document)',
                             ])
                             ->default('csv')
-                            ->required()
+                            ->required(),
+                        Section::make('Filters')
+                            ->schema([
+                                TextInput::make('age_min')
+                                    ->label('Minimum Age')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(150),
+                                TextInput::make('age_max')
+                                    ->label('Maximum Age')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(150),
+                                Select::make('gender')
+                                    ->label('Gender')
+                                    ->options([
+                                        'Male' => 'Male',
+                                        'Female' => 'Female',
+                                    ]),
+                                Select::make('purok_id')
+                                    ->label('Purok')
+                                    ->relationship('purok', 'name')
+                                    ->searchable()
+                                    ->preload(),
+                            ])
+                            ->columns(2),
                     ])
                     ->action(function ($data) {
-                        $query = Patient::query();
+                        $query = Patient::with(['barangay', 'category', 'purok']);
                         $user = Auth::user();
                         // BHW/Midwife: filter by barangay; no barangay_id = no export
                         if ($user->isBHW() || $user->isMidwife()) {
@@ -671,6 +696,21 @@ class PatientResource extends Resource
                             }
                             $query->where('barangay_id', $user->barangay_id);
                         }
+                        
+                        // Apply AGE, GENDER, PUROK filters
+                        if (!empty($data['age_min'])) {
+                            $query->where('age', '>=', $data['age_min']);
+                        }
+                        if (!empty($data['age_max'])) {
+                            $query->where('age', '<=', $data['age_max']);
+                        }
+                        if (!empty($data['gender'])) {
+                            $query->where('sex', $data['gender']);
+                        }
+                        if (!empty($data['purok_id'])) {
+                            $query->where('purok_id', $data['purok_id']);
+                        }
+                        
                         $barangay = $user->barangay_id ? Barangay::find($user->barangay_id) : null;
                         $barangayName = $barangay ? $barangay->name : '';
                         $brgy = $barangayName ? 'barangay_' . strtolower($barangayName) . '_' : '';
@@ -743,17 +783,29 @@ class PatientResource extends Resource
                         }
 
                         // Handle CSV export
-                        return response()->streamDownload(function () use ($patients, $data) {
+                        return response()->streamDownload(function () use ($patients, $data, $title, $barangay) {
                             $csv = fopen('php://output', 'w');
                             $user = Auth::user();
                             $barangay = $user->barangay_id ? Barangay::find($user->barangay_id) : null;
-                            $brgy = $barangay ? 'Barangay ' . $barangay->name . ' Patients Information Records' : 'Patients Information Records';
+                            $barangayName = $barangay ? $barangay->name : 'All Barangays';
+                            $province = config('app.province', 'DAVAO DEL NORTE');
+                            $municipality = config('app.municipality', 'CARMEN');
+                            $dateTime = now()->format('F d, Y h:i A');
                             
-                            if ($brgy) {
-                                fputcsv($csv, [$brgy]);
-                            }
+                            // Add UTF-8 BOM for Excel compatibility
+                            fprintf($csv, chr(0xEF).chr(0xBB).chr(0xBF));
+                            
+                            // Add header rows (matching xlsx format)
+                            fputcsv($csv, ['REPUBLIC OF THE PHILIPPINES', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, ['PROVINCE OF ' . strtoupper($province), '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, ['MUNICIPAL HEALTH OFFICE', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, ['MUNICIPALITY OF ' . strtoupper($municipality), '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, ['BARANGAY ' . strtoupper($barangayName), '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, [strtoupper($title), '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, ['', '', '', '', '', '', '', '', '', '', '', '', '', '']); // Empty row
+                            fputcsv($csv, ['As of : ' . $dateTime, '', '', '', '', '', '', '', '', '', '', '', '', '']);
 
-                            // Add CSV headers, can be extended per report type if needed
+                            // Column headers
                             fputcsv($csv, [
                                 'Full Name', 
                                 'Birthdate', 
@@ -768,25 +820,29 @@ class PatientResource extends Resource
                                 'Weight', 
                                 'BMI', 
                                 'Maintenance'
-                        ]);
+                            ]);
                             
                             foreach ($patients as $patient) {
                                 fputcsv($csv, [
-                                    $patient->first_name . ' ' . $patient->middle_name ?? '' . ' ' . $patient->last_name,
-                                    $patient->birth_date->format('M d, Y'),
-                                    $patient->age,
+                                    trim($patient->first_name . ' ' . ($patient->middle_name ?? '') . ' ' . $patient->last_name),
+                                    $patient->birth_date ? $patient->birth_date->format('M d, Y') : 'N/A',
+                                    $patient->age ?? 'N/A',
                                     $patient->barangay->name ?? 'N/A',
                                     $patient->category->name ?? 'N/A',
-                                    $patient->blood_pressure,
-                                    $patient->sugar_level,
-                                    $patient->contact_number,
-                                    $patient->sex,
-                                    $patient->height,
-                                    $patient->weight,
-                                    $patient->bmi,
-                                    is_array($patient->medication_maintenance) ? implode(', ', $patient->medication_maintenance) : '',
+                                    $patient->blood_pressure ?? 'N/A',
+                                    $patient->sugar_level ?? 'N/A',
+                                    $patient->contact_number ?? 'N/A',
+                                    $patient->sex ?? 'N/A',
+                                    $patient->height ?? 'N/A',
+                                    $patient->weight ?? 'N/A',
+                                    $patient->bmi ?? 'N/A',
+                                    is_array($patient->medication_maintenance) ? implode(', ', $patient->medication_maintenance) : ($patient->medication_maintenance ?? 'N/A'),
                                 ]);
                             }
+                            
+                            // Footer row
+                            fputcsv($csv, ['', '', '', '', '', '', '', '', '', '', '', '', '', '']); // Empty row
+                            fputcsv($csv, ['Total Records: ' . count($patients), '', '', '', '', '', '', '', '', '', '', '', '', '']);
                             
                             fclose($csv);
                         }, $reportTitle . '_' . date('Y-m-d_His') . '.csv');

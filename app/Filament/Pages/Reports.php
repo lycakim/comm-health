@@ -652,7 +652,9 @@ class Reports extends Page implements HasTable
             
             // Generate PDF for preview
             $pdfService = app(PDFGenerationService::class);
-            $pdf = $pdfService->generateReportDataPdf($data, $normalizedType);
+            $user = Auth::user();
+            $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
+            $pdf = $pdfService->generateReportDataPdf($data, $normalizedType, $barangay);
             
             // Create a temporary file for preview
             $tempFilename = 'preview_' . $reportType . '_' . now()->format('YmdHis') . '.pdf';
@@ -711,35 +713,9 @@ class Reports extends Page implements HasTable
             
             $pdfService = app(PDFGenerationService::class);
             $user = Auth::user();
+            $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
             $filename = "{$normalizedType}_" . now()->format('Y-m-d_His') . ".{$format}";
             $fileContent = null;
-            
-            // Handle PDF export
-            if ($format === 'pdf') {
-                $pdf = $pdfService->generateReportDataPdf($data, $normalizedType);
-                $fileContent = $pdf->output();
-            } else {
-                // Handle CSV export
-                $handle = fopen('php://temp', 'r+');
-                
-                // Add UTF-8 BOM for Excel compatibility
-                fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
-                
-                // Add headers
-                fputcsv($handle, $data['headers']);
-                
-                // Add rows
-                foreach ($data['rows'] as $row) {
-                    fputcsv($handle, $row);
-                }
-                
-                rewind($handle);
-                $fileContent = stream_get_contents($handle);
-                fclose($handle);
-            }
-            
-            // Save to storage
-            $fileMetadata = $pdfService->saveReportToStorage($fileContent, $normalizedType, $format, $filename);
             
             // Get report title
             $reportTitles = [
@@ -750,6 +726,52 @@ class Reports extends Page implements HasTable
                 'family-planning' => 'Family Planning Usage Report',
                 'morbidity-mortality' => 'Morbidity and Mortality Report',
             ];
+            $reportTitle = $reportTitles[$normalizedType] ?? ucwords(str_replace('-', ' ', $normalizedType)) . ' Report';
+            $barangayName = $barangay ? $barangay->name : 'All Barangays';
+            $province = config('app.province', 'DAVAO DEL NORTE');
+            $municipality = config('app.municipality', 'CARMEN');
+            $dateTime = now()->format('F d, Y h:i A');
+            
+            // Handle PDF export
+            if ($format === 'pdf') {
+                $pdf = $pdfService->generateReportDataPdf($data, $normalizedType, $barangay);
+                $fileContent = $pdf->output();
+            } else {
+                // Handle CSV export
+                $handle = fopen('php://temp', 'r+');
+                
+                // Add UTF-8 BOM for Excel compatibility
+                fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+                
+                // Add header rows (matching xlsx format)
+                fputcsv($handle, ['REPUBLIC OF THE PHILIPPINES', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                fputcsv($handle, ['PROVINCE OF ' . strtoupper($province), '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                fputcsv($handle, ['MUNICIPAL HEALTH OFFICE', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                fputcsv($handle, ['MUNICIPALITY OF ' . strtoupper($municipality), '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                fputcsv($handle, ['BARANGAY ' . strtoupper($barangayName), '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                fputcsv($handle, [strtoupper($reportTitle), '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                fputcsv($handle, ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '']); // Empty row
+                fputcsv($handle, ['As of : ' . $dateTime, '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                
+                // Add column headers
+                fputcsv($handle, $data['headers']);
+                
+                // Add rows
+                foreach ($data['rows'] as $row) {
+                    fputcsv($handle, $row);
+                }
+                
+                // Add footer row
+                fputcsv($handle, ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '']); // Empty row
+                fputcsv($handle, ['Total Records: ' . count($data['rows']), '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                
+                rewind($handle);
+                $fileContent = stream_get_contents($handle);
+                fclose($handle);
+            }
+            
+            // Save to storage
+            $fileMetadata = $pdfService->saveReportToStorage($fileContent, $normalizedType, $format, $filename);
             
             // Create database record
             $report = Report::create([

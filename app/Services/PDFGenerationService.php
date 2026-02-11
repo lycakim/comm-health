@@ -295,11 +295,20 @@ class PDFGenerationService
      */
     public function generatePatientListPdf($patients, string $title, $barangay = null): \Barryvdh\DomPDF\PDF
     {
+        $barangayName = $barangay ? $barangay->name : 'All Barangays';
+        $province = config('app.province', 'DAVAO DEL NORTE');
+        $municipality = config('app.municipality', 'CARMEN');
+        $dateTime = now()->format('F d, Y h:i A');
+
         $html = view('pdf.patient-list', [
             'patients' => $patients,
             'title' => $title,
             'barangay' => $barangay,
+            'barangayName' => $barangayName,
+            'province' => $province,
+            'municipality' => $municipality,
             'date' => now()->format('F d, Y'),
+            'dateTime' => $dateTime,
         ])->render();
 
         return Pdf::loadHTML($html)
@@ -333,11 +342,20 @@ class PDFGenerationService
      */
     public function generateConsultationListPdf($consultations, string $title, $barangay = null): \Barryvdh\DomPDF\PDF
     {
+        $barangayName = $barangay ? $barangay->name : 'All Barangays';
+        $province = config('app.province', 'DAVAO DEL NORTE');
+        $municipality = config('app.municipality', 'CARMEN');
+        $dateTime = now()->format('F d, Y h:i A');
+
         $html = view('pdf.consultation-list', [
             'consultations' => $consultations,
             'title' => $title,
             'barangay' => $barangay,
+            'barangayName' => $barangayName,
+            'province' => $province,
+            'municipality' => $municipality,
             'date' => now()->format('F d, Y'),
+            'dateTime' => $dateTime,
         ])->render();
 
         return Pdf::loadHTML($html)
@@ -353,11 +371,50 @@ class PDFGenerationService
      */
     public function generateProgramListPdf($programs, string $title, $barangay = null): \Barryvdh\DomPDF\PDF
     {
+        $barangayName = $barangay ? $barangay->name : 'All Barangays';
+        $province = config('app.province', 'DAVAO DEL NORTE');
+        $municipality = config('app.municipality', 'CARMEN');
+        $dateTime = now()->format('F d, Y h:i A');
+
         $html = view('pdf.program-list', [
             'programs' => $programs,
             'title' => $title,
             'barangay' => $barangay,
+            'barangayName' => $barangayName,
+            'province' => $province,
+            'municipality' => $municipality,
             'date' => now()->format('F d, Y'),
+            'dateTime' => $dateTime,
+        ])->render();
+
+        return Pdf::loadHTML($html)
+            ->setPaper('legal', 'landscape')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
+    }
+
+    /**
+     * Generate PDF for referral list reports
+     */
+    public function generateReferralListPdf($referrals, string $title, $barangay = null): \Barryvdh\DomPDF\PDF
+    {
+        $barangayName = $barangay ? $barangay->name : 'All Barangays';
+        $province = config('app.province', 'DAVAO DEL NORTE');
+        $municipality = config('app.municipality', 'CARMEN');
+        $dateTime = now()->format('F d, Y h:i A');
+
+        $html = view('pdf.referral-list', [
+            'referrals' => $referrals,
+            'title' => $title,
+            'reportTitle' => $title,
+            'barangay' => $barangay,
+            'barangayName' => $barangayName,
+            'province' => $province,
+            'municipality' => $municipality,
+            'date' => now()->format('F d, Y'),
+            'dateTime' => $dateTime,
         ])->render();
 
         return Pdf::loadHTML($html)
@@ -371,7 +428,7 @@ class PDFGenerationService
     /**
      * Generate PDF for report data (used by Reports page)
      */
-    public function generateReportDataPdf(array $reportData, string $reportType): \Barryvdh\DomPDF\PDF
+    public function generateReportDataPdf(array $reportData, string $reportType, $barangay = null): \Barryvdh\DomPDF\PDF
     {
         $templateMap = [
             'patient-profiling' => 'pdf.reports.patient-profiling',
@@ -384,10 +441,29 @@ class PDFGenerationService
 
         $template = $templateMap[$reportType] ?? 'pdf.reports.patient-profiling';
 
+        // Get report title
+        $reportTitles = [
+            'patient-profiling' => 'Patient Profiling Report',
+            'resident-profiling' => 'Patient Profiling Report',
+            'maternal-child' => 'Maternal and Child Report',
+            'senior-citizens' => 'Senior Citizens Health Status Report',
+            'family-planning' => 'Family Planning Usage Report',
+            'morbidity-mortality' => 'Morbidity and Mortality Report',
+        ];
+
+        $reportTitle = $reportTitles[$reportType] ?? ucwords(str_replace('-', ' ', $reportType)) . ' Report';
+        $barangayName = $barangay ? $barangay->name : 'All Barangays';
+
         $html = view($template, [
             'headers' => $reportData['headers'] ?? [],
             'rows' => $reportData['rows'] ?? [],
             'date' => now()->format('F d, Y'),
+            'dateTime' => now()->format('F d, Y h:i A'),
+            'province' => config('app.province', 'DAVAO DEL NORTE'),
+            'municipality' => config('app.municipality', 'CARMEN'),
+            'barangayName' => $barangayName,
+            'reportTitle' => $reportTitle,
+            'totalRecords' => count($reportData['rows'] ?? []),
         ])->render();
 
         return Pdf::loadHTML($html)

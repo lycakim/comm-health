@@ -22,6 +22,7 @@ use Filament\Resources\Resource;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Fieldset;
 use App\Enums\EducationalAttainmentEnum;
 use Illuminate\Database\Eloquent\Builder;
@@ -721,6 +722,176 @@ class ReferralResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                Tables\Actions\Action::make('export')
+                    ->label('Export')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->form([
+                        Forms\Components\Select::make('format')
+                            ->label('Export Format')
+                            ->options([
+                                'csv' => 'CSV (Spreadsheet)',
+                                'pdf' => 'PDF (Document)',
+                            ])
+                            ->default('csv')
+                            ->required(),
+                        Section::make('Filters')
+                            ->schema([
+                                TextInput::make('age_min')
+                                    ->label('Minimum Age')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(150),
+                                TextInput::make('age_max')
+                                    ->label('Maximum Age')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(150),
+                                Select::make('gender')
+                                    ->label('Gender')
+                                    ->options([
+                                        'Male' => 'Male',
+                                        'Female' => 'Female',
+                                    ]),
+                                Select::make('purok_id')
+                                    ->label('Purok')
+                                    ->relationship('patient.purok', 'name')
+                                    ->searchable()
+                                    ->preload(),
+                            ])
+                            ->columns(2),
+                    ])
+                    ->action(function (array $data) {
+                        $query = Referral::with(['patient', 'patient.purok', 'patient.barangay', 'consultation.patient', 'consultation.patient.purok', 'consultation.patient.barangay', 'user']);
+                        
+                        // Apply filters
+                        $hasFilters = !empty($data['age_min']) || !empty($data['age_max']) || !empty($data['gender']) || !empty($data['purok_id']);
+                        
+                        if ($hasFilters) {
+                            $query->where(function (Builder $q) use ($data) {
+                                $q->whereHas('patient', function (Builder $patientQuery) use ($data) {
+                                    if (!empty($data['age_min'])) {
+                                        $patientQuery->where('age', '>=', $data['age_min']);
+                                    }
+                                    if (!empty($data['age_max'])) {
+                                        $patientQuery->where('age', '<=', $data['age_max']);
+                                    }
+                                    if (!empty($data['gender'])) {
+                                        $patientQuery->where('sex', $data['gender']);
+                                    }
+                                    if (!empty($data['purok_id'])) {
+                                        $patientQuery->where('purok_id', $data['purok_id']);
+                                    }
+                                })
+                                ->orWhereHas('consultation.patient', function (Builder $patientQuery) use ($data) {
+                                    if (!empty($data['age_min'])) {
+                                        $patientQuery->where('age', '>=', $data['age_min']);
+                                    }
+                                    if (!empty($data['age_max'])) {
+                                        $patientQuery->where('age', '<=', $data['age_max']);
+                                    }
+                                    if (!empty($data['gender'])) {
+                                        $patientQuery->where('sex', $data['gender']);
+                                    }
+                                    if (!empty($data['purok_id'])) {
+                                        $patientQuery->where('purok_id', $data['purok_id']);
+                                    }
+                                });
+                            });
+                        }
+
+                        $referrals = $query->get();
+
+                        if ($referrals->isEmpty()) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('No Data Found')
+                                ->body('No referrals match the selected filters.')
+                                ->warning()
+                                ->send();
+                            return;
+                        }
+
+                        $user = Auth::user();
+                        $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
+                        $barangayName = $barangay ? $barangay->name : 'All Barangays';
+                        $province = config('app.province', 'DAVAO DEL NORTE');
+                        $municipality = config('app.municipality', 'CARMEN');
+                        $dateTime = now()->format('F d, Y h:i A');
+                        $reportTitle = 'Referrals Report';
+
+                        if ($data['format'] === 'csv') {
+                            return response()->streamDownload(function () use ($referrals, $province, $municipality, $barangayName, $reportTitle, $dateTime) {
+                                $handle = fopen('php://output', 'w');
+                                
+                                // Add UTF-8 BOM for Excel compatibility
+                                fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+                                
+                                // Add header rows (matching xlsx format)
+                                fputcsv($handle, ['REPUBLIC OF THE PHILIPPINES', '', '', '', '', '', '', '', '', '', '']);
+                                fputcsv($handle, ['PROVINCE OF ' . strtoupper($province), '', '', '', '', '', '', '', '', '', '']);
+                                fputcsv($handle, ['MUNICIPAL HEALTH OFFICE', '', '', '', '', '', '', '', '', '', '']);
+                                fputcsv($handle, ['MUNICIPALITY OF ' . strtoupper($municipality), '', '', '', '', '', '', '', '', '', '']);
+                                fputcsv($handle, ['BARANGAY ' . strtoupper($barangayName), '', '', '', '', '', '', '', '', '', '']);
+                                fputcsv($handle, [strtoupper($reportTitle), '', '', '', '', '', '', '', '', '', '']);
+                                fputcsv($handle, ['', '', '', '', '', '', '', '', '', '', '']); // Empty row
+                                fputcsv($handle, ['As of : ' . $dateTime, '', '', '', '', '', '', '', '', '', '']);
+                                
+                                // Column headers
+                                fputcsv($handle, [
+                                    'Reference ID',
+                                    'Patient Name',
+                                    'Age',
+                                    'Gender',
+                                    'Purok',
+                                    'Barangay',
+                                    'Urgency',
+                                    'Status',
+                                    'Referred To',
+                                    'Referred By',
+                                    'Date Referred',
+                                ]);
+                                
+                                // Rows
+                                foreach ($referrals as $referral) {
+                                    $patient = $referral->patient ?? $referral->consultation?->patient;
+                                    fputcsv($handle, [
+                                        $referral->id,
+                                        $patient ? ($patient->first_name . ' ' . $patient->last_name) : 'N/A',
+                                        $patient?->age ?? 'N/A',
+                                        $patient?->sex ?? 'N/A',
+                                        $patient?->purok?->name ?? 'N/A',
+                                        $patient?->barangay?->name ?? 'N/A',
+                                        $referral->urgency,
+                                        $referral->status,
+                                        $referral->referred_to,
+                                        $referral->user?->name ?? 'N/A',
+                                        $referral->date_referred ? $referral->date_referred->format('Y-m-d H:i:s') : ($referral->created_at->format('Y-m-d H:i:s')),
+                                    ]);
+                                }
+                                
+                                // Footer row
+                                fputcsv($handle, ['', '', '', '', '', '', '', '', '', '', '']); // Empty row
+                                fputcsv($handle, ['Total Records: ' . count($referrals), '', '', '', '', '', '', '', '', '', '']);
+                                
+                                fclose($handle);
+                            }, 'referrals_export_' . now()->format('Y-m-d_His') . '.csv', [
+                                'Content-Type' => 'text/csv',
+                            ]);
+                        } else {
+                            // PDF export
+                            $pdfService = app(\App\Services\PDFGenerationService::class);
+                            $pdf = $pdfService->generateReferralListPdf($referrals, $reportTitle, $barangay);
+                            $filename = 'referrals_export_' . now()->format('Y-m-d_His') . '.pdf';
+                            
+                            return response()->streamDownload(
+                                fn () => print($pdf->output()),
+                                $filename,
+                                ['Content-Type' => 'application/pdf']
+                            );
+                        }
+                    }),
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('Reference ID')

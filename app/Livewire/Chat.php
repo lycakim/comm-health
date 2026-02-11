@@ -33,6 +33,7 @@ class Chat extends Component
     public function loadUsers()
     {
         $this->users = User::where('id', '!=', Auth::id())
+            ->with('barangay')
             ->when($this->searchTerm, function ($query) {
                 return $query->where('name', 'like', '%' . $this->searchTerm . '%');
             })

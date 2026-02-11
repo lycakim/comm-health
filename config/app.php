@@ -126,4 +126,17 @@ return [
     'filament-otp-login.code.length' => env('APP_FILAMENT_OTP_LOGIN_CODE_LENGTH', 6),
     'filament-otp-login-code-expires' => env('APP_FILAMENT_OTP_LOGIN_CODE_EXPIRES', 120),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Location Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These values are used for report headers and location display.
+    |
+    */
+
+    'province' => env('APP_PROVINCE', 'DAVAO DEL NORTE'),
+    'municipality' => env('APP_MUNICIPALITY', 'CARMEN'),
+    'location' => env('APP_LOCATION', 'Your Municipality'),
+
 ];

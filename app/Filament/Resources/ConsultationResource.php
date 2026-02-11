@@ -20,6 +20,7 @@ use Filament\Forms\Components\Select;
 use App\Services\PDFGenerationService;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Section;
 use Filament\Notifications\Notification;
 use App\Services\ConsultationFormService;
 use Illuminate\Database\Eloquent\Builder;
@@ -576,14 +577,55 @@ class ConsultationResource extends Resource
                                 'pdf' => 'PDF (Document)',
                             ])
                             ->default('csv')
-                            ->required()
+                            ->required(),
+                        Section::make('Filters')
+                            ->schema([
+                                TextInput::make('age_min')
+                                    ->label('Minimum Age')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(150),
+                                TextInput::make('age_max')
+                                    ->label('Maximum Age')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(150),
+                                Select::make('gender')
+                                    ->label('Gender')
+                                    ->options([
+                                        'Male' => 'Male',
+                                        'Female' => 'Female',
+                                    ]),
+                                Select::make('purok_id')
+                                    ->label('Purok')
+                                    ->relationship('patient.purok', 'name')
+                                    ->searchable()
+                                    ->preload(),
+                            ])
+                            ->columns(2),
                     ])
                     ->action(function ($data) {
-                        $query = Consultation::with(['patient', 'patient.barangay', 'patient.category'])->latest();
+                        $query = Consultation::with(['patient', 'patient.barangay', 'patient.category', 'patient.purok'])->latest();
                         $user = Auth::user();
                         $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
                         $barangayName = $barangay ? $barangay->name : '';
                         $brgy = $barangayName ? 'barangay_' . strtolower($barangayName) . '_' : '';
+                        
+                        // Apply AGE, GENDER, PUROK filters
+                        $query->whereHas('patient', function ($q) use ($data) {
+                            if (!empty($data['age_min'])) {
+                                $q->where('age', '>=', $data['age_min']);
+                            }
+                            if (!empty($data['age_max'])) {
+                                $q->where('age', '<=', $data['age_max']);
+                            }
+                            if (!empty($data['gender'])) {
+                                $q->where('sex', $data['gender']);
+                            }
+                            if (!empty($data['purok_id'])) {
+                                $q->where('purok_id', $data['purok_id']);
+                            }
+                        });
                         
                         $reportTitle = '';
                         $title = '';
@@ -665,17 +707,29 @@ class ConsultationResource extends Resource
                         }
 
                         // Handle CSV export
-                        return response()->streamDownload(function () use ($consultations, $data) {
+                        return response()->streamDownload(function () use ($consultations, $data, $title, $barangay) {
                             $csv = fopen('php://output', 'w');
                             $user = Auth::user();
                             $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
-                            $brgy = $barangay ? 'Barangay ' . $barangay->name . ' Consultations Information Records' : 'Consultations Information Records';
+                            $barangayName = $barangay ? $barangay->name : 'All Barangays';
+                            $province = config('app.province', 'DAVAO DEL NORTE');
+                            $municipality = config('app.municipality', 'CARMEN');
+                            $dateTime = now()->format('F d, Y h:i A');
+                            
+                            // Add UTF-8 BOM for Excel compatibility
+                            fprintf($csv, chr(0xEF).chr(0xBB).chr(0xBF));
+                            
+                            // Add header rows (matching xlsx format)
+                            fputcsv($csv, ['REPUBLIC OF THE PHILIPPINES', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, ['PROVINCE OF ' . strtoupper($province), '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, ['MUNICIPAL HEALTH OFFICE', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, ['MUNICIPALITY OF ' . strtoupper($municipality), '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, ['BARANGAY ' . strtoupper($barangayName), '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, [strtoupper($title), '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                            fputcsv($csv, ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '']); // Empty row
+                            fputcsv($csv, ['As of : ' . $dateTime, '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
 
-                            if ($brgy) {
-                                fputcsv($csv, [$brgy]);
-                            }
-
-                            // Add CSV headers, can be extended per report type if needed
+                            // Column headers
                             fputcsv($csv, [
                                 'Full Name', 
                                 'Birthdate', 
@@ -691,26 +745,31 @@ class ConsultationResource extends Resource
                                 'BMI', 
                                 'Maintenance',
                                 'Consultation Date'
-                        ]);
+                            ]);
                             
                             foreach ($consultations as $consult) {
+                                $patient = $consult->patient;
                                 fputcsv($csv, [
-                                    $consult->patient->first_name . ' ' . $consult->patient->middle_name ?? '' . ' ' . $consult->patient->last_name,
-                                    $consult->patient->birth_date->format('M d, Y'),
-                                    $consult->patient->age,
-                                    $consult->patient->barangay->name ?? 'N/A',
-                                    $consult->patient->category->name ?? 'N/A',
-                                    $consult->patient->blood_pressure,
-                                    $consult->patient->sugar_level,
-                                    $consult->patient->contact_number,
-                                    $consult->patient->sex,
-                                    $consult->patient->height,
-                                    $consult->patient->weight,
-                                    $consult->patient->bmi,
-                                    is_array($consult->patient->medication_maintenance) ? implode(', ', $consult->patient->medication_maintenance) : '',
-                                    $consult->created_at->format('M d, Y')
+                                    trim($patient->first_name . ' ' . ($patient->middle_name ?? '') . ' ' . $patient->last_name),
+                                    $patient->birth_date ? $patient->birth_date->format('M d, Y') : 'N/A',
+                                    $patient->age ?? 'N/A',
+                                    $patient->barangay->name ?? 'N/A',
+                                    $patient->category->name ?? 'N/A',
+                                    $patient->blood_pressure ?? 'N/A',
+                                    $patient->sugar_level ?? 'N/A',
+                                    $patient->contact_number ?? 'N/A',
+                                    $patient->sex ?? 'N/A',
+                                    $patient->height ?? 'N/A',
+                                    $patient->weight ?? 'N/A',
+                                    $patient->bmi ?? 'N/A',
+                                    is_array($patient->medication_maintenance) ? implode(', ', $patient->medication_maintenance) : ($patient->medication_maintenance ?? 'N/A'),
+                                    $consult->created_at ? $consult->created_at->format('M d, Y') : 'N/A',
                                 ]);
                             }
+                            
+                            // Footer row
+                            fputcsv($csv, ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '']); // Empty row
+                            fputcsv($csv, ['Total Records: ' . count($consultations), '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
                             
                             fclose($csv);
                         }, $reportTitle . '_' . date('Y-m-d_His') . '.csv');

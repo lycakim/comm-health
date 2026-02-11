@@ -62,7 +62,11 @@ x-init="
             </div>
 
             <div class="overflow-y-auto flex-1">
-                <ul class="divide-y divide-gray-100 dark:divide-gray-700">
+                <div wire:loading wire:target="searchTerm" class="flex items-center justify-center py-4 text-gray-500 dark:text-gray-400">
+                    <x-filament::loading-indicator class="h-5 w-5 mr-2" />
+                    <span>Loading...</span>
+                </div>
+                <ul class="divide-y divide-gray-100 dark:divide-gray-700" wire:loading.remove wire:target="searchTerm">
                     @foreach($users as $user)
                         <li 
                             wire:key="user-{{ $user->id }}" 
@@ -86,7 +90,9 @@ x-init="
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center justify-between">
-                                    <p class="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">{{ $user->name }}</p>
+                                    <p class="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
+                                        {{ $user->name }} - {{ $user->role->getLabel() }}{{ $user->barangay ? ' - ' . $user->barangay->name : '' }}
+                                    </p>
                                 </div>
                                 @if(isset($lastMessages[$user->id]))
                                     <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
@@ -153,7 +159,12 @@ x-init="
                 
                 <!-- Messages -->
                 <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-3 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900" x-ref="chatMessages" style="max-height: calc(100vh - 10rem);">
-                    @foreach($messages as $message)
+                    <div wire:loading wire:target="selectUser" class="flex items-center justify-center py-8 text-gray-500 dark:text-gray-400">
+                        <x-filament::loading-indicator class="h-5 w-5 mr-2" />
+                        <span>Loading messages...</span>
+                    </div>
+                    <div wire:loading.remove wire:target="selectUser">
+                        @forelse($messages as $message)
                         <div class="flex {{ $message->sender_id === auth()->id() ? 'justify-end' : 'justify-start' }}">
                             @if($message->sender_id !== auth()->id())
                                 <div class="flex-shrink-0 mr-2 mt-1">
@@ -181,7 +192,11 @@ x-init="
                                 </span>
                             </div>
                         </div>
-                    @endforeach
+                        @empty
+                            <div class="text-center text-gray-500 dark:text-gray-400 py-8">
+                                <p>No messages yet. Start the conversation!</p>
+                            </div>
+                        @endforelse
 
                     <!-- Typing indicator -->
                     <div x-show="isTyping" class="flex justify-start">

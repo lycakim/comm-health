@@ -49,13 +49,25 @@
                     <x-filament::button 
                         color="gray" 
                         icon="heroicon-o-eye"
-                        wire:click="previewReport('patient-profiling')">
-                        Preview
+                        wire:click="previewReport('patient-profiling')"
+                        wire:loading.attr="disabled"
+                        wire:target="previewReport">
+                        <span wire:loading.remove wire:target="previewReport">Preview</span>
+                        <span wire:loading wire:target="previewReport" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="openGenerateReportModal('patient-profiling', 'monthly')">
-                        Generate Report
+                        wire:click="openGenerateReportModal('patient-profiling', 'monthly')"
+                        wire:loading.attr="disabled"
+                        wire:target="openGenerateReportModal">
+                        <span wire:loading.remove wire:target="openGenerateReportModal">Generate Report</span>
+                        <span wire:loading wire:target="openGenerateReportModal" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
                     </x-filament::button>
                 </div>
             </div>
@@ -81,13 +93,25 @@
                     <x-filament::button 
                         color="gray" 
                         icon="heroicon-o-eye"
-                        wire:click="previewReport('maternal-child')">
-                        Preview
+                        wire:click="previewReport('maternal-child')"
+                        wire:loading.attr="disabled"
+                        wire:target="previewReport">
+                        <span wire:loading.remove wire:target="previewReport">Preview</span>
+                        <span wire:loading wire:target="previewReport" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="openGenerateReportModal('maternal-child', 'quarterly')">
-                        Generate Report
+                        wire:click="openGenerateReportModal('maternal-child', 'quarterly')"
+                        wire:loading.attr="disabled"
+                        wire:target="openGenerateReportModal">
+                        <span wire:loading.remove wire:target="openGenerateReportModal">Generate Report</span>
+                        <span wire:loading wire:target="openGenerateReportModal" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
                     </x-filament::button>
                 </div>
             </div>
@@ -113,13 +137,25 @@
                     <x-filament::button 
                         color="gray" 
                         icon="heroicon-o-eye"
-                        wire:click="previewReport('senior-citizens')">
-                        Preview
+                        wire:click="previewReport('senior-citizens')"
+                        wire:loading.attr="disabled"
+                        wire:target="previewReport">
+                        <span wire:loading.remove wire:target="previewReport">Preview</span>
+                        <span wire:loading wire:target="previewReport" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="openGenerateReportModal('senior-citizens', 'quarterly')">
-                        Generate Report
+                        wire:click="openGenerateReportModal('senior-citizens', 'quarterly')"
+                        wire:loading.attr="disabled"
+                        wire:target="openGenerateReportModal">
+                        <span wire:loading.remove wire:target="openGenerateReportModal">Generate Report</span>
+                        <span wire:loading wire:target="openGenerateReportModal" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
                     </x-filament::button>
                 </div>
             </div>
@@ -145,13 +181,25 @@
                     <x-filament::button 
                         color="gray" 
                         icon="heroicon-o-eye"
-                        wire:click="previewReport('family-planning')">
-                        Preview
+                        wire:click="previewReport('family-planning')"
+                        wire:loading.attr="disabled"
+                        wire:target="previewReport">
+                        <span wire:loading.remove wire:target="previewReport">Preview</span>
+                        <span wire:loading wire:target="previewReport" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="openGenerateReportModal('family-planning', 'quarterly')">
-                        Generate Report
+                        wire:click="openGenerateReportModal('family-planning', 'quarterly')"
+                        wire:loading.attr="disabled"
+                        wire:target="openGenerateReportModal">
+                        <span wire:loading.remove wire:target="openGenerateReportModal">Generate Report</span>
+                        <span wire:loading wire:target="openGenerateReportModal" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
                     </x-filament::button>
                 </div>
             </div>
@@ -177,13 +225,25 @@
                     <x-filament::button 
                         color="gray" 
                         icon="heroicon-o-eye"
-                        wire:click="previewReport('morbidity-mortality')">
-                        Preview
+                        wire:click="previewReport('morbidity-mortality')"
+                        wire:loading.attr="disabled"
+                        wire:target="previewReport">
+                        <span wire:loading.remove wire:target="previewReport">Preview</span>
+                        <span wire:loading wire:target="previewReport" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
                     </x-filament::button>
                     <x-filament::button 
                         icon="heroicon-o-plus"
-                        wire:click="openGenerateReportModal('morbidity-mortality', 'quarterly')">
-                        Generate Report
+                        wire:click="openGenerateReportModal('morbidity-mortality', 'quarterly')"
+                        wire:loading.attr="disabled"
+                        wire:target="openGenerateReportModal">
+                        <span wire:loading.remove wire:target="openGenerateReportModal">Generate Report</span>
+                        <span wire:loading wire:target="openGenerateReportModal" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
                     </x-filament::button>
                 </div>
             </div>

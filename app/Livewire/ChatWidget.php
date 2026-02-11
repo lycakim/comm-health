@@ -172,10 +172,15 @@ class ChatWidget extends Component
     {
         $this->users = User::where('id', '!=', Auth::id())
             ->where('role', '!=', 'resident')
+            ->with('barangay')
             ->orderBy('name')
             ->get()
             ->mapWithKeys(function ($user) {
-                return [$user->id => $user->name];
+                $formattedLabel = $user->name . ' - ' . $user->role->getLabel();
+                if ($user->barangay) {
+                    $formattedLabel .= ' - ' . $user->barangay->name;
+                }
+                return [$user->id => $formattedLabel];
             })
             ->toArray();
     }

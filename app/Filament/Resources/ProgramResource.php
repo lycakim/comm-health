@@ -345,7 +345,8 @@ class ProgramResource extends Resource
                     ->action(function ($data) {
                         $programs = Program::with(['barangay', 'category'])->get();
                         $title = 'Health Programs Report';
-                        $barangay = null;
+                        $user = Auth::user();
+                        $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
 
                         // Handle PDF export
                         if ($data['format'] === 'pdf') {
@@ -361,9 +362,31 @@ class ProgramResource extends Resource
                         }
 
                         // Handle CSV export
-                        return response()->streamDownload(function () use ($programs) {
+                        return response()->streamDownload(function () use ($programs, $title, $barangay) {
                             $csv = fopen('php://output', 'w');
+                            $user = Auth::user();
+                            $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
+                            $barangayName = $barangay ? $barangay->name : 'All Barangays';
+                            $province = config('app.province', 'DAVAO DEL NORTE');
+                            $municipality = config('app.municipality', 'CARMEN');
+                            $dateTime = now()->format('F d, Y h:i A');
+                            
+                            // Add UTF-8 BOM for Excel compatibility
+                            fprintf($csv, chr(0xEF).chr(0xBB).chr(0xBF));
+                            
+                            // Add header rows (matching xlsx format)
+                            fputcsv($csv, ['REPUBLIC OF THE PHILIPPINES', '', '', '', '']);
+                            fputcsv($csv, ['PROVINCE OF ' . strtoupper($province), '', '', '', '']);
+                            fputcsv($csv, ['MUNICIPAL HEALTH OFFICE', '', '', '', '']);
+                            fputcsv($csv, ['MUNICIPALITY OF ' . strtoupper($municipality), '', '', '', '']);
+                            fputcsv($csv, ['BARANGAY ' . strtoupper($barangayName), '', '', '', '']);
+                            fputcsv($csv, [strtoupper($title), '', '', '', '']);
+                            fputcsv($csv, ['', '', '', '', '']); // Empty row
+                            fputcsv($csv, ['As of : ' . $dateTime, '', '', '', '']);
+                            
+                            // Column headers
                             fputcsv($csv, ['Program Name', 'Barangay', 'Category', 'Date']);
+                            
                             foreach ($programs as $program) {
                                 fputcsv($csv, [
                                     $program->name, 
@@ -372,6 +395,11 @@ class ProgramResource extends Resource
                                     $program->program_start_date ? \Carbon\Carbon::parse($program->program_start_date)->format('Y-m-d') : 'N/A'
                                 ]);
                             }
+                            
+                            // Footer row
+                            fputcsv($csv, ['', '', '', '']); // Empty row
+                            fputcsv($csv, ['Total Records: ' . count($programs), '', '', '']);
+                            
                             fclose($csv);
                         }, 'health-programs_' . date('Y-m-d_His') . '.csv');
                     }),

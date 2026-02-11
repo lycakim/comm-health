@@ -50,11 +50,17 @@
 </head>
 <body>
     <div class="header">
-        <h1>{{ $title }}</h1>
-        @if($barangay)
-            <p>Barangay: {{ $barangay->name }}</p>
-        @endif
-        <p>Generated on: {{ $date }}</p>
+        <div style="margin-bottom: 10px;">
+            <img src="{{ public_path('comm-health-icon.png') }}" alt="Municipality Logo" style="height: 60px; width: auto; display: block; margin: 0 auto;">
+        </div>
+        <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">REPUBLIC OF THE PHILIPPINES</p>
+        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">PROVINCE OF {{ strtoupper($province ?? config('app.province', 'DAVAO DEL NORTE')) }}</p>
+        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">MUNICIPAL HEALTH OFFICE</p>
+        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">MUNICIPALITY OF {{ strtoupper($municipality ?? config('app.municipality', 'CARMEN')) }}</p>
+        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">BARANGAY {{ strtoupper($barangayName ?? ($barangay ? $barangay->name : 'ALL BARANGAYS')) }}</p>
+        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">{{ strtoupper($title) }}</p>
+        <p style="font-size: 10px; margin-bottom: 5px;">&nbsp;</p>
+        <p style="font-size: 10px;">As of : {{ $dateTime ?? $date }}</p>
     </div>
 
     <table>
