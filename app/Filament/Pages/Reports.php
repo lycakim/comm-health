@@ -399,6 +399,7 @@ class Reports extends Page implements HasTable
                                 'senior-citizens' => 'Senior Citizens Report',
                                 'family-planning' => 'Family Planning Report',
                                 'morbidity-mortality' => 'Morbidity and Mortality Report',
+                                'family-profile-consolidation' => 'Family Profile Consolidation',
                             ])
                             ->required()
                             ->default('resident-profiling'),
@@ -629,6 +630,14 @@ class Reports extends Page implements HasTable
     }
 
     /**
+     * Open modal to generate report (called from Report Template tab buttons)
+     */
+    public function openGenerateReportModal(string $reportType, string $frequency = 'monthly')
+    {
+        return $this->generateReport($reportType, 'pdf');
+    }
+
+    /**
      * Preview a report without generating/downloading
      */
     public function previewReport(string $reportType)
@@ -640,8 +649,11 @@ class Reports extends Page implements HasTable
             // Get data based on report type
             $data = $this->getReportData($normalizedType);
             
-            // Check if there's no data
-            if (empty($data['rows']) || count($data['rows']) === 0) {
+            // Check if there's no data (skip for family-profile-consolidation which has summary/ageGrouping)
+            $hasData = $normalizedType === 'family-profile-consolidation'
+                ? isset($data['summary'])
+                : (!empty($data['rows']) && count($data['rows']) > 0);
+            if (!$hasData) {
                 Notification::make()
                     ->title('No Data Available')
                     ->body('There is no data available for this report. Please try a different report type or check back later.')
@@ -701,8 +713,11 @@ class Reports extends Page implements HasTable
             // Get data based on report type
             $data = $this->getReportData($normalizedType);
             
-            // Check if there's no data
-            if (empty($data['rows']) || count($data['rows']) === 0) {
+            // Check if there's no data (skip for family-profile-consolidation which has summary/ageGrouping)
+            $hasData = $normalizedType === 'family-profile-consolidation'
+                ? isset($data['summary'])
+                : (!empty($data['rows']) && count($data['rows']) > 0);
+            if (!$hasData) {
                 Notification::make()
                     ->title('No Data Available')
                     ->body('There is no data available for this report. Please try a different report type or check back later.')
@@ -714,6 +729,10 @@ class Reports extends Page implements HasTable
             $pdfService = app(PDFGenerationService::class);
             $user = Auth::user();
             $barangay = $user->barangay_id ? \App\Models\Barangay::find($user->barangay_id) : null;
+            // Family Profile Consolidation only supports PDF
+            if ($normalizedType === 'family-profile-consolidation' && $format !== 'pdf') {
+                $format = 'pdf';
+            }
             $filename = "{$normalizedType}_" . now()->format('Y-m-d_His') . ".{$format}";
             $fileContent = null;
             
@@ -725,6 +744,7 @@ class Reports extends Page implements HasTable
                 'senior-citizens' => 'Senior Citizens Health Status Report',
                 'family-planning' => 'Family Planning Usage Report',
                 'morbidity-mortality' => 'Morbidity and Mortality Report',
+                'family-profile-consolidation' => 'Family Profile Consolidation',
             ];
             $reportTitle = $reportTitles[$normalizedType] ?? ucwords(str_replace('-', ' ', $normalizedType)) . ' Report';
             $barangayName = $barangay ? $barangay->name : 'All Barangays';
@@ -737,7 +757,15 @@ class Reports extends Page implements HasTable
                 $pdf = $pdfService->generateReportDataPdf($data, $normalizedType, $barangay);
                 $fileContent = $pdf->output();
             } else {
-                // Handle CSV export
+                // Handle CSV export (not supported for family-profile-consolidation)
+                if ($normalizedType === 'family-profile-consolidation') {
+                    Notification::make()
+                        ->title('Format Not Supported')
+                        ->body('Family Profile Consolidation report is only available in PDF format.')
+                        ->warning()
+                        ->send();
+                    return;
+                }
                 $handle = fopen('php://temp', 'r+');
                 
                 // Add UTF-8 BOM for Excel compatibility
@@ -845,6 +873,7 @@ class Reports extends Page implements HasTable
             'senior-citizens' => $this->getSeniorCitizensData(),
             'family-planning' => $this->getFamilyPlanningData(),
             'morbidity-mortality' => $this->getMorbidityMortalityData(),
+            'family-profile-consolidation' => $this->getFamilyProfileConsolidationData(),
             default => throw new \Exception('Invalid report type: ' . $reportType),
         };
     }
@@ -871,7 +900,7 @@ class Reports extends Page implements HasTable
                     $patient->id,
                     $patient->first_name,
                     $patient->last_name,
-                    $patient->date_of_birth?->format('Y-m-d'),
+                    $patient->birth_date?->format('Y-m-d'),
                     $patient->age,
                     $patient->sex,
                     $patient->contact_number,
@@ -979,6 +1008,131 @@ class Reports extends Page implements HasTable
                     $latestRecord?->next_schedule?->format('Y-m-d') ?? 'N/A'
                 ];
             })->toArray()
+        ];
+    }
+
+    protected function getFamilyProfileConsolidationData()
+    {
+        $user = Auth::user();
+        $query = Patient::query();
+        if ($user->barangay_id) {
+            $query->where('barangay_id', $user->barangay_id);
+        }
+        $patients = $query->get();
+
+        // Summary stats
+        $totalPopulation = $patients->count();
+        $householdHeads = $patients->where('relationship_to_head_of_family', 'Self')->count();
+        $totalHouses = $patients->sum('no_of_house') ?: $householdHeads;
+        $familyHeads = $householdHeads;
+        $married = $patients->whereIn('civil_status', ['married', 'Married'])->count();
+        $widowMale = $patients->whereIn('civil_status', ['widowed', 'Widowed'])->where('sex', 'male')->count();
+        $widowFemale = $patients->whereIn('civil_status', ['widowed', 'Widowed'])->where('sex', 'female')->count();
+        $liveIn = $patients->whereIn('civil_status', ['live-in', 'Live-in'])->count();
+        $soloParent = 0; // Not in schema - use placeholder
+        $singleMother = $patients->where('sex', 'female')->whereIn('civil_status', ['single', 'Single'])->count(); // Approximation
+        $separated = $patients->whereIn('civil_status', ['separated', 'Separated'])->count();
+        $pregnantWomen = $patients->where('pregnant', true)->count();
+        $wra = $patients->where('sex', 'female')->filter(fn ($p) => $p->age >= 15 && $p->age <= 49)->count();
+        $singleWra = $patients->where('sex', 'female')->filter(fn ($p) => $p->age >= 15 && $p->age <= 49)->whereIn('civil_status', ['single', 'Single'])->count();
+        $seniorCitizens = $patients->filter(fn ($p) => $p->age >= 60)->count();
+        $smokersMale = $patients->where('sex', 'male')->filter(fn ($p) => is_array($p->health_statuses) && in_array('Smoker', $p->health_statuses))->count();
+        $smokersFemale = $patients->where('sex', 'female')->filter(fn ($p) => is_array($p->health_statuses) && in_array('Smoker', $p->health_statuses))->count();
+        $pwd = $patients->filter(fn ($p) => is_array($p->health_statuses) && in_array('Person with Disabilities', $p->health_statuses))->count();
+        $nhtsCct = 0;
+        $nhtsNonCct = 0;
+        $nhtsSet = 0;
+        $ofw = 0;
+
+        // Age grouping: 0-11 mos, 1, 2, 3, ..., 17, 18, 19, 20, 21-24, ..., 85+
+        $ageGroupsLeft = [];
+        $ageGroupsRight = [];
+        $ageLabelsLeft = ['0-11 mos', '1 year', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17'];
+
+        foreach ($ageLabelsLeft as $label) {
+            $male = 0;
+            $female = 0;
+            if ($label === '0-11 mos') {
+                $male = $patients->where('sex', 'male')->filter(fn ($p) => $p->age !== null && (int) $p->age < 1)->count();
+                $female = $patients->where('sex', 'female')->filter(fn ($p) => $p->age !== null && (int) $p->age < 1)->count();
+            } elseif ($label === '1 year') {
+                $male = $patients->where('sex', 'male')->filter(fn ($p) => (int) ($p->age ?? 0) === 1)->count();
+                $female = $patients->where('sex', 'female')->filter(fn ($p) => (int) ($p->age ?? 0) === 1)->count();
+            } else {
+                $ageNum = (int) $label;
+                $male = $patients->where('sex', 'male')->filter(fn ($p) => (int) ($p->age ?? 0) === $ageNum)->count();
+                $female = $patients->where('sex', 'female')->filter(fn ($p) => (int) ($p->age ?? 0) === $ageNum)->count();
+            }
+            $ageGroupsLeft[] = ['label' => $label, 'male' => $male, 'female' => $female, 'total' => $male + $female];
+        }
+
+        $rangesRight = [
+            ['18', 18, 18],
+            ['19', 19, 19],
+            ['20', 20, 20],
+            ['21-24', 21, 24],
+            ['25-29', 25, 29],
+            ['30-34', 30, 34],
+            ['35-39', 35, 39],
+            ['40-44', 40, 44],
+            ['45-49', 45, 49],
+            ['50-54', 50, 54],
+            ['55-59', 55, 59],
+            ['60-64', 60, 64],
+            ['65-69', 65, 69],
+            ['70-74', 70, 74],
+            ['75-79', 75, 79],
+            ['80-84', 80, 84],
+            ['85+', 85, 999],
+        ];
+        foreach ($rangesRight as [$label, $min, $max]) {
+            $ageMin = $min;
+            $ageMax = $max;
+            $male = $patients->where('sex', 'male')->filter(fn ($p) => (($age = (int) ($p->age ?? 0)) >= $ageMin && $age <= $ageMax))->count();
+            $female = $patients->where('sex', 'female')->filter(fn ($p) => (($age = (int) ($p->age ?? 0)) >= $ageMin && $age <= $ageMax))->count();
+            $ageGroupsRight[] = ['label' => $label, 'male' => $male, 'female' => $female, 'total' => $male + $female];
+        }
+
+        $totalLeft = [
+            'male' => collect($ageGroupsLeft)->sum('male'),
+            'female' => collect($ageGroupsLeft)->sum('female'),
+        ];
+        $totalLeft['total'] = $totalLeft['male'] + $totalLeft['female'];
+        $totalRight = [
+            'male' => collect($ageGroupsRight)->sum('male'),
+            'female' => collect($ageGroupsRight)->sum('female'),
+        ];
+        $totalRight['total'] = $totalRight['male'] + $totalRight['female'];
+
+        return [
+            'summary' => [
+                'totalPopulation' => $totalPopulation,
+                'householdHeads' => $householdHeads,
+                'totalHouses' => $totalHouses,
+                'familyHeads' => $familyHeads,
+                'married' => $married,
+                'widowMale' => $widowMale,
+                'widowFemale' => $widowFemale,
+                'liveIn' => $liveIn,
+                'soloParent' => $soloParent,
+                'singleMother' => $singleMother,
+                'separated' => $separated,
+                'pregnantWomen' => $pregnantWomen,
+                'wra' => $wra,
+                'singleWra' => $singleWra,
+                'seniorCitizens' => $seniorCitizens,
+                'smokersMale' => $smokersMale,
+                'smokersFemale' => $smokersFemale,
+                'nhtsCct' => $nhtsCct,
+                'nhtsNonCct' => $nhtsNonCct,
+                'nhtsSet' => $nhtsSet,
+                'pwd' => $pwd,
+                'ofw' => $ofw,
+            ],
+            'ageGroupsLeft' => $ageGroupsLeft,
+            'ageGroupsRight' => $ageGroupsRight,
+            'totalLeft' => $totalLeft,
+            'totalRight' => $totalRight,
         ];
     }
 

@@ -247,6 +247,50 @@
                     </x-filament::button>
                 </div>
             </div>
+            <div class="template-card group block p-4 rounded-lg border transition-all duration-200 ease-in-out
+                      bg-white hover:bg-green-50 border-gray-200 hover:border-green-300 hover:shadow-md
+                      dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:hover:border-gray-600
+                      transform hover:scale-105">
+                
+                <div class="flex justify-between">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-200">
+                        Family Profile Consolidation
+                    </h3>
+                    <x-filament::badge icon="heroicon-m-calendar">
+                        Quarterly
+                    </x-filament::badge>
+                </div>
+                
+                <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 mt-1 transition-colors duration-200">
+                    Demographic and household statistics by barangay
+                </p>
+
+                <div class="flex justify-between mt-6">
+                    <x-filament::button 
+                        color="gray" 
+                        icon="heroicon-o-eye"
+                        wire:click="previewReport('family-profile-consolidation')"
+                        wire:loading.attr="disabled"
+                        wire:target="previewReport">
+                        <span wire:loading.remove wire:target="previewReport">Preview</span>
+                        <span wire:loading wire:target="previewReport" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
+                    </x-filament::button>
+                    <x-filament::button 
+                        icon="heroicon-o-plus"
+                        wire:click="openGenerateReportModal('family-profile-consolidation', 'quarterly')"
+                        wire:loading.attr="disabled"
+                        wire:target="openGenerateReportModal">
+                        <span wire:loading.remove wire:target="openGenerateReportModal">Generate Report</span>
+                        <span wire:loading wire:target="openGenerateReportModal" class="flex items-center gap-2">
+                            <x-filament::loading-indicator class="h-4 w-4" />
+                            Loading...
+                        </span>
+                    </x-filament::button>
+                </div>
+            </div>
         </div>
     </div>
     <div x-show="tab === 'tab3'" x-cloak>

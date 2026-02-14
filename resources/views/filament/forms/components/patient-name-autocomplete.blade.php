@@ -3,6 +3,7 @@
     $currentFirstName = $currentFirstName ?? '';
     $currentMiddleName = $currentMiddleName ?? '';
     $currentLastName = $currentLastName ?? '';
+    $isCreate = $isCreate ?? true;
 @endphp
 
 <div 
@@ -83,9 +84,12 @@
             </div>
         </div>
     @elseif(
-        (strlen(trim($currentFirstName)) >= 2) ||
-        (strlen(trim($currentMiddleName)) >= 2) ||
-        (strlen(trim($currentLastName)) >= 2)
+        $isCreate &&
+        (
+            (strlen(trim($currentFirstName)) >= 2) ||
+            (strlen(trim($currentMiddleName)) >= 2) ||
+            (strlen(trim($currentLastName)) >= 2)
+        )
     )
         <div class="mt-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4">
             <p class="text-sm text-gray-600 dark:text-gray-400 text-center">

@@ -223,12 +223,15 @@ class PatientResource extends Resource
                                     ->label('Matching Existing Patients')
                                     ->dehydrated(false)
                                     ->view('filament.forms.components.patient-name-autocomplete')
-                                    ->visible(fn (Get $get) => 
-                                        (strlen(trim($get('first_name') ?? '')) >= 2) ||
-                                        (strlen(trim($get('middle_name') ?? '')) >= 2) ||
-                                        (strlen(trim($get('last_name') ?? '')) >= 2)
+                                    ->visible(fn (Get $get, $livewire) =>
+                                        $livewire->getRecord() === null &&
+                                        (
+                                            (strlen(trim($get('first_name') ?? '')) >= 2) ||
+                                            (strlen(trim($get('middle_name') ?? '')) >= 2) ||
+                                            (strlen(trim($get('last_name') ?? '')) >= 2)
+                                        )
                                     )
-                                    ->viewData(fn (Get $get) => [
+                                    ->viewData(fn (Get $get, $livewire) => [
                                         'matchingPatients' => self::searchMatchingPatients(
                                             $get('first_name'),
                                             $get('middle_name'),
@@ -237,6 +240,7 @@ class PatientResource extends Resource
                                         'currentFirstName' => $get('first_name'),
                                         'currentMiddleName' => $get('middle_name'),
                                         'currentLastName' => $get('last_name'),
+                                        'isCreate' => $livewire->getRecord() === null,
                                     ])
                                     ->columnSpanFull(),
                                 Select::make('relationship_to_head_of_family')
@@ -381,11 +385,7 @@ class PatientResource extends Resource
                                             Textarea::make('description'),
                                         ];
                                     })
-                                    ->createOptionUsing(function (array $data, Get $get): int {
-                                        $name = $get('name');
-
-                                        $data['name'] = $name;
-
+                                    ->createOptionUsing(function (array $data): int {
                                         return Occupation::create($data)->getKey();
                                     })
                                     ->required(),

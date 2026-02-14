@@ -10,14 +10,6 @@
             margin: 0;
             padding: 20px;
         }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .header p {
-            margin: 5px 0;
-            font-size: 11px;
-        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -36,27 +28,16 @@
         td {
             font-size: 8px;
         }
-        .footer {
-            margin-top: 20px;
-            text-align: right;
-            font-size: 9px;
-        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div style="margin-bottom: 10px;">
-            <img src="{{ public_path('comm-health-icon.png') }}" alt="Municipality Logo" style="height: 60px; width: auto; display: block; margin: 0 auto;">
-        </div>
-        <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">REPUBLIC OF THE PHILIPPINES</p>
-        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">PROVINCE OF {{ strtoupper($province ?? 'DAVAO DEL NORTE') }}</p>
-        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">MUNICIPAL HEALTH OFFICE</p>
-        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">MUNICIPALITY OF {{ strtoupper($municipality ?? 'CARMEN') }}</p>
-        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">BARANGAY {{ strtoupper($barangayName ?? 'ALL BARANGAYS') }}</p>
-        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">{{ strtoupper($reportTitle ?? 'Referrals Report') }}</p>
-        <p style="font-size: 10px; margin-bottom: 5px;">&nbsp;</p>
-        <p style="font-size: 10px;">As of : {{ $dateTime ?? $date }}</p>
-    </div>
+    @include('pdf.partials.header', [
+        'province' => $province ?? 'DAVAO DEL NORTE',
+        'municipality' => $municipality ?? 'CARMEN',
+        'reportTitle' => $reportTitle ?? 'Referrals Report',
+        'barangayName' => $barangayName ?? 'ALL BARANGAYS',
+        'dateTime' => $dateTime ?? $date ?? now()->format('F d, Y h:i A'),
+    ])
 
     <table>
         <thead>
@@ -96,8 +77,9 @@
         </tbody>
     </table>
 
-    <div class="footer">
-        <p>Total Records: {{ count($referrals) }}</p>
-    </div>
+    @include('pdf.partials.footer', [
+        'totalRecords' => count($referrals ?? []),
+        'barangayName' => $barangayName ?? 'ALL BARANGAYS',
+    ])
 </body>
 </html>

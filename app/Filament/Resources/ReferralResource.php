@@ -897,29 +897,41 @@ class ReferralResource extends Resource
                     ->label('Reference ID')
                     ->formatStateUsing(function ($record) {
                         if ($record->consultation) {
-                            return 'Consultation #' . $record->consultation_id . ' - ' . $record->consultation->patient->first_name . ' ' . $record->consultation->patient->last_name;
+                            return 'Consultation #' . $record->consultation_id;
                         }
-                        elseif ($record->patient_id && $record->patient) {
-                            return 'Patient #' . $record->patient_id . ' - ' . $record->patient->first_name . ' ' . $record->patient->last_name;
+                        if ($record->patient_id && $record->patient) {
+                            return 'Patient #' . $record->patient_id;
                         }
-                        else {
-                            return 'No ID';
-                        }
+                        return 'No ID';
                     })
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query
                             ->with(['consultation', 'patient'])
                             ->where('id', 'like', "%{$search}%")
-                            ->orWhereHas('patient', function (Builder $patientQuery) use ($search) {
-                                $patientQuery->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%");
+                            ->orWhere('consultation_id', 'like', "%{$search}%")
+                            ->orWhere('patient_id', 'like', "%{$search}%");
+                    })
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('patient_name')
+                    ->label('Name')
+                    ->getStateUsing(function ($record) {
+                        $patient = $record->patient ?? $record->consultation?->patient;
+                        return $patient ? trim($patient->first_name . ' ' . $patient->last_name) : 'N/A';
+                    })
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query
+                            ->with(['consultation', 'patient'])
+                            ->whereHas('patient', function (Builder $patientQuery) use ($search) {
+                                $patientQuery->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%");
                             })
                             ->orWhereHas('consultation', function (Builder $consultationQuery) use ($search) {
                                 $consultationQuery->whereHas('patient', function (Builder $patientQuery) use ($search) {
-                                    $patientQuery->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%");
+                                    $patientQuery->where('first_name', 'like', "%{$search}%")
+                                        ->orWhere('last_name', 'like', "%{$search}%");
                                 });
                             });
-                    })
-                    ->sortable(),
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Referred')
                     ->since()
@@ -958,12 +970,6 @@ class ReferralResource extends Resource
                     ->searchable()
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('urgency')
-                    ->options([
-                        'routine' => 'Routine',
-                        'urgent' => 'Urgent',
-                        'emergency' => 'Emergency',
-                    ]),
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'pending' => 'Pending',

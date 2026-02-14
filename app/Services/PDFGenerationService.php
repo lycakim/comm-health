@@ -437,6 +437,7 @@ class PDFGenerationService
             'senior-citizens' => 'pdf.reports.senior-citizens',
             'family-planning' => 'pdf.reports.family-planning',
             'morbidity-mortality' => 'pdf.reports.morbidity-mortality',
+            'family-profile-consolidation' => 'pdf.reports.family-profile-consolidation',
         ];
 
         $template = $templateMap[$reportType] ?? 'pdf.reports.patient-profiling';
@@ -449,22 +450,40 @@ class PDFGenerationService
             'senior-citizens' => 'Senior Citizens Health Status Report',
             'family-planning' => 'Family Planning Usage Report',
             'morbidity-mortality' => 'Morbidity and Mortality Report',
+            'family-profile-consolidation' => 'Family Profile Consolidation',
         ];
 
         $reportTitle = $reportTitles[$reportType] ?? ucwords(str_replace('-', ' ', $reportType)) . ' Report';
         $barangayName = $barangay ? $barangay->name : 'All Barangays';
+        $dateTime = now()->format('F d, Y h:i A');
 
-        $html = view($template, [
-            'headers' => $reportData['headers'] ?? [],
-            'rows' => $reportData['rows'] ?? [],
+        $viewData = [
             'date' => now()->format('F d, Y'),
-            'dateTime' => now()->format('F d, Y h:i A'),
+            'dateTime' => $dateTime,
             'province' => config('app.province', 'DAVAO DEL NORTE'),
             'municipality' => config('app.municipality', 'CARMEN'),
             'barangayName' => $barangayName,
             'reportTitle' => $reportTitle,
-            'totalRecords' => count($reportData['rows'] ?? []),
-        ])->render();
+        ];
+
+        if ($reportType === 'family-profile-consolidation') {
+            $viewData = array_merge($viewData, [
+                'summary' => $reportData['summary'] ?? [],
+                'ageGroupsLeft' => $reportData['ageGroupsLeft'] ?? [],
+                'ageGroupsRight' => $reportData['ageGroupsRight'] ?? [],
+                'totalLeft' => $reportData['totalLeft'] ?? ['male' => 0, 'female' => 0, 'total' => 0],
+                'totalRight' => $reportData['totalRight'] ?? ['male' => 0, 'female' => 0, 'total' => 0],
+                'totalRecords' => ($reportData['summary']['totalPopulation'] ?? 0),
+            ]);
+        } else {
+            $viewData = array_merge($viewData, [
+                'headers' => $reportData['headers'] ?? [],
+                'rows' => $reportData['rows'] ?? [],
+                'totalRecords' => count($reportData['rows'] ?? []),
+            ]);
+        }
+
+        $html = view($template, $viewData)->render();
 
         return Pdf::loadHTML($html)
             ->setPaper('legal', 'landscape')

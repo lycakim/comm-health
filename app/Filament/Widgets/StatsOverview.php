@@ -10,6 +10,12 @@ use App\Models\Consultation;
 use Illuminate\Support\Facades\Auth;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use App\Filament\Resources\PatientResource;
+use App\Filament\Resources\ConsultationResource;
+use App\Filament\Resources\ReferralResource;
+use App\Filament\Resources\ProgramResource;
+use App\Filament\Resources\UserResource;
+use App\Filament\Pages\Reports;
 
 class StatsOverview extends BaseWidget
 {
@@ -81,32 +87,38 @@ class StatsOverview extends BaseWidget
                     ->description('+' . $patientIncrease . '% from last month')
                     ->descriptionIcon($patientIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                     ->chart([10, 12, 13, 14, 15, 12]) // Replace with actual data points
-                    ->color('success'),
+                    ->color('success')
+                    ->url(PatientResource::getUrl('index')),
                     
                 Stat::make('Consultations', $totalConsultations)
                     ->description('+' . $consultationIncrease . '% from last month')
                     ->descriptionIcon($consultationIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                     ->chart([5, 8, 12, 7, 9, 10]) // Replace with actual data points
-                    ->color('success'),
+                    ->color('success')
+                    ->url(ConsultationResource::getUrl('index')),
                     
                 Stat::make('Pending Referrals', $pendingReferrals)
                     ->description($referralChange > 0 ? '+' : '' . $referralChange . '% from last month')
                     ->descriptionIcon($referralChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                     ->chart([4, 3, 5, 6, 4, 3]) // Replace with actual data points
-                    ->color($referralChange > 0 ? 'danger' : 'success'),
+                    ->color($referralChange > 0 ? 'danger' : 'success')
+                    ->url(ReferralResource::getUrl('index')),
                     
                 Stat::make('Upcoming Programs', $upcomingProgramsCount)
                     ->description('Next: ' . ($nextProgram ? $nextProgram->name . ' (' . $nextProgram->date->format('M d') . ')' : 'None'))
-                    ->color('primary'),
+                    ->color('primary')
+                    ->url(ProgramResource::getUrl('index')),
                     
                 Stat::make('Reports Submitted', 12)
                     ->description('+' . 10 . ' this week')
                     ->descriptionIcon('heroicon-m-arrow-trending-up')
-                    ->color('success'),
+                    ->color('success')
+                    ->url(Reports::getUrl()),
                     
                 Stat::make('Active Health Workers', $barangaysWithHealthWorkers)
                     ->description('Across ' . $barangaysWithHealthWorkers . ' barangays')
-                    ->color('primary'),
+                    ->color('primary')
+                    ->url(UserResource::getUrl('index')),
             ];
         }
         
@@ -120,23 +132,27 @@ class StatsOverview extends BaseWidget
                 ->description($barangayId ? '+' . $patientIncrease . '% from last month' : 'No barangay assigned')
                 ->descriptionIcon($patientIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->chart([10, 12, 13, 14, 15, 12]) // Replace with actual data points
-                ->color('success'),
+                ->color('success')
+                ->url(PatientResource::getUrl('index')),
                 
             Stat::make('Consultations', $totalConsultations)
                 ->description($barangayId ? '+' . $consultationIncrease . '% from last month' : 'No barangay assigned')
                 ->descriptionIcon($consultationIncrease > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->chart([5, 8, 12, 7, 9, 10]) // Replace with actual data points
-                ->color('success'),
+                ->color('success')
+                ->url(ConsultationResource::getUrl('index')),
                 
             Stat::make('Pending Referrals', $pendingReferrals)
                 ->description($barangayId ? ($referralChange > 0 ? '+' : '') . $referralChange . '% from last month' : 'No barangay assigned')
                 ->descriptionIcon($referralChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->chart([4, 3, 5, 6, 4, 3]) // Replace with actual data points
-                ->color($referralChange > 0 ? 'danger' : 'success'),
+                ->color($referralChange > 0 ? 'danger' : 'success')
+                ->url(ReferralResource::getUrl('index')),
                 
             Stat::make('Upcoming Programs', $upcomingProgramsCount)
                 ->description('Next: ' . ($nextProgram ? $nextProgram->name . ' (' . $nextProgram->date->format('M d') . ')' : 'None'))
-                ->color('primary'),
+                ->color('primary')
+                ->url(ProgramResource::getUrl('index')),
         ];
     }
 
