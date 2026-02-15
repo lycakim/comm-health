@@ -70,16 +70,6 @@
                 </a>
             </p>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-                Need to verify your email? 
-                <button 
-                    type="button" 
-                    wire:click="resendVerificationEmail"
-                    class="text-green-600 hover:text-green-700 font-medium"
-                >
-                    Resend Verification Email
-                </button>
-            </p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">
                 <a href="/" class="text-green-600 hover:text-green-700 font-medium">
                     Back to Home
                 </a>

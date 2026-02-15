@@ -15,6 +15,7 @@ use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Auth\Login as BaseLogin;
+use App\Notifications\LoginNotification;
 use App\Http\Responses\Auth\CustomLoginResponse;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 
@@ -126,57 +127,6 @@ class Login extends BaseLogin
         ], $data['remember'] ?? false);
     }
     
-    public function resendVerificationEmail(): void
-    {
-        try {
-            $data = $this->form->getState();
-            $email = $data['email'] ?? null;
-            
-            if (!$email) {
-                Notification::make()
-                    ->title('Email required')
-                    ->body('Please enter your email address first.')
-                    ->warning()
-                    ->send();
-                return;
-            }
-            
-            $user = User::where('email', $email)->first();
-            
-            if (!$user) {
-                Notification::make()
-                    ->title('User not found')
-                    ->body('No account found with this email address.')
-                    ->warning()
-                    ->send();
-                return;
-            }
-            
-            if ($user->hasVerifiedEmail()) {
-                Notification::make()
-                    ->title('Email already verified')
-                    ->body('Your email address is already verified. You can proceed to login.')
-                    ->info()
-                    ->send();
-                return;
-            }
-            
-            $user->sendEmailVerificationNotification();
-            
-            Notification::make()
-                ->title('Verification email sent')
-                ->body('A new verification link has been sent to your email address. Please check your inbox.')
-                ->success()
-                ->send();
-        } catch (\Exception $e) {
-            Notification::make()
-                ->title('Error')
-                ->body('An error occurred while sending the verification email. Please try again.')
-                ->danger()
-                ->send();
-        }
-    }
-
     protected function sendOtp(string $email): void
     {
         $user = User::where('email', $email)->first();
@@ -240,6 +190,7 @@ class Login extends BaseLogin
                 'last_otp_login_at' => now(),
             ]);
 
+            $this->sendLoginNotification($user);
             $this->cleanupOtpCode($this->userEmail);
             session()->regenerate();
 
@@ -293,8 +244,20 @@ class Login extends BaseLogin
 
     protected function handleSuccessfulLogin($user): ?LoginResponse
     {
-        // Redirect to the main Filament dashboard
-        // Role-based access is handled by canAccess() methods in Resources and Pages
+        $this->sendLoginNotification($user);
         return app(LoginResponse::class);
+    }
+
+    protected function sendLoginNotification(User $user): void
+    {
+        try {
+            $user->notify(new LoginNotification(
+                ipAddress: request()->ip() ?? 'Unknown',
+                userAgent: request()->userAgent() ?? 'Unknown',
+                loginTime: now()->format('F j, Y \a\t g:i A')
+            ));
+        } catch (\Exception $e) {
+            // Silently fail - don't block login if email fails
+        }
     }
 }

@@ -39,7 +39,6 @@ class AppPanelProvider extends PanelProvider
             ->path('commhealth')
             // ->login(Login::class)
             ->registration(Register::class)
-            ->emailVerification(\App\Filament\Pages\Auth\EmailVerification::class)
             ->colors([
                 'primary' => Color::Green,
             ])
