@@ -958,28 +958,10 @@ class ReferralResource extends Resource
                     ->searchable()
                     ->formatStateUsing(fn (string $state): string => 
                         UrgencyEnum::tryFrom($state)?->getLabel() ?? $state),
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->searchable()
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'accepted' => 'info',
-                        'completed' => 'success',
-                        'cancelled' => 'danger',
-                    }),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Referred By')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\SelectColumn::make('status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'accepted' => 'Accepted',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
-                        'no_show' => 'No Show',
-                    ])
-                    ->searchable()
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('barangay_id')
