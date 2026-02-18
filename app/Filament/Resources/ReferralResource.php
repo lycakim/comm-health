@@ -13,7 +13,6 @@ use App\Models\Patient;
 use Filament\Forms\Get;
 use App\Models\Referral;
 use Filament\Forms\Form;
-use App\Enums\UrgencyEnum;
 use Filament\Tables\Table;
 use App\Models\Consultation;
 use App\Enums\CivilStatusEnum;
@@ -949,15 +948,6 @@ class ReferralResource extends Resource
                     ->since()
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('urgency')
-                    ->badge()
-                    ->color(function (string $state): string {
-                        $enum = UrgencyEnum::tryFrom($state);
-                        return $enum?->getColor() ?? 'gray';
-                    })
-                    ->searchable()
-                    ->formatStateUsing(fn (string $state): string => 
-                        UrgencyEnum::tryFrom($state)?->getLabel() ?? $state),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Referred By')
                     ->searchable()

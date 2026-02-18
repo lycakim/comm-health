@@ -81,6 +81,10 @@ class AppPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::body.end',
                 fn () => view('components.privacy-modal-hook')
+            )
+            ->renderHook(
+                'panels::body.end',
+                fn () => view('filament.components.loading-overlay')
             );
     }
 }
