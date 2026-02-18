@@ -10,23 +10,133 @@
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <style>
-            .photo-carousel-container {
-                width: 100%;
-                position: relative;
+            /* 3D Coverflow carousel – scoped, no Tailwind */
+            .coverflow-section {
+                background: linear-gradient(160deg, #f0faf4, #e8f5ee, #f5fbf7);
+                padding: 3rem 1rem;
             }
-            
-            .photo-carousel-track {
-                will-change: transform;
+            .coverflow-heading {
+                text-align: center;
+                margin-bottom: 2rem;
+            }
+            .coverflow-heading h2 {
+                font-size: 1.875rem;
+                font-weight: 700;
+                margin: 0 0 0.5rem 0;
+            }
+            .coverflow-heading p {
+                font-size: 1rem;
+                margin: 0;
+            }
+            .coverflow-stage {
+                perspective: 1000px;
+                height: 460px;
                 display: flex;
-                align-items: flex-start;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto;
             }
-            
-            .photo-item {
-                transition: transform 0.3s ease;
+            .coverflow-track {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                transform-style: preserve-3d;
             }
-            
-            .photo-item img {
-                will-change: transform;
+            .coverflow-card {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                width: 300px;
+                height: 400px;
+                border-radius: 16px;
+                overflow: hidden;
+                cursor: pointer;
+                transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                            opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                            box-shadow 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                backface-visibility: hidden;
+            }
+            .coverflow-card img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+            .coverflow-card.is-active {
+                box-shadow: 0 20px 40px rgba(26, 122, 74, 0.35);
+            }
+            .coverflow-card.is-active::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                border: 2.5px solid rgba(26, 122, 74, 0.5);
+                border-radius: 16px;
+                pointer-events: none;
+            }
+            .coverflow-card .card-reflection {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 40%;
+                background: linear-gradient(to top, rgba(255,255,255,0.5), transparent);
+                pointer-events: none;
+            }
+            .coverflow-controls {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 1.5rem;
+                margin-top: 2rem;
+            }
+            .coverflow-btn {
+                width: 44px;
+                height: 44px;
+                border-radius: 50%;
+                border: 2px solid #1a7a4a;
+                background: transparent;
+                color: #1a7a4a;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background 0.2s, color 0.2s;
+            }
+            .coverflow-btn:hover {
+                background: #1a7a4a;
+                color: #fff;
+            }
+            .coverflow-dots {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .coverflow-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #c4dece;
+                border: none;
+                padding: 0;
+                cursor: pointer;
+                transition: width 0.3s, border-radius 0.3s, background 0.3s;
+            }
+            .coverflow-dot.is-active {
+                width: 24px;
+                border-radius: 4px;
+                background: #1a7a4a;
+            }
+            @media (max-width: 640px) {
+                .coverflow-stage {
+                    height: 320px;
+                }
+                .coverflow-card {
+                    width: 220px;
+                    height: 293px;
+                }
+                .coverflow-card.is-active::after {
+                    border-radius: 12px;
+                }
             }
         </style>
     </head>
@@ -72,77 +182,36 @@
                 </div>
             </div>
 
-            <!-- Photo Gallery Carousel Section -->
             @if(isset($photos) && count($photos) > 0)
-            <div class="py-8 bg-gray-50 overflow-hidden">
-                <div class="mb-8 text-center">
-                    <h2 class="text-3xl font-bold text-emerald-600 mb-2">Our Community Health Activities</h2>
+            <section class="coverflow-section" id="coverflow-section" data-count="{{ count($photos) }}">
+                <div class="coverflow-heading">
+                    <h2 class="text-emerald-600">Our Community Health Activities</h2>
                     <p class="text-gray-600">Capturing moments from our health programs and community outreach</p>
                 </div>
-                
-                <!-- Carousel Container -->
-                <div class="relative">
-                    <div class="photo-carousel-container overflow-hidden">
-                        <div class="photo-carousel-track flex gap-4" id="photoCarousel">
-                            <!-- First set of photos -->
-                            @foreach($photos as $index => $photo)
-                                @php
-                                    // Varied sizes based on index
-                                    $sizeClasses = [
-                                        ['w-32', 'h-48'],
-                                        ['w-40', 'h-56'],
-                                        ['w-48', 'h-64'],
-                                        ['w-56', 'h-64'],
-                                        ['w-36', 'h-52'],
-                                    ];
-                                    $sizeIndex = $index % count($sizeClasses);
-                                    $size = $sizeClasses[$sizeIndex];
-                                    
-                                    // Varied vertical offsets for scattered effect
-                                    $offsetClasses = ['mt-0', 'mt-4', 'mt-8', 'mt-12', 'mt-6'];
-                                    $offsetIndex = ($index * 3) % count($offsetClasses);
-                                    $offset = $offsetClasses[$offsetIndex];
-                                @endphp
-                                <div class="photo-item flex-shrink-0 {{ $offset }} {{ $size[0] }} {{ $size[1] }} group cursor-pointer">
-                                    <img 
-                                        src="{{ $photo }}" 
-                                        alt="Community Health Activity {{ $index + 1 }}"
-                                        class="w-full h-full object-cover rounded-lg shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110"
-                                        loading="lazy"
-                                    >
-                                </div>
-                            @endforeach
-                            
-                            <!-- Duplicate set for seamless infinite loop -->
-                            @foreach($photos as $index => $photo)
-                                @php
-                                    $sizeClasses = [
-                                        ['w-32', 'h-48'],
-                                        ['w-40', 'h-56'],
-                                        ['w-48', 'h-64'],
-                                        ['w-56', 'h-64'],
-                                        ['w-36', 'h-52'],
-                                    ];
-                                    $sizeIndex = $index % count($sizeClasses);
-                                    $size = $sizeClasses[$sizeIndex];
-                                    
-                                    $offsetClasses = ['mt-0', 'mt-4', 'mt-8', 'mt-12', 'mt-6'];
-                                    $offsetIndex = ($index * 3) % count($offsetClasses);
-                                    $offset = $offsetClasses[$offsetIndex];
-                                @endphp
-                                <div class="photo-item flex-shrink-0 {{ $offset }} {{ $size[0] }} {{ $size[1] }} group cursor-pointer">
-                                    <img 
-                                        src="{{ $photo }}" 
-                                        alt="Community Health Activity {{ $index + 1 }}"
-                                        class="w-full h-full object-cover rounded-lg shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110"
-                                        loading="lazy"
-                                    >
-                                </div>
-                            @endforeach
+                <div class="coverflow-stage">
+                    <div class="coverflow-track" style="transform-style: preserve-3d;">
+                        @foreach($photos as $index => $photo)
+                        <div class="coverflow-card" data-index="{{ $index }}" role="button" tabindex="0">
+                            <img src="{{ $photo }}" alt="Community Health Activity {{ $index + 1 }}" loading="lazy">
+                            <div class="card-reflection"></div>
                         </div>
+                        @endforeach
                     </div>
                 </div>
-            </div>
+                <div class="coverflow-controls">
+                    <button type="button" class="coverflow-btn coverflow-btn-prev" aria-label="Previous">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <div class="coverflow-dots">
+                        @foreach($photos as $index => $photo)
+                        <button type="button" class="coverflow-dot" data-index="{{ $index }}" aria-label="Go to slide {{ $index + 1 }}"></button>
+                        @endforeach
+                    </div>
+                    <button type="button" class="coverflow-btn coverflow-btn-next" aria-label="Next">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+            </section>
             @endif
 
             <!-- Features Section -->
@@ -264,73 +333,82 @@
             </div>
         </footer>
     </div>
-    @livewireScripts
-    @stack('scripts')
-    
     @if(isset($photos) && count($photos) > 0)
     <script>
-        // Photo Carousel Infinite Scroll Animation
-        document.addEventListener('DOMContentLoaded', function() {
-            const carousel = document.getElementById('photoCarousel');
-            if (!carousel) return;
+    (function() {
+        var section = document.getElementById('coverflow-section');
+        if (!section) return;
 
-            const carouselContainer = carousel.parentElement;
-            let animationId;
-            let scrollPosition = 0;
-            const scrollSpeed = 0.5; // pixels per frame
-            let isPaused = false;
+        var track = section.querySelector('.coverflow-track');
+        var cards = section.querySelectorAll('.coverflow-card');
+        var dots = section.querySelectorAll('.coverflow-dot');
+        var btnPrev = section.querySelector('.coverflow-btn-prev');
+        var btnNext = section.querySelector('.coverflow-btn-next');
+        var count = cards.length;
+        var active = Math.min(2, count - 1);
 
-            // Calculate the width of one set of photos
-            const firstSetWidth = carousel.children.length > 0 
-                ? Array.from(carousel.children).slice(0, carousel.children.length / 2)
-                    .reduce((sum, child) => sum + child.offsetWidth + 16, 0) // 16px for gap-4
-                : carousel.scrollWidth / 2;
-
-            function animate() {
-                if (!isPaused) {
-                    scrollPosition += scrollSpeed;
-                    
-                    // Reset position when we've scrolled one full set width
-                    if (scrollPosition >= firstSetWidth) {
-                        scrollPosition = 0;
-                    }
-                    
-                    carousel.style.transform = `translateX(-${scrollPosition}px)`;
-                }
-                
-                animationId = requestAnimationFrame(animate);
+        function getStyle(index) {
+            var offset = index - active;
+            var absOffset = Math.abs(offset);
+            if (absOffset > 2) {
+                return { display: 'none' };
             }
+            var translateZ = [0, -140, -260][absOffset] + 'px';
+            var scale = [1, 0.82, 0.65][absOffset];
+            var opacity = [1, 0.75, 0.45][absOffset];
+            var zIndex = [10, 5, 1][absOffset];
+            var tx = offset * 280;
+            return {
+                display: 'block',
+                transform: 'translate(-50%, -50%) translateX(' + tx + 'px) translateZ(' + translateZ + ') rotateY(' + (offset * -28) + 'deg) scale(' + scale + ')',
+                opacity: opacity,
+                zIndex: zIndex
+            };
+        }
 
-            // Pause on hover
-            carouselContainer.addEventListener('mouseenter', () => {
-                isPaused = true;
-            });
+        function applyStyles() {
+            for (var i = 0; i < cards.length; i++) {
+                var style = getStyle(i);
+                for (var prop in style) {
+                    cards[i].style[prop] = style[prop];
+                }
+                cards[i].classList.toggle('is-active', i === active);
+            }
+            for (var j = 0; j < dots.length; j++) {
+                dots[j].classList.toggle('is-active', j === active);
+            }
+        }
 
-            carouselContainer.addEventListener('mouseleave', () => {
-                isPaused = false;
-            });
+        function goTo(index) {
+            active = (index + count) % count;
+            applyStyles();
+        }
 
-            // Start animation
-            animate();
+        function goNext() {
+            goTo(active + 1);
+        }
 
-            // Handle window resize
-            let resizeTimeout;
-            window.addEventListener('resize', () => {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(() => {
-                    // Recalculate first set width on resize
-                    const newFirstSetWidth = carousel.children.length > 0 
-                        ? Array.from(carousel.children).slice(0, carousel.children.length / 2)
-                            .reduce((sum, child) => sum + child.offsetWidth + 16, 0)
-                        : carousel.scrollWidth / 2;
-                    
-                    if (scrollPosition >= newFirstSetWidth) {
-                        scrollPosition = 0;
-                    }
-                }, 250);
-            });
+        function goPrev() {
+            goTo(active - 1);
+        }
+
+        applyStyles();
+
+        btnPrev.addEventListener('click', goPrev);
+        btnNext.addEventListener('click', goNext);
+
+        cards.forEach(function(card, i) {
+            card.addEventListener('click', function() { goTo(i); });
         });
+        dots.forEach(function(dot, i) {
+            dot.addEventListener('click', function() { goTo(i); });
+        });
+
+        setInterval(goNext, 4500);
+    })();
     </script>
     @endif
+    @livewireScripts
+    @stack('scripts')
 </body>
 </html>
