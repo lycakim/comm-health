@@ -970,13 +970,6 @@ class ReferralResource extends Resource
                     ->searchable()
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'accepted' => 'Accepted',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
-                    ]),
                 Tables\Filters\SelectFilter::make('barangay_id')
                     ->relationship('patient.barangay', 'name')
                     ->label('Barangay')
@@ -984,9 +977,10 @@ class ReferralResource extends Resource
                     ->preload(),
                 Tables\Filters\Filter::make('date')
                     ->form([
-                        Forms\Components\DatePicker::make('created_from'),
-                        Forms\Components\DatePicker::make('created_until'),
+                        Forms\Components\DatePicker::make('created_from')->columnSpan(1),
+                        Forms\Components\DatePicker::make('created_until')->columnSpan(1),
                     ])
+                    ->columns(2)
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
@@ -1000,7 +994,7 @@ class ReferralResource extends Resource
                     }),
             ])
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent)
-            ->filtersFormColumns(4)
+            ->filtersFormColumns(2)
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
