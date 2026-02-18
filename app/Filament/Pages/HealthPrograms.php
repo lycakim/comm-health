@@ -6,6 +6,8 @@ use Carbon\Carbon;
 use App\Models\User;
 use App\Enums\RoleEnum;
 use App\Models\Program;
+use App\Exports\HealthProgramsExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Filament\Pages\Page;
 use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
@@ -86,10 +88,10 @@ class HealthPrograms extends Page implements HasTable
                         Select::make('format')
                             ->label('Export Format')
                             ->options([
-                                'csv' => 'CSV (Spreadsheet)',
+                                'xlsx' => 'Excel (XLSX)',
                                 'pdf' => 'PDF (Document)',
                             ])
-                            ->default('csv')
+                            ->default('xlsx')
                             ->required()
                     ])
                     ->action(function ($data) {
@@ -107,6 +109,17 @@ class HealthPrograms extends Page implements HasTable
                                 fn () => print($pdf->output()),
                                 $filename,
                                 ['Content-Type' => 'application/pdf']
+                            );
+                        }
+
+                        // Handle XLSX export
+                        if ($data['format'] === 'xlsx') {
+                            $user = Auth::user();
+                            $user->load('barangay');
+                            return Excel::download(
+                                new HealthProgramsExport($programs, $title, $barangay, $user->getPreparedByLabelForExport()),
+                                'health-programs_' . date('Y-m-d_His') . '.xlsx',
+                                \Maatwebsite\Excel\Excel::XLSX
                             );
                         }
 

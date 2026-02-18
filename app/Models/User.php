@@ -105,6 +105,29 @@ class User extends Authenticatable implements CanLoginDirectly
         return $this->role === RoleEnum::MIDWIFE;
     }
 
+    /**
+     * Label for "Prepared By" in XLSX exports. BHW/Midwife use their assigned barangay;
+     * MHO and Admin have no barangay.
+     */
+    public function getPreparedByLabelForExport(): string
+    {
+        if ($this->isBHW()) {
+            $barangay = $this->barangay;
+            return $barangay ? 'BHW - ' . $barangay->name : 'BHW';
+        }
+        if ($this->isMidwife()) {
+            $barangay = $this->barangay;
+            return $barangay ? 'Midwife - ' . $barangay->name : 'Midwife';
+        }
+        if ($this->isMHO()) {
+            return 'MHO - Municipal Health Office';
+        }
+        if ($this->isAdmin()) {
+            return 'Admin';
+        }
+        return $this->name ?? 'Prepared By';
+    }
+
     public function sentMessages()
     {
         return $this->hasMany(Message::class, 'sender_id');

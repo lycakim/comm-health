@@ -14,8 +14,10 @@ use Filament\Infolists\Infolist;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
+use App\Exports\GenericReportExport;
 use App\Services\PDFGenerationService;
 use Filament\Resources\Components\Tab;
+use Maatwebsite\Excel\Facades\Excel;
 use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\Grid;
@@ -236,7 +238,11 @@ class Reports extends Page implements HasTable
                         }
                         
                         $filePath = Storage::disk('public')->path($record->file_path);
-                        $mimeType = $record->format === 'pdf' ? 'application/pdf' : 'text/csv';
+                        $mimeType = match ($record->format) {
+                            'pdf' => 'application/pdf',
+                            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            default => 'text/csv',
+                        };
                         
                         return response()->download($filePath, $record->file_name, [
                             'Content-Type' => $mimeType,
@@ -406,10 +412,10 @@ class Reports extends Page implements HasTable
                         Select::make('format')
                             ->label('Export Format')
                             ->options([
-                                'csv' => 'CSV (Spreadsheet)',
+                                'xlsx' => 'Excel (XLSX)',
                                 'pdf' => 'PDF (Document)',
                             ])
-                            ->default('csv')
+                            ->default('xlsx')
                             ->required()
                     ])
                     ->action(function ($data, $livewire) {
@@ -756,6 +762,19 @@ class Reports extends Page implements HasTable
             if ($format === 'pdf') {
                 $pdf = $pdfService->generateReportDataPdf($data, $normalizedType, $barangay);
                 $fileContent = $pdf->output();
+            } elseif ($format === 'xlsx') {
+                // Handle XLSX export (not supported for family-profile-consolidation)
+                if ($normalizedType === 'family-profile-consolidation') {
+                    Notification::make()
+                        ->title('Format Not Supported')
+                        ->body('Family Profile Consolidation report is only available in PDF format.')
+                        ->warning()
+                        ->send();
+                    return;
+                }
+                $user->load('barangay');
+                $export = new GenericReportExport($data['headers'], $data['rows'], $reportTitle, $barangay, $user->getPreparedByLabelForExport());
+                $fileContent = Excel::raw($export, \Maatwebsite\Excel\Excel::XLSX);
             } else {
                 // Handle CSV export (not supported for family-profile-consolidation)
                 if ($normalizedType === 'family-profile-consolidation') {
@@ -828,16 +847,25 @@ class Reports extends Page implements HasTable
                     $filename,
                     ['Content-Type' => 'application/pdf']
                 );
-            } else {
+            }
+            if ($format === 'xlsx') {
                 return Response::streamDownload(
                     fn () => print($fileContent),
                     $filename,
                     [
-                        'Content-Type' => 'text/csv',
+                        'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                         'Content-Disposition' => "attachment; filename={$filename}",
                     ]
                 );
             }
+            return Response::streamDownload(
+                fn () => print($fileContent),
+                $filename,
+                [
+                    'Content-Type' => 'text/csv',
+                    'Content-Disposition' => "attachment; filename={$filename}",
+                ]
+            );
             
         } catch (\Exception $e) {
             Notification::make()

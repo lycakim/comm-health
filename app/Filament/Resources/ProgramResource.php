@@ -16,8 +16,10 @@ use Filament\Tables\Table;
 use App\Traits\HasUserTypeUrls;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use App\Exports\ProgramsExport;
 use App\Services\SemaphoreService;
 use Filament\Forms\Components\Grid;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
@@ -336,10 +338,10 @@ class ProgramResource extends Resource
                         Select::make('format')
                             ->label('Export Format')
                             ->options([
-                                'csv' => 'CSV (Spreadsheet)',
+                                'xlsx' => 'Excel (XLSX)',
                                 'pdf' => 'PDF (Document)',
                             ])
-                            ->default('csv')
+                            ->default('xlsx')
                             ->required()
                     ])
                     ->action(function ($data) {
@@ -358,6 +360,17 @@ class ProgramResource extends Resource
                                 fn () => print($pdf->output()),
                                 $filename,
                                 ['Content-Type' => 'application/pdf']
+                            );
+                        }
+
+                        // Handle XLSX export
+                        if ($data['format'] === 'xlsx') {
+                            $user = Auth::user();
+                            $user->load('barangay');
+                            return Excel::download(
+                                new ProgramsExport($programs, $title, $barangay, $user->getPreparedByLabelForExport()),
+                                'health-programs_' . date('Y-m-d_His') . '.xlsx',
+                                \Maatwebsite\Excel\Excel::XLSX
                             );
                         }
 

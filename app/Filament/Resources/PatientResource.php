@@ -40,8 +40,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Support\Htmlable;
 use Filament\Forms\Components\CheckboxList;
 use App\Services\PatientFormOptionsServices;
+use App\Exports\PatientsExport;
 use App\Services\PDFGenerationService;
 use App\Services\PatientImportService;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Jobs\ImportPatientsJob;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\ToggleButtons;
@@ -650,10 +652,10 @@ class PatientResource extends Resource
                         Select::make('format')
                             ->label('Export Format')
                             ->options([
-                                'csv' => 'CSV (Spreadsheet)',
+                                'xlsx' => 'Excel (XLSX)',
                                 'pdf' => 'PDF (Document)',
                             ])
-                            ->default('csv')
+                            ->default('xlsx')
                             ->required(),
                         Section::make('Filters')
                             ->schema([
@@ -779,6 +781,17 @@ class PatientResource extends Resource
                                 fn () => print($pdf->output()),
                                 $filename,
                                 ['Content-Type' => 'application/pdf']
+                            );
+                        }
+
+                        // Handle XLSX export
+                        if ($data['format'] === 'xlsx') {
+                            $user = Auth::user();
+                            $user->load('barangay');
+                            return Excel::download(
+                                new PatientsExport($patients, $title, $barangay, $user->getPreparedByLabelForExport()),
+                                $reportTitle . '_' . date('Y-m-d_His') . '.xlsx',
+                                \Maatwebsite\Excel\Excel::XLSX
                             );
                         }
 

@@ -24,8 +24,10 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Fieldset;
+use App\Exports\ReferralsExport;
 use App\Enums\EducationalAttainmentEnum;
 use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Facades\Excel;
 use Filament\Forms\Components\Actions\Action;
 use App\Filament\Resources\ReferralResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -731,10 +733,10 @@ class ReferralResource extends Resource
                         Forms\Components\Select::make('format')
                             ->label('Export Format')
                             ->options([
-                                'csv' => 'CSV (Spreadsheet)',
+                                'xlsx' => 'Excel (XLSX)',
                                 'pdf' => 'PDF (Document)',
                             ])
-                            ->default('csv')
+                            ->default('xlsx')
                             ->required(),
                         Section::make('Filters')
                             ->schema([
@@ -819,6 +821,16 @@ class ReferralResource extends Resource
                         $municipality = config('app.municipality', 'CARMEN');
                         $dateTime = now()->format('F d, Y h:i A');
                         $reportTitle = 'Referrals Report';
+
+                        if ($data['format'] === 'xlsx') {
+                            $user = Auth::user();
+                            $user->load('barangay');
+                            return Excel::download(
+                                new ReferralsExport($referrals, $reportTitle, $barangay, $user->getPreparedByLabelForExport()),
+                                'referrals_export_' . now()->format('Y-m-d_His') . '.xlsx',
+                                \Maatwebsite\Excel\Excel::XLSX
+                            );
+                        }
 
                         if ($data['format'] === 'csv') {
                             return response()->streamDownload(function () use ($referrals, $province, $municipality, $barangayName, $reportTitle, $dateTime) {

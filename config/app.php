@@ -139,4 +139,13 @@ return [
     'municipality' => env('APP_MUNICIPALITY', 'CARMEN'),
     'location' => env('APP_LOCATION', 'Your Municipality'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Export Logo
+    |--------------------------------------------------------------------------
+    | Path to the logo image shown on the left of XLSX export headers.
+    | Default: public/comm-health-icon.png (then images/comm-health-icon.png or .jpg)
+    */
+    'export_logo_path' => env('APP_EXPORT_LOGO_PATH'),
+
 ];

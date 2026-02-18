@@ -17,8 +17,10 @@ use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\Radio;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
+use App\Exports\ConsultationsExport;
 use App\Services\PDFGenerationService;
 use Filament\Forms\Components\Textarea;
+use Maatwebsite\Excel\Facades\Excel;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Section;
 use Filament\Notifications\Notification;
@@ -573,10 +575,10 @@ class ConsultationResource extends Resource
                         Select::make('format')
                             ->label('Export Format')
                             ->options([
-                                'csv' => 'CSV (Spreadsheet)',
+                                'xlsx' => 'Excel (XLSX)',
                                 'pdf' => 'PDF (Document)',
                             ])
-                            ->default('csv')
+                            ->default('xlsx')
                             ->required(),
                         Section::make('Filters')
                             ->schema([
@@ -703,6 +705,17 @@ class ConsultationResource extends Resource
                                 fn () => print($pdf->output()),
                                 $filename,
                                 ['Content-Type' => 'application/pdf']
+                            );
+                        }
+
+                        // Handle XLSX export
+                        if ($data['format'] === 'xlsx') {
+                            $user = Auth::user();
+                            $user->load('barangay');
+                            return Excel::download(
+                                new ConsultationsExport($consultations, $title, $barangay, $user->getPreparedByLabelForExport()),
+                                $reportTitle . '_' . date('Y-m-d_His') . '.xlsx',
+                                \Maatwebsite\Excel\Excel::XLSX
                             );
                         }
 
