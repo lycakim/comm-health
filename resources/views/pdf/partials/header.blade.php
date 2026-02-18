@@ -1,7 +1,13 @@
+@php
+    $logoPath = public_path('comm-health-icon.png');
+    $logoBase64 = (file_exists($logoPath)) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : '';
+@endphp
 <div class="header-banner" style="background: #2563eb; padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
         <div style="flex-shrink: 0;">
-            <img src="{{ public_path('comm-health-icon.png') }}" alt="Municipality Logo" style="height: 70px; width: auto; display: block; background: white; padding: 5px; border-radius: 50%;">
+            @if($logoBase64)
+            <img src="{{ $logoBase64 }}" alt="Municipality Logo" style="height: 70px; width: auto; display: block; background: white; padding: 5px; border-radius: 50%;">
+            @endif
         </div>
         <div style="text-align: right; color: white; flex-grow: 1;">
             <p style="margin: 0; font-size: 11px; font-weight: normal;">Republic of the Philippines</p>

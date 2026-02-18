@@ -49,9 +49,15 @@
     </style>
 </head>
 <body>
+    @php
+        $logoPath = public_path('comm-health-icon.png');
+        $logoBase64 = (file_exists($logoPath)) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : '';
+    @endphp
     <div class="header">
         <div style="margin-bottom: 10px;">
-            <img src="{{ public_path('comm-health-icon.png') }}" alt="Municipality Logo" style="height: 60px; width: auto; display: block; margin: 0 auto;">
+            @if($logoBase64)
+            <img src="{{ $logoBase64 }}" alt="Municipality Logo" style="height: 60px; width: auto; display: block; margin: 0 auto;">
+            @endif
         </div>
         <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">REPUBLIC OF THE PHILIPPINES</p>
         <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">PROVINCE OF {{ strtoupper($province ?? config('app.province', 'DAVAO DEL NORTE')) }}</p>
