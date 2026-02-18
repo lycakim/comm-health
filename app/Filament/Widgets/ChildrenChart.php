@@ -8,7 +8,7 @@ use Illuminate\Contracts\Support\Htmlable;
 
 class ChildrenChart extends ChartWidget
 {
-    protected static ?string $heading = 'Children Patient Statistics by Barangay';
+    protected static ?string $heading = 'Children Resident Statistics by Barangay';
 
     protected static string $view = 'filament.widgets.chart-with-filters';
 
@@ -114,9 +114,9 @@ class ChildrenChart extends ChartWidget
     //     if ($this->filter) {
     //         [$year, $month] = explode('-', $this->filter);
     //         $monthName = date('F', mktime(0, 0, 0, (int)$month, 1));
-    //         return "Children patient distribution across barangays for {$monthName} {$year}";
+    //         return "Children resident distribution across barangays for {$monthName} {$year}";
     //     }
-    //     return 'Children patient distribution by barangay.';
+    //     return 'Children resident distribution by barangay.';
     // }
 
     public function getDescription(): ?string
@@ -127,9 +127,9 @@ class ChildrenChart extends ChartWidget
         if ($this->filter) {
             [$year, $month] = explode('-', $this->filter);
             $monthName = date('F', mktime(0, 0, 0, (int)$month, 1));
-            return "Children patient distribution across {$locationLabel} for {$monthName} {$year}";
+            return "Children resident distribution across {$locationLabel} for {$monthName} {$year}";
         }
-        return "Children patient distribution by {$locationLabel}.";
+        return "Children resident distribution by {$locationLabel}.";
     }
 
     public function getHeading(): string|Htmlable|null
@@ -137,9 +137,9 @@ class ChildrenChart extends ChartWidget
         $user = auth()->user();
 
         if ($user->isBHW()) {
-            return 'Children Patient Statistics by Purok';
+            return 'Children Resident Statistics by Purok';
         }
 
-        return 'Children Patient Statistics by Barangay';
+        return 'Children Resident Statistics by Barangay';
     }
 }

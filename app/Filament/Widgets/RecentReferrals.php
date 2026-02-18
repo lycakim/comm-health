@@ -13,7 +13,7 @@ class RecentReferrals extends BaseWidget
 {
     protected static ?string $heading = 'Recent Referrals';
 
-    protected static ?string $subheading = 'Latest patient referrals processed';
+    protected static ?string $subheading = 'Latest resident referrals processed';
 
     protected static ?int $sort = 4;
 
@@ -22,7 +22,7 @@ class RecentReferrals extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
-            ->description("Latest patient referrals requiring attention")
+            ->description("Latest resident referrals requiring attention")
             ->query(
                 Referral::with(['consultation.patient.barangay'])
                     ->latest()
@@ -30,7 +30,7 @@ class RecentReferrals extends BaseWidget
             )
             ->columns([
                 TextColumn::make('consultation.patient.first_name')
-                    ->label('Patient')
+                    ->label('Resident')
                     ->formatStateUsing(fn ($state, $record) => 
                         $record->consultation && $record->consultation->patient 
                             ? "{$record->consultation->patient->first_name} {$record->consultation->patient->last_name}" 

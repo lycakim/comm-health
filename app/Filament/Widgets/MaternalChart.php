@@ -90,9 +90,9 @@ class MaternalChart extends ChartWidget
     //     if ($this->filter) {
     //         [$year, $month] = explode('-', $this->filter);
     //         $monthName = date('F', mktime(0, 0, 0, (int)$month, 1));
-    //         return "Maternal patient distribution across barangays for {$monthName} {$year}";
+    //         return "Maternal resident distribution across barangays for {$monthName} {$year}";
     //     }
-    //     return 'Maternal patient distribution by barangay.';
+    //     return 'Maternal resident distribution by barangay.';
     // }
 
     public function getDescription(): ?string
@@ -103,9 +103,9 @@ class MaternalChart extends ChartWidget
         if ($this->filter) {
             [$year, $month] = explode('-', $this->filter);
             $monthName = date('F', mktime(0, 0, 0, (int)$month, 1));
-            return "Maternal patient distribution across {$locationLabel} for {$monthName} {$year}";
+            return "Maternal resident distribution across {$locationLabel} for {$monthName} {$year}";
         }
-        return "Maternal patient distribution by {$locationLabel}.";
+        return "Maternal resident distribution by {$locationLabel}.";
     }
 
     public function getHeading(): string|Htmlable|null
@@ -113,9 +113,9 @@ class MaternalChart extends ChartWidget
         $user = auth()->user();
 
         if ($user->isBHW()) {
-            return 'Maternal Patient Statistics by Purok';
+            return 'Maternal Resident Statistics by Purok';
         }
 
-        return 'Maternal Patient Statistics by Barangay';
+        return 'Maternal Resident Statistics by Barangay';
     }
 }

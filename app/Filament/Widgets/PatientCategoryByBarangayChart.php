@@ -9,9 +9,9 @@ use Filament\Widgets\ChartWidget;
 
 class PatientCategoryByBarangayChart extends ChartWidget
 {
-    protected static ?string $heading = 'Patients Category By Barangay';
+    protected static ?string $heading = 'Residents Category By Barangay';
 
-    protected static ?string $description = 'Distribution of patients by category';
+    protected static ?string $description = 'Distribution of residents by category';
 
     protected int | string | array $columnSpan = 'full';
 

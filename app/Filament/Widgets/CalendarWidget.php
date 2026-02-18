@@ -84,7 +84,7 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
                 ];
             });
 
-        // Fetch Consultations - BHW/Midwife: filter by patient's barangay; no barangay_id = no events
+        // Fetch Consultations - BHW/Midwife: filter by resident's barangay; no barangay_id = no events
         $consultations = Consultation::query()
             ->when(
                 in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]),
@@ -199,20 +199,20 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
     public function viewConsultationAction(): Action
     {
         return Action::make('viewConsultation')
-            ->modalHeading(fn () => 'Consultation Details')
+            ->modalHeading(fn () => 'Resident Consultation Details')
             ->infolist(fn (Infolist $infolist) => $infolist
                 ->record($this->selectedConsultation)
                 ->schema([
                     Section::make()
                         ->schema([
                             TextEntry::make('patient.full_name')
-                                ->label('Patient Name')
+                                ->label('Resident Name')
                                 ->formatStateUsing(fn ($record) => 
                                     ($record->patient->first_name ?? '') . ' ' . 
                                     ($record->patient->last_name ?? '')
                                 ),
                             TextEntry::make('date')
-                                ->label('Consultation Date')
+                                ->label('Resident Consultation Date')
                                 ->date('M d, Y'),
                             TextEntry::make('category.name')
                                 ->label('Category')

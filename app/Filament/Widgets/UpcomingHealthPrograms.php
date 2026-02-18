@@ -49,7 +49,12 @@ class UpcomingHealthPrograms extends BaseWidget
                     ->color('gray')
                     ->outlined()
                     ->label('View All Programs')
-                    // ->url(fn (Program) => route('programs.view', $record))
+                    ->url(function () {
+                        $role = Auth::user()->role;
+                        return in_array($role, [RoleEnum::ADMIN, RoleEnum::MHO])
+                            ? '/commhealth/programs'
+                            : '/commhealth/health-programs';
+                    })
             ])
             ->columns([
                 Tables\Columns\Layout\Stack::make([

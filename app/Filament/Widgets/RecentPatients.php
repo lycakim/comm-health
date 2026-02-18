@@ -13,14 +13,14 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class RecentPatients extends BaseWidget
 {
-    protected static ?string $heading = 'Recent Patients';
+    protected static ?string $heading = 'Recent Residents';
 
-    protected static ?string $subheading = 'Latest patients added to the system';
+    protected static ?string $subheading = 'Latest residents added to the system';
     
     public function table(Table $table): Table
     {
         return $table
-            ->description("Patients with recent consultations or upcoming appointments")
+            ->description("Residents with recent consultations or upcoming appointments")
             ->query(
                 Patient::latest()
                     ->when(
@@ -39,7 +39,7 @@ class RecentPatients extends BaseWidget
             )
             ->columns([
                 Tables\Columns\TextColumn::make('first_name')
-                    ->label('Patient')
+                    ->label('Resident')
                     ->formatStateUsing(fn ($state, $record) => 
                         $record->first_name . ' ' . $record->last_name
                             ? "{$record->first_name} {$record->last_name}" 
@@ -78,7 +78,13 @@ class RecentPatients extends BaseWidget
                 Tables\Actions\Action::make('view')
                     ->color('gray')
                     ->outlined()
-                    ->label('View Patient')
+                    ->label('View Resident')
+                    ->url(function () {
+                        $role = Auth::user()->role;
+                        return in_array($role, [RoleEnum::ADMIN, RoleEnum::MHO])
+                            ? '/commhealth/residents'
+                            : '/commhealth/residents';
+                    })
             ])
             ->paginated(false);
     }

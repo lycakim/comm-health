@@ -8,7 +8,7 @@ use App\Services\SeniorCitizenChartService;
 
 class SeniorCitizenChart extends ChartWidget
 {
-    protected static ?string $heading = 'Senior Citizen Patient Statistics by Barangay';
+    protected static ?string $heading = 'Senior Citizen Resident Statistics by Barangay';
 
     protected static string $view = 'filament.widgets.chart-with-filters';
 
@@ -114,9 +114,9 @@ class SeniorCitizenChart extends ChartWidget
         if ($this->filter) {
             [$year, $month] = explode('-', $this->filter);
             $monthName = date('F', mktime(0, 0, 0, (int)$month, 1));
-            return "Senior citizen patient distribution across barangays for {$monthName} {$year}";
+            return "Senior citizen resident distribution across barangays for {$monthName} {$year}";
         }
-        return 'Senior citizen patient distribution by barangay.';
+        return 'Senior citizen resident distribution by barangay.';
     }
 
     public function getHeading(): string|Htmlable|null
@@ -124,9 +124,9 @@ class SeniorCitizenChart extends ChartWidget
         $user = auth()->user();
 
         if ($user->isBHW()) {
-            return 'Senior Citizen Patient Statistics by Purok';
+            return 'Senior Citizen Resident Statistics by Purok';
         }
 
-        return 'Senior Citizen Patient Statistics by Barangay';
+        return 'Senior Citizen Resident Statistics by Barangay';
     }
 }

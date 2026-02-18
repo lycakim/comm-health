@@ -8,9 +8,9 @@ use Filament\Widgets\ChartWidget;
 
 class PatientCategoryChart extends ChartWidget
 {
-    protected static ?string $heading = 'Patients Category Preview';
+    protected static ?string $heading = 'Residents Category Preview';
 
-    protected static ?string $description = 'Distribution of patients by category';
+    protected static ?string $description = 'Distribution of residents by category';
 
     protected static ?int $sort = 4;
 

@@ -71,7 +71,7 @@ class PatientChart extends ChartWidget
     public function getGenderFilters(): array
     {
         return [
-            'all' => '👥 All Patients',
+            'all' => '👥 All Residents',
             'male' => '👨 Male Only',
             'female' => '👩 Female Only',
             'children' => '👶 Children (0-17)',
@@ -123,9 +123,9 @@ class PatientChart extends ChartWidget
         if ($this->filter) {
             [$year, $month] = explode('-', $this->filter);
             $monthName = date('F', mktime(0, 0, 0, (int)$month, 1));
-            return "Patient distribution across {$locationLabel} for {$monthName} {$year}";
+            return "Resident distribution across {$locationLabel} for {$monthName} {$year}";
         }
-        return "Patient distribution by {$locationLabel}.";
+        return "Resident distribution by {$locationLabel}.";
     }
 
     public function getHeading(): string|Htmlable|null
@@ -133,9 +133,9 @@ class PatientChart extends ChartWidget
         $user = auth()->user();
 
         if ($user->isBHW()) {
-            return 'Patient Statistics by Purok';
+            return 'Resident Statistics by Purok';
         }
 
-        return 'Patient Statistics by Barangay';
+        return 'Resident Statistics by Barangay';
     }
 }

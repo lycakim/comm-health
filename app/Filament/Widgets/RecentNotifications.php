@@ -8,6 +8,7 @@ use App\Models\Announcement;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\RoleEnum;
 use App\Filament\Resources\AnnouncementResource;
 
 class RecentNotifications extends BaseWidget
@@ -37,9 +38,13 @@ class RecentNotifications extends BaseWidget
                     ->label('View All')
                     ->icon('heroicon-o-eye')
                     ->color('gray')
-                    ->action(function () {
-                        return AnnouncementResource::getUrl('index');
-                    }),
+                    ->url(function () {
+                        $role = Auth::user()->role;
+                        return in_array($role, [RoleEnum::ADMIN, RoleEnum::MHO])
+                            ? '/commhealth/announcements'
+                            : '/commhealth/notifications';
+                    })
+                    ->visible(fn () => in_array(Auth::user()->role, [RoleEnum::ADMIN, RoleEnum::MHO]))
             ])
             ->query(
                 Announcement::latest()
