@@ -400,6 +400,7 @@ class PatientResource extends Resource
                                         return Auth::user()->barangay_id;
                                     })
                                     ->disabled(fn () => (bool) Auth::user()->barangay_id)
+                                    ->dehydrated(true)
                                     ->live(),
                                 Select::make('purok_id')
                                     ->label('Purok')
