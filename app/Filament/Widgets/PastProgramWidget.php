@@ -24,10 +24,20 @@ class PastProgramWidget extends BaseWidget
                     ->whereDate('program_start_date', '<', now()->startOfDay())
                     ->whereDate('program_start_date', '>=', now()->subDays(30)->startOfDay())
                     ->when(
-                        Auth::user()->role !== RoleEnum::MHO->value,
+                        Auth::user()->role === RoleEnum::MHO,
+                        fn ($query) => $query->where(function ($q) {
+                            $q->whereHas('createdByUser', fn ($sub) => $sub->whereIn('role', [RoleEnum::ADMIN, RoleEnum::MHO]))
+                                ->orWhere(function ($sub) {
+                                    $sub->whereNull('created_by')
+                                        ->whereHas('coordinatorUser', fn ($c) => $c->whereIn('role', [RoleEnum::ADMIN, RoleEnum::MHO]));
+                                })
+                                ->orWhereNull('created_by');
+                        })
+                    )
+                    ->when(
+                        in_array(Auth::user()->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]),
                         function ($query) {
-                            $barangayId = Auth::user()->barangay_id;
-                            
+                            $barangayId = Auth::user()->barangay_id ?? Auth::user()->barangays()->first()?->id;
                             if ($barangayId) {
                                 $query->where('barangay_id', $barangayId);
                             } else {

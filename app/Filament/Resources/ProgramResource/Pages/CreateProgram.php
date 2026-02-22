@@ -24,9 +24,16 @@ class CreateProgram extends CreateRecord
     
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Ensure coordinator is set to current user
-        $data['coordinator'] = Auth::id();
-        
+        $userId = Auth::id();
+        $data['coordinator'] = $userId;
+        $data['created_by'] = $userId;
+
+        // BHW/Midwife: force barangay to their assigned barangay
+        $user = Auth::user();
+        if (in_array($user->role, [\App\Enums\RoleEnum::BHW, \App\Enums\RoleEnum::MIDWIFE])) {
+            $data['barangay_id'] = $user->barangay_id ?? $user->barangays()->first()?->id;
+        }
+
         return $data;
     }
     

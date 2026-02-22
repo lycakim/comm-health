@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <title>Maternal and Child Report</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px; }
+        body { font-family: Arial, sans-serif; font-size: 14px; margin: 0; padding: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #000; padding: 6px; text-align: left; }
-        th { background-color: #f0f0f0; font-weight: bold; font-size: 9px; }
-        td { font-size: 8px; }
+        th, td { border: 1px solid #000; padding: 10px; text-align: left; }
+        th { background-color: #f0f0f0; font-weight: bold; font-size: 13px; }
+        td { font-size: 12px; }
     </style>
 </head>
 <body>

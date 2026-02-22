@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <title>Family Profile Consolidation</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px; }
+        body { font-family: Arial, sans-serif; font-size: 14px; margin: 0; padding: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #000; padding: 4px; text-align: center; font-size: 9px; }
+        th, td { border: 1px solid #000; padding: 8px; text-align: center; font-size: 13px; }
         th { background-color: #f0f0f0; font-weight: bold; }
         .summary-section { display: flex; margin-bottom: 20px; }
         .summary-col { flex: 1; padding: 0 15px; }
@@ -15,7 +15,7 @@
         .summary-value { text-align: right; }
         .age-table-wrapper { display: flex; gap: 20px; margin-top: 15px; }
         .age-table { flex: 1; }
-        .age-section-title { font-weight: bold; text-align: center; margin-bottom: 10px; font-size: 11px; }
+        .age-section-title { font-weight: bold; text-align: center; margin-bottom: 10px; font-size: 15px; }
     </style>
 </head>
 <body>

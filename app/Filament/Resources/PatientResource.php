@@ -247,14 +247,31 @@ class PatientResource extends Resource
                                     ->columnSpanFull(),
                                 Select::make('relationship_to_head_of_family')
                                     ->label('Relationship to the Head of the Family')
-                                    // ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'other' ? 2 : 'full')
-                                    ->columnSpan(2)
-                                    ->default('Self')
-                                    ->options(fn () => collect(PatientFormOptionsServices::getPatientRelationships())->sort()->toArray())
                                     ->live()
+                                    ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'Other' ? 2 : 2)
+                                    ->default('Head')
+                                    ->options(fn () => collect(PatientFormOptionsServices::getPatientRelationships())->sort()->toArray())
                                     ->preload()
                                     ->searchable()
-                                    ->required(fn (Get $get) => $get('relationship_to_head_of_family') !== 'other'),
+                                    ->required(fn (Get $get) => $get('relationship_to_head_of_family') !== 'Other'),
+                                TextInput::make('relationship_to_head_of_family_other')
+                                    ->label('Please specify relationship')
+                                    ->columnSpan(2)
+                                    ->required(fn (Get $get) => $get('relationship_to_head_of_family') === 'Other')
+                                    ->disabled(fn (Get $get) => $get('relationship_to_head_of_family') !== 'Other'),
+                                Select::make('household_head_id')
+                                    ->label('Household Head')
+                                    ->relationship(
+                                        'householdHead',
+                                        'first_name',
+                                        fn ($query, $livewire) => $livewire->getRecord()
+                                            ? $query->where('id', '!=', $livewire->getRecord()->id)
+                                            : $query
+                                    )
+                                    ->getOptionLabelFromRecordUsing(fn ($record) => ($record->last_name ?? '') . ', ' . ($record->first_name ?? '') . ($record->middle_name ? ' ' . $record->middle_name : ''))
+                                    ->searchable(['first_name', 'last_name', 'middle_name'])
+                                    ->preload()
+                                    ->columnSpan(2),
                                 Select::make('sex')
                                     ->label('Gender')
                                     ->searchable()
@@ -267,11 +284,6 @@ class PatientResource extends Resource
                                         'female' => 'Female',
                                     ])
                                     ->required(),
-                                TextInput::make('relationship_to_head_of_family_other')
-                                    ->label('Please specify relationship')
-                                    ->columnSpan(1)
-                                    ->required(fn (Get $get) => $get('relationship_to_head_of_family') === 'other')
-                                    ->visible(fn (Get $get) => $get('relationship_to_head_of_family') === 'other'),
                                 Textarea::make('place_of_birth')
                                     ->required()
                                     ->columnSpanFull(),

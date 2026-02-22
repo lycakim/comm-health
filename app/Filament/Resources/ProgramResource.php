@@ -85,52 +85,86 @@ class ProgramResource extends Resource
     // Full access to the resource (all roles that can see it)
     public static function canAccess(): bool
     {
-        return in_array(self::currentUser()->role, [
-            RoleEnum::ADMIN,
-            RoleEnum::MHO,
-        ]);
+        $user = self::currentUser();
+        if (in_array($user->role, [RoleEnum::ADMIN, RoleEnum::MHO])) {
+            return true;
+        }
+        // BHW/Midwife: must have assigned barangay
+        if (in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE])) {
+            $barangayId = $user->barangay_id ?? $user->barangays()->first()?->id;
+            return !empty($barangayId);
+        }
+        return false;
     }
 
     // Can view individual records
     public static function canView(Model $record): bool
     {
-        return in_array(self::currentUser()->role, [
-            RoleEnum::ADMIN,
-            RoleEnum::MHO,
-        ]);
+        $user = self::currentUser();
+        if ($user->isAdmin()) {
+            return true;
+        }
+        if ($user->isMHO()) {
+            // MHO cannot see BHW-created programs
+            $creator = $record->createdByUser ?? $record->coordinatorUser;
+            return $creator && in_array($creator->role, [RoleEnum::ADMIN, RoleEnum::MHO]);
+        }
+        if ($user->isBHW() || $user->isMidwife()) {
+            $barangayId = $user->barangay_id ?? $user->barangays()->first()?->id;
+            return $barangayId && $record->barangay_id == $barangayId;
+        }
+        return false;
     }
 
-    // Can edit (excludes BHW)
+    // Can edit: Admin/MHO all; BHW only programs they created
     public static function canEdit(Model $record): bool
     {
-        return in_array(self::currentUser()->role, [
-            RoleEnum::ADMIN,
-            RoleEnum::MHO,
-            RoleEnum::MIDWIFE
-        ]);
+        $user = self::currentUser();
+        if ($user->isAdmin() || $user->isMHO()) {
+            return true;
+        }
+        if ($user->isMidwife()) {
+            return true;
+        }
+        if ($user->isBHW()) {
+            $creatorId = $record->created_by ?? $record->coordinator;
+            return $creatorId && (int) $creatorId === (int) $user->id;
+        }
+        return false;
     }
 
-    // Can delete (excludes BHW & MIDWIFE)
+    // Can delete: Admin/MHO all; BHW only programs they created
     public static function canDelete(Model $record): bool
     {
-        return in_array(self::currentUser()->role, [
-            RoleEnum::ADMIN,
-            RoleEnum::MHO
-        ]);
+        $user = self::currentUser();
+        if ($user->isAdmin() || $user->isMHO()) {
+            return true;
+        }
+        if ($user->isBHW() || $user->isMidwife()) {
+            $creatorId = $record->created_by ?? $record->coordinator;
+            return $creatorId && (int) $creatorId === (int) $user->id;
+        }
+        return false;
     }
 
-    // Can create (excludes BHW & MIDWIFE)
+    // Can create: Admin, MHO, BHW (with barangay)
     public static function canCreate(): bool
     {
-        return in_array(self::currentUser()->role, [
-            RoleEnum::ADMIN,
-            RoleEnum::MHO
-        ]);
+        $user = self::currentUser();
+        if (in_array($user->role, [RoleEnum::ADMIN, RoleEnum::MHO])) {
+            return true;
+        }
+        if (in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE])) {
+            $barangayId = $user->barangay_id ?? $user->barangays()->first()?->id;
+            return !empty($barangayId);
+        }
+        return false;
     }
 
     public static function form(Form $form): Form
     {
-        $isReadOnly = self::currentUser()->role === RoleEnum::BHW;
+        $user = self::currentUser();
+        $isBHWOrMidwife = in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]);
         
         return $form
             ->schema([
@@ -138,50 +172,50 @@ class ProgramResource extends Resource
                     ->schema([
                         TextInput::make('name')
                             ->label('Program Name')
-                            ->required()
-                            ->disabled($isReadOnly),
+                            ->required(),
                         Select::make('category_id')
                             ->label('Category')
                             ->searchable()
                             ->options(Category::query()->get()->pluck('name', 'id')->toArray())
-                            ->required()
-                            ->disabled($isReadOnly),
+                            ->required(),
                         Select::make('barangay_id')
                             ->label('Barangay')
                             ->columnSpanFull()
                             ->searchable()
                             ->options(Barangay::query()->get()->pluck('name', 'id')->toArray())
                             ->required()
-                            ->disabled($isReadOnly),
+                            ->disabled($isBHWOrMidwife)
+                            ->dehydrated()
+                            ->default(fn () => $isBHWOrMidwife ? ($user->barangay_id ?? $user->barangays()->first()?->id) : null)
+                            ->afterStateHydrated(function (Select $component) use ($isBHWOrMidwife, $user) {
+                                if ($isBHWOrMidwife && empty($component->getState())) {
+                                    $component->state($user->barangay_id ?? $user->barangays()->first()?->id);
+                                }
+                            }),
                         Textarea::make('description')
-                            ->columnSpanFull()
-                            ->disabled($isReadOnly),
+                            ->columnSpanFull(),
                         DatePicker::make('program_start_date')
                             ->required()
                             ->native(false)
                             ->displayFormat('M d, Y')
                             ->minDate(now())
-                            ->firstDayOfWeek(7)
-                            ->disabled($isReadOnly),
+                            ->firstDayOfWeek(7),
                         DatePicker::make('program_end_date')
                             ->required()
                             ->native(false)
                             ->displayFormat('M d, Y')
                             ->minDate(now())
-                            ->firstDayOfWeek(7)
-                            ->disabled($isReadOnly),
+                            ->firstDayOfWeek(7),
                         TimePicker::make('program_start_time')
-                            ->required()
-                            ->disabled($isReadOnly),
+                            ->required(),
                         TimePicker::make('program_end_time')
-                            ->required()
-                            ->disabled($isReadOnly),
+                            ->required(),
                         
                         Select::make('coordinator')
                             ->label('Coordinator')
                             ->columnSpanFull()
                             ->options(function () {
-                                return User::where('role', RoleEnum::MHO)->pluck('name', 'id')->toArray();
+                                return User::whereIn('role', [RoleEnum::MHO, RoleEnum::ADMIN])->pluck('name', 'id')->toArray();
                             })
                             ->default(fn () => Auth::id())
                             ->afterStateHydrated(function (Select $component, $state) {
@@ -191,7 +225,8 @@ class ProgramResource extends Resource
                             })
                             ->disabled()
                             ->dehydrated()
-                            ->required(),
+                            ->required(fn () => !$isBHWOrMidwife)
+                            ->visible(!$isBHWOrMidwife),
                     ])
                     ->columns(2),
                 Section::make('Reporting Fields')
@@ -273,11 +308,12 @@ class ProgramResource extends Resource
                             ->reorderable()
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => $state['label'] ?? $state['name'] ?? null)
-                            ->deleteAction(
+                                ->deleteAction(
                                 fn (Action $action) => $action->requiresConfirmation()
                             ),
                     ])
-                    ->collapsible(),
+                    ->collapsible()
+                    ->visible(!$isBHWOrMidwife),
             ]);
     }
 
@@ -317,7 +353,9 @@ class ProgramResource extends Resource
 
     public static function table(Table $table): Table
     {
-        $isBHWOrMidwife = in_array(self::currentUser()->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]);
+        $user = self::currentUser();
+        $isBHWOrMidwife = in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]);
+        $isAdmin = $user->isAdmin();
         
         return $table
             ->columns([
@@ -328,6 +366,10 @@ class ProgramResource extends Resource
                 TextColumn::make('category.name')
                     ->label('Category')
                     ->searchable(),
+                TextColumn::make('createdByUser.name')
+                    ->label('Created By')
+                    ->formatStateUsing(fn ($state, $record) => $record->createdByUser?->name ?? $record->coordinatorUser?->name ?? 'N/A')
+                    ->visible($isAdmin),
             ])
             ->headerActions([
                 Tables\Actions\Action::make('export_csv')
@@ -421,21 +463,17 @@ class ProgramResource extends Resource
                 //
             ])
             ->actions([
-                // Show View action for BHW and Midwife
                 Tables\Actions\ViewAction::make()
-                    ->visible(fn () => $isBHWOrMidwife),
-                // Show Edit action for those who can edit
-                Tables\Actions\EditAction::make()
-                    ->visible(fn () => !$isBHWOrMidwife),
+                    ->visible(fn () => Auth::user()->isMHO() || Auth::user()->isAdmin()),
+                Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                // button for sending sms to all patients in the barangay
                 Tables\Actions\Action::make('send_sms')
-                    ->label('Send SMSsss')
+                    ->label('Send SMS')
                     ->modalHeading('Send SMS Notification')
                     ->modalSubmitActionLabel('Confirm & Send SMS')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('success')
-                    ->visible(fn () => Auth::user()->isBHW())
+                    ->visible(fn () => Auth::user()->isMHO() || Auth::user()->isAdmin())
 
                     ->form(function ($record) {
                         $users = \App\Models\Patient::where('barangay_id', $record->barangay_id)->get();
@@ -587,7 +625,28 @@ class ProgramResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->modifyQueryUsing(function (Builder $query) {
-                $query->latest();
+                $user = Auth::user();
+                $query->with(['createdByUser', 'coordinatorUser']);
+
+                if ($user->isAdmin()) {
+                    return $query->latest();
+                }
+                if ($user->isMHO()) {
+                    // MHO: only programs created by Admin or MHO (exclude BHW/Midwife-created)
+                    return $query->where(function ($q) {
+                        $q->whereHas('createdByUser', fn ($sub) => $sub->whereIn('role', [RoleEnum::ADMIN, RoleEnum::MHO]))
+                            ->orWhere(function ($sub) {
+                                $sub->whereNull('created_by')
+                                    ->whereHas('coordinatorUser', fn ($c) => $c->whereIn('role', [RoleEnum::ADMIN, RoleEnum::MHO]));
+                            })
+                            ->orWhereNull('created_by');
+                    })->latest();
+                }
+                if ($user->isBHW() || $user->isMidwife()) {
+                    $barangayId = $user->barangay_id ?? $user->barangays()->first()?->id;
+                    return $query->where('barangay_id', $barangayId)->latest();
+                }
+                return $query->latest();
             });
     }
 

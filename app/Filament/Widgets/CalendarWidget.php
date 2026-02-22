@@ -35,14 +35,26 @@ class CalendarWidget extends FullCalendarWidget implements HasActions
     {
         $user = Auth::user();
         
-        // Fetch Programs - BHW/Midwife: filter by barangay; no barangay_id = no events
+        // Fetch Programs - Admin: all; MHO: exclude BHW-created; BHW/Midwife: filter by barangay
         $programs = Program::query()
-            ->with(['category', 'barangay', 'coordinatorUser'])
+            ->with(['category', 'barangay', 'coordinatorUser', 'createdByUser'])
+            ->when(
+                $user->role === RoleEnum::MHO,
+                fn ($query) => $query->where(function ($q) {
+                    $q->whereHas('createdByUser', fn ($sub) => $sub->whereIn('role', [RoleEnum::ADMIN, RoleEnum::MHO]))
+                        ->orWhere(function ($sub) {
+                            $sub->whereNull('created_by')
+                                ->whereHas('coordinatorUser', fn ($c) => $c->whereIn('role', [RoleEnum::ADMIN, RoleEnum::MHO]));
+                        })
+                        ->orWhereNull('created_by');
+                })
+            )
             ->when(
                 in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]),
                 function ($query) use ($user) {
-                    if ($user->barangay_id) {
-                        $query->where('barangay_id', $user->barangay_id);
+                    $barangayId = $user->barangay_id ?? $user->barangays()->first()?->id;
+                    if ($barangayId) {
+                        $query->where('barangay_id', $barangayId);
                     } else {
                         $query->whereRaw('1 = 0');
                     }

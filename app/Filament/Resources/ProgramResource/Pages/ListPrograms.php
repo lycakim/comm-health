@@ -15,9 +15,6 @@ class ListPrograms extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        if (Auth::user()->isBHW() || Auth::user()->isMidwife()) {
-            return [];
-        }
         return [
             Actions\CreateAction::make()
                 ->icon('heroicon-o-plus'),

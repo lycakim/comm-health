@@ -33,6 +33,8 @@ class HealthPrograms extends Page implements HasTable
 
     protected static ?string $navigationGroup = 'Programs';
 
+    protected static ?int $navigationSort = 1;
+
     public string $activeTab = 'calendar';
 
     public static function canAccess(): bool
@@ -51,8 +53,6 @@ class HealthPrograms extends Page implements HasTable
 
     public static function table(Table $table): Table
     {
-        $isBHWOrMidwife = in_array(self::currentUser()->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]);
-        
         return $table
             ->query(
                 Program::latest()
@@ -79,6 +79,12 @@ class HealthPrograms extends Page implements HasTable
                     ->searchable(),
             ])
             ->headerActions([
+                Action::make('create_program')
+                    ->label('Create Barangay Program')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('success')
+                    ->url(\App\Filament\Resources\ProgramResource::getUrl('create'))
+                    ->visible(fn () => in_array(Auth::user()->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]) && (Auth::user()->barangay_id || Auth::user()->barangays()->exists())),
                 Action::make('export_csv')
                     ->label('Export CSV')
                     ->disabled(fn() => is_null(Auth::user()->barangay_id) || Auth::user()->role === RoleEnum::MHO->value)
@@ -144,7 +150,7 @@ class HealthPrograms extends Page implements HasTable
             ])
             ->actions([
                 ViewAction::make()
-                    ->visible(fn () => $isBHWOrMidwife)
+                    ->visible(fn () => Auth::user()->isMHO() || Auth::user()->isAdmin())
                     ->modalHeading(fn ($record) => $record->name ?? 'Program Details')
                     ->infolist(fn (Infolist $infolist) => $infolist
                         ->schema([
@@ -200,7 +206,7 @@ class HealthPrograms extends Page implements HasTable
                     ->modalSubmitActionLabel('Confirm & Send SMS')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('success')
-                    ->visible(fn ($record) => Auth::user()->isBHW() && $record->program_end_date > now())
+                    ->visible(fn ($record) => (Auth::user()->isMHO() || Auth::user()->isAdmin()) && $record->program_end_date > now())
 
                     ->form(function ($record) {
                         $users = \App\Models\Patient::where('barangay_id', $record->barangay_id)->where('category_id', $record->category_id)->get();

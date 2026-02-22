@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            font-size: 10px;
+            font-size: 16px;
             margin: 0;
             padding: 20px;
         }
@@ -17,16 +17,16 @@
         }
         th, td {
             border: 1px solid #000;
-            padding: 6px;
+            padding: 12px;
             text-align: left;
         }
         th {
             background-color: #f0f0f0;
             font-weight: bold;
-            font-size: 9px;
+            font-size: 15px;
         }
         td {
-            font-size: 8px;
+            font-size: 14px;
         }
     </style>
 </head>

@@ -19,6 +19,15 @@ class EditProgram extends EditRecord
         return $this->getResource()::getUrl('index');
     }
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        if (in_array($user->role, [RoleEnum::BHW, RoleEnum::MIDWIFE])) {
+            $data['barangay_id'] = $this->getRecord()->barangay_id;
+        }
+        return $data;
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -37,6 +37,11 @@ class Program extends Model
         return $this->belongsTo(User::class, 'coordinator', 'id');
     }
 
+    public function createdByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

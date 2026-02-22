@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            font-size: 10px;
+            font-size: 14px;
             margin: 0;
             padding: 20px;
         }
@@ -16,12 +16,12 @@
         }
         .header h1 {
             margin: 0;
-            font-size: 16px;
+            font-size: 20px;
             font-weight: bold;
         }
         .header p {
             margin: 5px 0;
-            font-size: 11px;
+            font-size: 15px;
         }
         table {
             width: 100%;
@@ -30,21 +30,21 @@
         }
         th, td {
             border: 1px solid #000;
-            padding: 6px;
+            padding: 10px;
             text-align: left;
         }
         th {
             background-color: #f0f0f0;
             font-weight: bold;
-            font-size: 9px;
+            font-size: 13px;
         }
         td {
-            font-size: 8px;
+            font-size: 12px;
         }
         .footer {
             margin-top: 20px;
             text-align: right;
-            font-size: 9px;
+            font-size: 13px;
         }
     </style>
 </head>
@@ -59,14 +59,14 @@
             <img src="{{ $logoBase64 }}" alt="Municipality Logo" style="height: 60px; width: auto; display: block; margin: 0 auto;">
             @endif
         </div>
-        <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">REPUBLIC OF THE PHILIPPINES</p>
-        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">PROVINCE OF {{ strtoupper($province ?? config('app.province', 'DAVAO DEL NORTE')) }}</p>
-        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">MUNICIPAL HEALTH OFFICE</p>
-        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">MUNICIPALITY OF {{ strtoupper($municipality ?? config('app.municipality', 'CARMEN')) }}</p>
-        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">BARANGAY {{ strtoupper($barangayName ?? ($barangay ? $barangay->name : 'ALL BARANGAYS')) }}</p>
-        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">{{ strtoupper($title) }}</p>
-        <p style="font-size: 10px; margin-bottom: 5px;">&nbsp;</p>
-        <p style="font-size: 10px;">As of : {{ $dateTime ?? $date }}</p>
+        <p style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">REPUBLIC OF THE PHILIPPINES</p>
+        <p style="font-size: 15px; font-weight: bold; margin-bottom: 5px;">PROVINCE OF {{ strtoupper($province ?? config('app.province', 'DAVAO DEL NORTE')) }}</p>
+        <p style="font-size: 15px; font-weight: bold; margin-bottom: 5px;">MUNICIPAL HEALTH OFFICE</p>
+        <p style="font-size: 15px; font-weight: bold; margin-bottom: 5px;">MUNICIPALITY OF {{ strtoupper($municipality ?? config('app.municipality', 'CARMEN')) }}</p>
+        <p style="font-size: 15px; font-weight: bold; margin-bottom: 5px;">BARANGAY {{ strtoupper($barangayName ?? ($barangay ? $barangay->name : 'ALL BARANGAYS')) }}</p>
+        <p style="font-size: 15px; font-weight: bold; margin-bottom: 5px;">{{ strtoupper($title) }}</p>
+        <p style="font-size: 14px; margin-bottom: 5px;">&nbsp;</p>
+        <p style="font-size: 14px;">As of : {{ $dateTime ?? $date }}</p>
     </div>
 
     <table>

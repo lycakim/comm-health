@@ -66,6 +66,11 @@ class Patient extends Model
         return $this->belongsTo(User::class, 'account_user_id');
     }
 
+    public function householdHead(): BelongsTo
+    {
+        return $this->belongsTo(Patient::class, 'household_head_id');
+    }
+
     protected function fullName(): Attribute
     {
         return Attribute::make(
@@ -122,9 +127,18 @@ class Patient extends Model
             }
         });
 
+        static::created(function ($patient) {
+            if ($patient->relationship_to_head_of_family === 'Head' && empty($patient->household_head_id)) {
+                $patient->update(['household_head_id' => $patient->id]);
+            }
+        });
+
         static::updating(function ($patient) {
             if ($patient->birth_date) {
                 $patient->age = (int) Carbon::parse($patient->birth_date)->age;
+            }
+            if ($patient->relationship_to_head_of_family === 'Head' && empty($patient->household_head_id)) {
+                $patient->household_head_id = $patient->id;
             }
         });
     }
