@@ -40,7 +40,7 @@ class ListPatients extends ListRecords
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('gray')
                 ->action(function () {
-                    return PatientTemplateExport::download('resident_import_template_' . date('Y-m-d') . '.csv');
+                    return PatientTemplateExport::download('resident_import_template_' . date('Y-m-d') . '.xlsx');
                 });
 
             $actions[] = Actions\Action::make('importPatients')
@@ -49,19 +49,20 @@ class ListPatients extends ListRecords
                 ->color('info')
                 ->form([
                     FileUpload::make('files')
-                        ->label('Excel/CSV Files')
+                        ->label('Excel / CSV Files')
                         ->disk('public')
                         ->directory('imports')
                         ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'text/csv'])
                         ->multiple()
                         ->required()
-                        ->helperText('Upload one or more Excel files (.xlsx, .xls) or CSV files with patient data. Download the template for the correct format.'),
+                        ->helperText('Upload Excel (.xlsx) or CSV files. All data in the file will be imported. Download the template for the expected columns.'),
                 ])
                 ->action(function (array $data) {
                     try {
                         $files = is_array($data['files']) ? $data['files'] : [$data['files']];
                         $totalSuccess = 0;
                         $totalFailed = 0;
+                        $totalSkipped = 0;
                         $allErrors = [];
                         
                         foreach ($files as $file) {
@@ -109,7 +110,8 @@ class ListPatients extends ListRecords
                                 $results = $import->getResults();
                                 $totalSuccess += $results['success'];
                                 $totalFailed += $results['failed'];
-                                
+                                $totalSkipped += $results['skipped'] ?? 0;
+
                                 if (!empty($results['errors'])) {
                                     $allErrors = array_merge($allErrors, $results['errors']);
                                 }
@@ -127,6 +129,9 @@ class ListPatients extends ListRecords
                         }
                         
                         $message = "Successfully imported {$totalSuccess} resident(s) from " . count($files) . " file(s).";
+                        if ($totalSkipped > 0) {
+                            $message .= " {$totalSkipped} skipped (already exist).";
+                        }
                         if ($totalFailed > 0) {
                             $message .= " {$totalFailed} failed.";
                         }

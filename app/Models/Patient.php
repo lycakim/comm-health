@@ -39,6 +39,11 @@ class Patient extends Model
         'drainage_disposals' => 'array',
         'livestock' => 'array',
         'bmi' => 'decimal:2',
+        'indigent' => 'boolean',
+        'pwd' => 'boolean',
+        'renter' => 'boolean',
+        'solo_parent' => 'boolean',
+        'senior_citizen' => 'boolean',
     ];
 
     public function barangay(): BelongsTo
@@ -128,7 +133,8 @@ class Patient extends Model
         });
 
         static::created(function ($patient) {
-            if ($patient->relationship_to_head_of_family === 'Head' && empty($patient->household_head_id)) {
+            $isHead = in_array($patient->relationship_to_head_of_family, ['Head', 'Household-Head'], true);
+            if ($isHead && empty($patient->household_head_id)) {
                 $patient->update(['household_head_id' => $patient->id]);
             }
         });
@@ -137,7 +143,8 @@ class Patient extends Model
             if ($patient->birth_date) {
                 $patient->age = (int) Carbon::parse($patient->birth_date)->age;
             }
-            if ($patient->relationship_to_head_of_family === 'Head' && empty($patient->household_head_id)) {
+            $isHead = in_array($patient->relationship_to_head_of_family, ['Head', 'Household-Head'], true);
+            if ($isHead && empty($patient->household_head_id)) {
                 $patient->household_head_id = $patient->id;
             }
         });

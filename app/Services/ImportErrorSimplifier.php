@@ -10,10 +10,12 @@ class ImportErrorSimplifier
 {
     /**
      * Convert a technical error message into a simple, actionable one.
+     * Returns null if the message is not recognised — callers should log the
+     * raw message and show a generic fallback instead of silently swallowing it.
      */
     public static function simplify(string $message, ?int $row = null): string
     {
-        $msg = trim($message);
+        $msg    = trim($message);
         $prefix = $row ? "Row {$row}: " : '';
 
         // Remove "Validation failed: " prefix to parse the rest
@@ -52,7 +54,7 @@ class ImportErrorSimplifier
             return $prefix . 'Please enter Male or Female for gender.';
         }
 
-        // Name format (regex validation)
+        // Name format
         if (preg_match('/first[\s_]*name.*format|regex/i', $msg)) {
             return $prefix . 'First name: use only letters, spaces, and hyphens.';
         }
@@ -83,6 +85,9 @@ class ImportErrorSimplifier
         if (preg_match('/unsupported file|\.csv|\.xlsx/i', $msg)) {
             return 'Please use an Excel (.xlsx) or CSV file.';
         }
+        if (preg_match('/could not (read|detect).*header|detect header row/i', $msg)) {
+            return 'The file format was not recognised. Please use the download template (Excel with "Last Name", "First Name" in the header row).';
+        }
 
         // Numeric fields
         if (preg_match('/sugar[\s_]*level|height|weight.*(numeric|number)/i', $msg)) {
@@ -94,7 +99,7 @@ class ImportErrorSimplifier
             return $prefix . 'Please check the contact number. Use format: 09XXXXXXXXX.';
         }
 
-        // SQL / database errors (hide technical details)
+        // SQL / database errors (hide technical details from user)
         if (preg_match('/SQLSTATE|Integrity constraint|Duplicate entry/i', $msg)) {
             return $prefix . 'This resident may already exist. Please check your list.';
         }
@@ -104,8 +109,15 @@ class ImportErrorSimplifier
             return $prefix . 'Please check the information and fix any mistakes.';
         }
 
-        // Unknown - keep it short and helpful
-        return $prefix . 'Please check the information and try again.';
+        // ── Unknown error ──────────────────────────────────────────────────────
+        // Log the raw message so developers can see what's actually failing,
+        // then show a generic user-friendly message.
+        \Illuminate\Support\Facades\Log::warning('ImportErrorSimplifier: unrecognised error', [
+            'row'     => $row,
+            'message' => $message,
+        ]);
+
+        return $prefix . 'Please check the information and try again. (See laravel.log for details)';
     }
 
     /**
@@ -113,7 +125,7 @@ class ImportErrorSimplifier
      */
     public static function simplifyForDisplay(array $error): array
     {
-        $row = $error['row'] ?? null;
+        $row     = $error['row'] ?? null;
         $message = $error['message'] ?? 'Unknown error';
 
         return array_merge($error, [

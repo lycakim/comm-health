@@ -41,7 +41,7 @@ class IndexPatients extends ListRecords
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('gray')
                 ->action(function () {
-                    return PatientTemplateExport::download('patient_import_template_' . date('Y-m-d') . '.csv');
+                    return PatientTemplateExport::download('patient_import_template_' . date('Y-m-d') . '.xlsx');
                 });
 
             $actions[] = Actions\Action::make('importPatients')
@@ -63,6 +63,7 @@ class IndexPatients extends ListRecords
                         $files = is_array($data['files']) ? $data['files'] : [$data['files']];
                         $totalSuccess = 0;
                         $totalFailed = 0;
+                        $totalSkipped = 0;
                         $allErrors = [];
                         
                         foreach ($files as $file) {
@@ -110,7 +111,8 @@ class IndexPatients extends ListRecords
                                 $results = $import->getResults();
                                 $totalSuccess += $results['success'];
                                 $totalFailed += $results['failed'];
-                                
+                                $totalSkipped += $results['skipped'] ?? 0;
+
                                 if (!empty($results['errors'])) {
                                     $allErrors = array_merge($allErrors, $results['errors']);
                                 }
@@ -128,6 +130,9 @@ class IndexPatients extends ListRecords
                         }
                         
                         $message = "Successfully imported {$totalSuccess} resident(s) from " . count($files) . " file(s).";
+                        if ($totalSkipped > 0) {
+                            $message .= " {$totalSkipped} skipped (already exist).";
+                        }
                         if ($totalFailed > 0) {
                             $message .= " {$totalFailed} failed.";
                         }

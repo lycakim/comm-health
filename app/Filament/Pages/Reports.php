@@ -1050,7 +1050,7 @@ class Reports extends Page implements HasTable
 
         // Summary stats
         $totalPopulation = $patients->count();
-        $householdHeads = $patients->where('relationship_to_head_of_family', 'Self')->count();
+        $householdHeads = $patients->whereIn('relationship_to_head_of_family', ['Self', 'Head', 'Household-Head'])->count();
         $totalHouses = $patients->sum('no_of_house') ?: $householdHeads;
         $familyHeads = $householdHeads;
         $married = $patients->whereIn('civil_status', ['married', 'Married'])->count();

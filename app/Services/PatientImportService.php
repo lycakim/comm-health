@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\DuplicatePatientException;
 use App\Models\Patient;
 use App\Models\Category;
 use App\Models\Barangay;
@@ -69,28 +70,71 @@ class PatientImportService
         if (isset($row['contact_number']) && !empty($row['contact_number'])) {
             $row['contact_number'] = (string) $row['contact_number'];
         }
-        
-        // Setup validation rules - only required: first_name, middle_name, last_name, sex, civil_status, birth_date
+
+        // Normalize Y/N to boolean for household census flags (Excel uses Y/N)
+        foreach (['indigent', 'pwd', 'renter', 'solo_parent', 'senior_citizen'] as $flag) {
+            if (!array_key_exists($flag, $row)) {
+                continue;
+            }
+            $v = $row[$flag];
+            if (is_bool($v)) {
+                $row[$flag] = $v;
+            } else {
+                $s = strtoupper(trim((string) $v));
+                $row[$flag] = in_array($s, ['Y', 'YES', '1', 'TRUE'], true);
+            }
+        }
+
+        // Coerce numeric fields so validation never blocks saving (no restriction)
+        foreach (['sugar_level', 'height', 'weight', 'age'] as $numericKey) {
+            if (!array_key_exists($numericKey, $row)) {
+                continue;
+            }
+            $v = $row[$numericKey];
+            if ($v === null || $v === '') {
+                $row[$numericKey] = null;
+            } elseif (!is_numeric($v)) {
+                $row[$numericKey] = null;
+            } else {
+                $num = (float) $v;
+                if ($numericKey === 'age') {
+                    $row[$numericKey] = ($num >= 0 && $num <= 150) ? (int) $num : null;
+                } else {
+                    $row[$numericKey] = $v;
+                }
+            }
+        }
+
+        // No restriction: accept all fields as optional; coerce invalid values so every row can be saved.
         $validator = Validator::make($row, [
-            'first_name'            => ['required', 'regex:/^[A-Za-z\s\.\-]+$/', 'max:255'],
-            'middle_name'           => ['required', 'regex:/^[A-Za-z\s\.\-]+$/', 'max:255'],
-            'last_name'             => ['required', 'regex:/^[A-Za-z\s\.\-]+$/', 'max:255'],
-            'suffix'                => ['nullable', 'regex:/^[A-Za-z0-9\.\s]+$/', 'max:10'],
-            'birth_date'            => ['required', 'date', 'before_or_equal:today'],
-            'sex'                   => 'required|in:male,female',
-            'civil_status'          => ['required', 'string', 'regex:/^[A-Za-z\s\.\-]+$/'],
-            'contact_number'        => ['nullable', 'string'], // Accept any string format, normalize will handle it
-            'purok'                 => ['nullable', 'string', 'regex:/^[A-Za-z0-9\s\.\-]*$/'],
-            'category'              => ['nullable', 'string', 'regex:/^[A-Za-z\s\.\-]*$/'],
-            'occupation'            => ['nullable', 'string', 'regex:/^[A-Za-z\s\.\-]*$/'],
+            'first_name'            => ['nullable', 'string', 'max:255'],
+            'middle_name'           => ['nullable', 'string', 'max:255'],
+            'last_name'             => ['nullable', 'string', 'max:255'],
+            'suffix'                => ['nullable', 'string', 'max:10'],
+            'birth_date'            => ['nullable'], // any value accepted; parsed or defaulted below
+            'age'                   => ['nullable', 'integer', 'min:0', 'max:150'],
+            'sex'                   => ['nullable', 'string', 'max:255'], // any value; coerced to male/female below
+            'civil_status'          => ['nullable', 'string', 'max:255'],
+            'contact_number'        => ['nullable', 'string'],
+            'purok'                 => ['nullable', 'string'],
+            'relationship_to_hh'    => ['nullable', 'string'],
+            'category'              => ['nullable', 'string'],
+            'occupation'            => ['nullable', 'string'],
             'blood_pressure'        => ['nullable', 'string'],
             'sugar_level'           => ['nullable', 'numeric'],
             'height'                => ['nullable', 'numeric', 'min:0'],
             'weight'                => ['nullable', 'numeric', 'min:0'],
             'place_of_birth'        => ['nullable', 'string'],
             'educational_attainment' => ['nullable', 'string'],
-        ], [
-            'birth_date.date' => 'The birth date must be a valid date in format YYYY-MM-DD or YYYY/MM/DD.',
+            'birth_order'           => ['nullable', 'string', 'max:50'],
+            'blood_type'            => ['nullable', 'string', 'max:10'],
+            'indigent'              => ['nullable', 'boolean'],
+            'pwd'                   => ['nullable', 'boolean'],
+            'renter'                => ['nullable', 'boolean'],
+            'solo_parent'           => ['nullable', 'boolean'],
+            'senior_citizen'        => ['nullable', 'boolean'],
+            'household_no'          => ['nullable', 'string', 'max:50'],
+            'precinct_no'           => ['nullable', 'string', 'max:50'],
         ]);
 
         if ($validator->fails()) {
@@ -98,14 +142,27 @@ class PatientImportService
         }
 
         $validated = $validator->validated();
-        
-        // Ensure birth_date is in Y-m-d format for database
-        if (isset($validated['birth_date'])) {
+
+        // Defaults for DB-required fields so every row is accepted and created (no restriction)
+        $validated['first_name'] = trim((string) ($validated['first_name'] ?? '')) ?: 'N/A';
+        $validated['last_name'] = trim((string) ($validated['last_name'] ?? '')) ?: 'N/A';
+        $validated['middle_name'] = trim((string) ($validated['middle_name'] ?? '')) ?: null;
+        $validated['sex'] = in_array($validated['sex'] ?? null, ['male', 'female'], true) ? $validated['sex'] : 'male';
+        $validated['civil_status'] = trim((string) ($validated['civil_status'] ?? '')) ?: 'Single';
+
+        // Birth date: required by DB; use parsed value, or derive from age when provided, or default when missing/invalid
+        if (!empty($validated['birth_date'])) {
             try {
                 $validated['birth_date'] = Carbon::parse($validated['birth_date'])->format('Y-m-d');
             } catch (\Exception $e) {
-                throw new \Exception('Invalid birth date format: ' . $validated['birth_date']);
+                $validated['birth_date'] = '2000-01-01';
             }
+        } elseif (!empty($validated['age']) && is_numeric($validated['age'])) {
+            $age = (int) $validated['age'];
+            $age = max(0, min(150, $age));
+            $validated['birth_date'] = Carbon::today()->subYears($age)->format('Y-m-d');
+        } else {
+            $validated['birth_date'] = '2000-01-01';
         }
 
         // Normalize contact number (only if not empty) - always treat as string
@@ -124,11 +181,11 @@ class PatientImportService
         }
         $validated['barangay_id'] = $userBarangayId;
 
-        // Handle purok string to id - save as null if not found (don't create)
+        // Handle purok: find by name in current user's barangay, or create new if not null (same barangay only)
         if (!empty($validated['purok'])) {
-            $purokName = trim($validated['purok']);
+            $purokName  = trim($validated['purok']);
             $barangayId = $validated['barangay_id'];
-            
+
             $purok = Purok::whereRaw('BINARY `name` = ?', [$purokName])
                 ->where('barangay_id', $barangayId)
                 ->first();
@@ -136,12 +193,16 @@ class PatientImportService
             if ($purok) {
                 $validated['purok_id'] = $purok->id;
             } else {
-                // If not found, save as null
-                $validated['purok_id'] = null;
+                // Create new purok in current user's barangay and use its id
+                $purok = Purok::create([
+                    'name'        => $purokName,
+                    'barangay_id' => $barangayId,
+                    'is_active'   => true,
+                ]);
+                $validated['purok_id'] = $purok->id;
             }
             unset($validated['purok']);
         } else {
-            // If purok not provided, save as null
             $validated['purok_id'] = null;
         }
 
@@ -154,6 +215,9 @@ class PatientImportService
                 $occupation = Occupation::create(['name' => $occupationName]);
             }
             $validated['occupation_id'] = $occupation->id;
+            unset($validated['occupation']);
+        } else {
+            $validated['occupation_id'] = null;
             unset($validated['occupation']);
         }
 
@@ -193,6 +257,14 @@ class PatientImportService
             }
         }
 
+        // Map Excel "Relationship to HH" to system relationship_to_head_of_family
+        if (!empty($validated['relationship_to_hh'])) {
+            $validated['relationship_to_head_of_family'] = self::mapRelationshipToHhToSystem(
+                trim((string) $validated['relationship_to_hh'])
+            );
+        }
+        unset($validated['relationship_to_hh']);
+
         // Always remove 'category' and other non-database keys to prevent SQL errors
         // These are converted to their ID equivalents above
         unset($validated['category'], $validated['purok'], $validated['occupation']);
@@ -203,12 +275,14 @@ class PatientImportService
             'first_name', 'last_name', 'middle_name', 'suffix', 'relationship_to_head_of_family',
             'relationship_to_head_of_family_other', 'place_of_birth', 'birth_date', 'age', 'sex',
             'civil_status', 'educational_attainment', 'contact_number', 'barangay_id', 'purok_id',
-            'category_id', 'occupation_id', 'pregnant', 'weeks_pregnant', 'months_pregnant',
+            'category_id', 'occupation_id', 'household_head_id', 'pregnant', 'weeks_pregnant', 'months_pregnant',
             'current_family_planning_method', 'family_monthly_income', 'ip', 'ip_type',
             'no_of_house', 'with_fence', 'house_type', 'blood_pressure', 'sugar_level',
             'height', 'weight', 'trained_for_first_aid', 'bmi', 'bmi_category',
             'health_statuses', 'medication_maintenance', 'water_supply_sources',
-            'toilet_types', 'drainage_disposals', 'livestock', 'user_id', 'account_user_id'
+            'toilet_types', 'drainage_disposals', 'livestock', 'user_id', 'account_user_id',
+            'birth_order', 'blood_type', 'indigent', 'pwd', 'renter', 'solo_parent', 'senior_citizen',
+            'household_no', 'precinct_no',
         ];
         
         $validated = array_intersect_key($validated, array_flip($allowedKeys));
@@ -229,7 +303,7 @@ class PatientImportService
             ->first();
 
         if ($existing) {
-            throw new \Exception('Patient with same name already exists');
+            throw new DuplicatePatientException('Patient with same name already exists', $existing);
         }
 
         $data['user_id'] = Auth::id();
@@ -306,30 +380,96 @@ class PatientImportService
     }
 
     /**
-     * Get template headers for CSV
+     * Map Excel "Relationship to HH" values to system relationship_to_head_of_family values.
+     * Keys are case-insensitive (Excel may use HH, SON, SPOUSE, etc.).
+     */
+    public static function mapRelationshipToHhToSystem(string $excelValue): ?string
+    {
+        $map = [
+            'hh' => 'Household-Head',
+            'head' => 'Household-Head',
+            'household head' => 'Household-Head',
+            'household head of family' => 'Household-Head',
+            'spouse' => 'Spouse',
+            'wife' => 'Spouse',
+            'husband' => 'Spouse',
+            'commonlaw partner' => 'Spouse',
+            'common-law partner' => 'Spouse',
+            'live-in partner' => 'Spouse',
+            'live in partner' => 'Spouse',
+            'son' => 'Child',
+            'daughter' => 'Child',
+            'child' => 'Child',
+            'brother' => 'Sibling',
+            'sister' => 'Sibling',
+            'sibling' => 'Sibling',
+            'father' => 'Parent',
+            'mother' => 'Parent',
+            'parent' => 'Parent',
+            'grandparent' => 'Grandparent',
+            'grandfather' => 'Grandparent',
+            'grandmother' => 'Grandparent',
+            'grandchild' => 'Grandchild',
+            'grandson' => 'Grandchild',
+            'granddaughter' => 'Grandchild',
+            'son-in-law' => 'Son-in-Law',
+            'son in law' => 'Son-in-Law',
+            'daughter-in-law' => 'Daughter-in-Law',
+            'daughter in law' => 'Daughter-in-Law',
+            'father-in-law' => 'Parent-in-Law',
+            'father in law' => 'Parent-in-Law',
+            'mother-in-law' => 'Parent-in-Law',
+            'mother in law' => 'Parent-in-Law',
+            'parent-in-law' => 'Parent-in-Law',
+            'parent in law' => 'Parent-in-Law',
+            'brother-in-law' => 'Sibling-in-Law',
+            'brother in law' => 'Sibling-in-Law',
+            'sister-in-law' => 'Sibling-in-Law',
+            'sister in law' => 'Sibling-in-Law',
+            'sibling-in-law' => 'Sibling-in-Law',
+            'sibling in law' => 'Sibling-in-Law',
+            'co-wife' => 'Co-Wife',
+            'co wife' => 'Co-Wife',
+            'relative' => 'Relative',
+            'boarder' => 'Boarder',
+            'helper' => 'Helper',
+            'househelper' => 'Helper',
+            'house helper' => 'Helper',
+        ];
+        $key = strtolower(trim($excelValue));
+        return $map[$key] ?? null;
+    }
+
+    /**
+     * Get template headers for CSV (matches Excel template structure).
+     * Order and names match the downloadable Excel template so CSV and Excel imports are consistent.
+     * Barangay (Brgy.) is included for reference but import uses current user's barangay_id.
      */
     public static function getTemplateHeaders(): array
     {
-        // The column names in the template must reflect that we expect string names, not IDs, for foreigns
-        // Barangay is excluded - always uses current user's barangay_id
         return [
-            'first_name',
-            'middle_name',
-            'last_name',
-            'suffix',
-            'birth_date',
-            'sex',
-            'civil_status',
-            'contact_number',
-            'purok',
-            'category',
-            'occupation',
-            'blood_pressure',
-            'sugar_level',
-            'height',
-            'weight',
-            'place_of_birth',
-            'educational_attainment',
+            'Last Name',
+            'First Name',
+            'Middle Name',
+            'Ext.',
+            'Purok',
+            'Brgy.',
+            'Relationship to HH',
+            'Household Head',
+            'Date of Birth',
+            'Birth Order (ika pila nga anak)',
+            'Age',
+            'Gender',
+            'Contact Number',
+            'Occupation',
+            'Blood Type',
+            'Indigent',
+            'PWD',
+            'RENTER',
+            'SOLO PARENT',
+            'SEÑIOR CITIZEN',
+            'HOUSEHOLD NO.',
+            'PRECINCT NO.',
         ];
     }
 }

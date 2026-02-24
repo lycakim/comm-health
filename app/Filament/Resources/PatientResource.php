@@ -289,7 +289,7 @@ class PatientResource extends Resource
                                     ->label('Relationship to the Head of the Family')
                                     ->live()
                                     ->columnSpan(2)
-                                    // ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'Other' ? 2 : 2)
+                                    ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'Household-Head' ? 4 : 2)
                                     ->default('Household Head')
                                     ->options(fn () => collect(PatientFormOptionsServices::getPatientRelationships())->sort()->toArray())
                                     ->preload()
@@ -307,11 +307,9 @@ class PatientResource extends Resource
                                         'householdHead',
                                         'first_name',
                                         function ($query, $livewire) {
-                                            // Exclude self
                                             if ($livewire->getRecord()) {
                                                 $query = $query->where('id', '!=', $livewire->getRecord()->id);
                                             }
-                                            // Only allow within the same barangay if NOT MHO
                                             $currentUser = auth()->user();
                                             if ($currentUser && !in_array($currentUser->role, [\App\Enums\RoleEnum::MHO, \App\Enums\RoleEnum::ADMIN])) {
                                                 $barangayId = $currentUser->barangay_id;
@@ -322,11 +320,24 @@ class PatientResource extends Resource
                                             return $query;
                                         }
                                     )
-                                    ->getOptionLabelFromRecordUsing(fn ($record) => ($record->last_name ?? '') . ', ' . ($record->first_name ?? '') . ($record->middle_name ? ' ' . $record->middle_name : ''))
+                                    ->getOptionLabelFromRecordUsing(
+                                        fn ($record) => trim(
+                                            ($record->last_name ?? '') . ', ' .
+                                            ($record->first_name ?? '') .
+                                            ($record->middle_name ? ' ' . $record->middle_name : '')
+                                        )
+                                    )
                                     ->searchable(['first_name', 'last_name', 'middle_name'])
                                     ->preload()
-                                    ->required()
-                                    ->columnSpan(2),
+                                    ->columnSpan(2)
+                                    // Hide and make optional when the patient is themselves the Household Head
+                                    ->hidden(fn ($get) => $get('relationship_to_head_of_family') === 'Household-Head')
+                                    ->required(fn ($get) => $get('relationship_to_head_of_family') !== 'Household-Head')
+                                    ->afterStateHydrated(function ($state, $set, $record) {
+                                        if ($record && $state == $record->id) {
+                                            $set('household_head_id', null);
+                                        }
+                                    }),
                                 Textarea::make('place_of_birth')
                                     ->required()
                                     ->columnSpanFull(),
