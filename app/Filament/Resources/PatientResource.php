@@ -245,33 +245,6 @@ class PatientResource extends Resource
                                         'isCreate' => $livewire->getRecord() === null,
                                     ])
                                     ->columnSpanFull(),
-                                Select::make('relationship_to_head_of_family')
-                                    ->label('Relationship to the Head of the Family')
-                                    ->live()
-                                    ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'Other' ? 2 : 2)
-                                    ->default('Head')
-                                    ->options(fn () => collect(PatientFormOptionsServices::getPatientRelationships())->sort()->toArray())
-                                    ->preload()
-                                    ->searchable()
-                                    ->required(fn (Get $get) => $get('relationship_to_head_of_family') !== 'Other'),
-                                TextInput::make('relationship_to_head_of_family_other')
-                                    ->label('Please specify relationship')
-                                    ->columnSpan(2)
-                                    ->required(fn (Get $get) => $get('relationship_to_head_of_family') === 'Other')
-                                    ->disabled(fn (Get $get) => $get('relationship_to_head_of_family') !== 'Other'),
-                                Select::make('household_head_id')
-                                    ->label('Household Head')
-                                    ->relationship(
-                                        'householdHead',
-                                        'first_name',
-                                        fn ($query, $livewire) => $livewire->getRecord()
-                                            ? $query->where('id', '!=', $livewire->getRecord()->id)
-                                            : $query
-                                    )
-                                    ->getOptionLabelFromRecordUsing(fn ($record) => ($record->last_name ?? '') . ', ' . ($record->first_name ?? '') . ($record->middle_name ? ' ' . $record->middle_name : ''))
-                                    ->searchable(['first_name', 'last_name', 'middle_name'])
-                                    ->preload()
-                                    ->columnSpan(2),
                                 Select::make('sex')
                                     ->label('Gender')
                                     ->searchable()
@@ -284,15 +257,12 @@ class PatientResource extends Resource
                                         'female' => 'Female',
                                     ])
                                     ->required(),
-                                Textarea::make('place_of_birth')
-                                    ->required()
-                                    ->columnSpanFull(),
                                 TextInput::make('contact_number')
                                     ->label('Contact Number')
-                                    ->columnSpanFull()
+                                    ->columnSpan(2)
                                     ->required()
                                     ->rule('regex:/^(09\d{9}|9\d{9}|639\d{9})$/')
-                                    ->helperText('Format: 09123456789')
+                                    ->hint('Format: 09123456789')
                                     ->afterStateHydrated(function ($component, $state) {
                                         // Normalize for display if needed
                                         if ($state && str_starts_with($state, '63')) {
@@ -315,6 +285,51 @@ class PatientResource extends Resource
                                         return $clean;
                                     })
                                     ->mask('99999999999'), // (optional) enforce 11 digits on screen
+                                Select::make('relationship_to_head_of_family')
+                                    ->label('Relationship to the Head of the Family')
+                                    ->live()
+                                    ->columnSpan(2)
+                                    // ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'Other' ? 2 : 2)
+                                    ->default('Household Head')
+                                    ->options(fn () => collect(PatientFormOptionsServices::getPatientRelationships())->sort()->toArray())
+                                    ->preload()
+                                    ->searchable()
+                                    ->required(),
+                                    // ->required(fn (Get $get) => $get('relationship_to_head_of_family') !== 'Other'),
+                                // TextInput::make('relationship_to_head_of_family_other')
+                                //     ->label('Please specify relationship')
+                                //     ->columnSpan(2)
+                                //     ->required(fn (Get $get) => $get('relationship_to_head_of_family') === 'Other')
+                                //     ->disabled(fn (Get $get) => $get('relationship_to_head_of_family') !== 'Other'),
+                                Select::make('household_head_id')
+                                    ->label('Household Head')
+                                    ->relationship(
+                                        'householdHead',
+                                        'first_name',
+                                        function ($query, $livewire) {
+                                            // Exclude self
+                                            if ($livewire->getRecord()) {
+                                                $query = $query->where('id', '!=', $livewire->getRecord()->id);
+                                            }
+                                            // Only allow within the same barangay if NOT MHO
+                                            $currentUser = auth()->user();
+                                            if ($currentUser && !in_array($currentUser->role, [\App\Enums\RoleEnum::MHO, \App\Enums\RoleEnum::ADMIN])) {
+                                                $barangayId = $currentUser->barangay_id;
+                                                if ($barangayId) {
+                                                    $query = $query->where('barangay_id', $barangayId);
+                                                }
+                                            }
+                                            return $query;
+                                        }
+                                    )
+                                    ->getOptionLabelFromRecordUsing(fn ($record) => ($record->last_name ?? '') . ', ' . ($record->first_name ?? '') . ($record->middle_name ? ' ' . $record->middle_name : ''))
+                                    ->searchable(['first_name', 'last_name', 'middle_name'])
+                                    ->preload()
+                                    ->required()
+                                    ->columnSpan(2),
+                                Textarea::make('place_of_birth')
+                                    ->required()
+                                    ->columnSpanFull(),
                                 DatePicker::make('birth_date')
                                     ->label('Date of Birth')
                                     ->required()

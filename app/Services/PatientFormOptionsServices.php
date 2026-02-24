@@ -97,7 +97,7 @@ class PatientFormOptionsServices
     public static function getPatientRelationships()
     {
         return [
-            'Head' =>  'Head',
+            'Household-Head' => 'Household Head',
             'Spouse' => 'Spouse',
             'Child' => 'Child',
             'Co-Wife' => 'Co-wife',
@@ -105,7 +105,7 @@ class PatientFormOptionsServices
             'Daughter-in-Law' => 'Daughter-in-law',
             'Grandparent' => 'Grandparent',
             'Grandchild' => 'Grandchild',
-            'Other' => 'Other',
+            // 'Other' => 'Other',
         ];
     }
 
