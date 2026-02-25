@@ -174,12 +174,20 @@ class PatientImportService
             $validated['contact_number'] = null;
         }
 
-        // Always use current user's barangay_id when importing
+        // Use current user's barangay_id when available; otherwise resolve from the "Brgy." column in the file
         $userBarangayId = Auth::user()->barangay_id;
-        if (!$userBarangayId) {
-            throw new \Exception("Current user has no assigned barangay. Cannot import patients without a barangay assignment.");
+        if ($userBarangayId) {
+            $validated['barangay_id'] = $userBarangayId;
+        } else {
+            // MHO / Admin: try to match the Brgy. value from the row to a barangay in the DB
+            $brgyName = trim((string) ($row['barangay'] ?? $row['Brgy.'] ?? $row['brgy'] ?? $row['brgy.'] ?? $row['Brgy'] ?? ''));
+            if ($brgyName !== '') {
+                $barangay = Barangay::whereRaw('UPPER(name) = ?', [strtoupper($brgyName)])->first();
+                $validated['barangay_id'] = $barangay?->id ?? null;
+            } else {
+                $validated['barangay_id'] = null;
+            }
         }
-        $validated['barangay_id'] = $userBarangayId;
 
         // Handle purok: find by name in current user's barangay, or create new if not null (same barangay only)
         if (!empty($validated['purok'])) {
@@ -267,7 +275,7 @@ class PatientImportService
 
         // Always remove 'category' and other non-database keys to prevent SQL errors
         // These are converted to their ID equivalents above
-        unset($validated['category'], $validated['purok'], $validated['occupation']);
+        unset($validated['category'], $validated['purok'], $validated['occupation'], $validated['barangay']);
 
         // Final safety check: remove any keys that don't exist as columns in the patients table
         // This prevents SQL errors if any unexpected keys slip through
@@ -295,12 +303,17 @@ class PatientImportService
      */
     protected function createPatient(array $data): Patient
     {
-        // Check for duplicate
-        $existing = Patient::where('first_name', $data['first_name'])
+        // Check for duplicate within the same barangay only (to avoid cross-barangay false positives)
+        $duplicateQuery = Patient::where('first_name', $data['first_name'])
             ->where('last_name', $data['last_name'])
             ->where('middle_name', $data['middle_name'] ?? null)
-            ->where('suffix', $data['suffix'] ?? null)
-            ->first();
+            ->where('suffix', $data['suffix'] ?? null);
+
+        if (!empty($data['barangay_id'])) {
+            $duplicateQuery->where('barangay_id', $data['barangay_id']);
+        }
+
+        $existing = $duplicateQuery->first();
 
         if ($existing) {
             throw new DuplicatePatientException('Patient with same name already exists', $existing);
@@ -437,7 +450,10 @@ class PatientImportService
             'house helper' => 'Helper',
         ];
         $key = strtolower(trim($excelValue));
-        return $map[$key] ?? null;
+
+        // If a known mapping exists, use it; otherwise fall back to saving the raw value as-is
+        // (title-cased) so no relationship data is ever lost during import.
+        return $map[$key] ?? ucfirst(strtolower(trim($excelValue)));
     }
 
     /**

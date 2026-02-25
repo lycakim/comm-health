@@ -312,6 +312,7 @@ class PatientsImport
             'senior_citizen'         => $get(['senior_citizen', 'SEÑIOR CITIZEN', 'SENIOR CITIZEN']),
             'household_no'           => $get(['household_no', 'HOUSEHOLD NO_', 'HOUSEHOLD NO.', 'HOUSEHOLD N']),
             'precinct_no'            => $get(['precinct_no', 'PRECINCT NO_', 'PRECINCT NO.', 'PRECINCT NO']),
+            'barangay'               => $get(['barangay', 'brgy', 'brgy.', 'Brgy.', 'Brgy', 'Barangay']),
 
             // Pre-resolved by importXlsx pass 2
             'household_head_id'      => $row['household_head_id'] ?? null,
