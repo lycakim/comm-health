@@ -985,7 +985,7 @@ class PatientResource extends Resource
                         ->color('primary'),
                     Tables\Actions\Action::make('add_new_user')
                         ->label('Create Access')
-                        ->hidden(fn ($record) => $record->account_user_id)
+                        ->hidden(fn () => true) // Temporarily hidden — not yet needed
                         ->accessSelectedRecords()
                         ->color('gray')
                         ->icon('heroicon-o-plus')
