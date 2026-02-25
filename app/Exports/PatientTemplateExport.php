@@ -16,14 +16,14 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class PatientTemplateExport implements FromArray, WithStyles, WithColumnWidths, WithEvents
 {
     private const SAMPLE_ROWS = [
-        ['DALIAN',  'JOHN LOUIE',  'SORROSA',   '',  'PUROK 1A', 'MAGSAYSAY', 'HH',               'DALIAN, JOHN LOUIE', '1/12/1987',  '',     38, 'M', '9295379931', 'N/A',          '',  'Y', 'N', 'N', 'N', 'N', '',       '0082B'],
-        ['DALIAN',  'AEGEUS AART', 'AQUINO',    '',  'PUROK 1A', 'MAGSAYSAY', 'SON',              'DALIAN, JOHN LOUIE', '3/11/2019',  '1st',   5, 'M', '',           'STUDENT',      '',  'Y', 'N', 'N', 'N', 'N', '',       ''],
-        ['AQUINO',  'MARICEL ANN', 'CASTRO',    '',  'PUROK 1A', 'MAGSAYSAY', 'COMMONLAW PARTNER','DALIAN, JOHN LOUIE', '12/2/1987',  '',     38, 'F', '',           'ONLINE SELLER','',  'Y', 'N', 'N', 'N', 'N', '',       ''],
-        ['DALIAN',  'TRENCE',      'SORROSA',   '',  'PUROK 1A', 'MAGSAYSAY', 'BROTHER',          'DALIAN, JOHN LOUIE', '5/24/1988',  '',     37, 'M', '9053649316', 'NURSE',        '',  'Y', 'N', 'N', 'N', 'N', '',       '0082B'],
-        ['PATES',   'ALEXANDER',   'FAJARDO',   '',  'PUROK 1A', 'MAGSAYSAY', 'HH',               'PATES,ALEXANDER',    '11/7/1987',  '',     36, 'M', '965266659',  'MP',           'O', 'Y', 'N', 'N', 'N', 'N', '',       '0083A'],
-        ['PATES',   'MICHELLE',    'SABELLANO', '',  'PUROK 1A', 'MAGSAYSAY', 'WIFE',             'PATES,ALEXANDER',    '12/8/1977',  '',     46, 'F', '',           'CS',           'O', 'Y', 'N', 'Y', 'N', 'N', '',       '0083A'],
-        ['PATES',   'CLEXY SLH',   'SABELLANO', '',  'PUROK 1A', 'MAGSAYSAY', 'DAUGHTER',         'PATES,ALEXANDER',    '8/16/2008',  '1st',  15, 'F', '',           'STUDENT',      '',  'Y', 'N', 'N', 'N', 'N', '',       ''],
-        ['PATES',   'SWIFY YMS',   'SABELLANO', '',  'PUROK 1A', 'MAGSAYSAY', 'DAUGHTER',         'PATES,ALEXANDER',    '10/26/2011', '2nd',  12, 'F', '',           'STUDENT',      '',  'Y', 'N', 'N', 'N', 'N', '',       ''],
+        ['DELA CRUZ', 'JUAN',       'SANTOS',    '',  'PUROK 1A', 'SAMPLE BRGY', 'HH',               'DELA CRUZ, JUAN',    '1/1/1985',   '',     40, 'M', '9000000001', 'N/A',          '',  'Y', 'N', 'N', 'N', 'N', '',       '0001A'],
+        ['DELA CRUZ', 'MARIA',      'REYES',     '',  'PUROK 1A', 'SAMPLE BRGY', 'WIFE',             'DELA CRUZ, JUAN',    '3/15/1987',  '',     38, 'F', '',           'HOUSEWIFE',    '',  'Y', 'N', 'N', 'N', 'N', '',       '0001A'],
+        ['DELA CRUZ', 'JOSE',       'SANTOS',    '',  'PUROK 1A', 'SAMPLE BRGY', 'SON',              'DELA CRUZ, JUAN',    '6/20/2010',  '1st',  15, 'M', '',           'STUDENT',      '',  'Y', 'N', 'N', 'N', 'N', '',       ''],
+        ['DELA CRUZ', 'ANA',        'SANTOS',    '',  'PUROK 1A', 'SAMPLE BRGY', 'DAUGHTER',         'DELA CRUZ, JUAN',    '9/5/2013',   '2nd',  12, 'F', '',           'STUDENT',      '',  'Y', 'N', 'N', 'N', 'N', '',       ''],
+        ['GARCIA',   'PEDRO',       'LOPES',     '',  'PUROK 2B', 'SAMPLE BRGY', 'HH',               'GARCIA, PEDRO',      '4/10/1980',  '',     45, 'M', '9000000002', 'FARMER',       'O', 'Y', 'N', 'N', 'N', 'N', '',       '0002B'],
+        ['GARCIA',   'ROSA',        'MENDOZA',   '',  'PUROK 2B', 'SAMPLE BRGY', 'WIFE',             'GARCIA, PEDRO',      '7/22/1983',  '',     42, 'F', '',           'N/A',          'A', 'Y', 'N', 'Y', 'N', 'N', '',       '0002B'],
+        ['GARCIA',   'CARLO',       'LOPES',     '',  'PUROK 2B', 'SAMPLE BRGY', 'SON',              'GARCIA, PEDRO',      '2/18/2006',  '1st',  19, 'M', '',           'STUDENT',      '',  'Y', 'N', 'N', 'N', 'N', '',       ''],
+        ['GARCIA',   'LUCIA',       'LOPES',     '',  'PUROK 2B', 'SAMPLE BRGY', 'DAUGHTER',         'GARCIA, PEDRO',      '11/30/2009', '2nd',  16, 'F', '',           'STUDENT',      '',  'Y', 'N', 'N', 'N', 'N', '',       ''],
     ];
 
     public function array(): array
