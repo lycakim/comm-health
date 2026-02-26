@@ -45,18 +45,11 @@ class DatabaseNotification extends Notification implements ShouldQueue
     }
 
     /**
-     * Get the array representation of the notification.
+     * Get the array representation of the notification (used by Laravel's database channel).
      *
      * @return array<string, mixed>
      */
     public function toArray(object $notifiable): array
-    {
-        return [
-            //
-        ];
-    }
-
-    public function toDatabase(object $notifiable): array
     {
         return [
             'title' => $this->title,
@@ -66,5 +59,10 @@ class DatabaseNotification extends Notification implements ShouldQueue
             'duration' => $this->duration,
             'actions' => $this->actions,
         ];
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        return $this->toArray($notifiable);
     }
 }

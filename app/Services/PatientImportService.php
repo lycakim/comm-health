@@ -9,6 +9,7 @@ use App\Models\Barangay;
 use App\Models\Purok;
 use App\Models\Occupation;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
@@ -320,6 +321,10 @@ class PatientImportService
         }
 
         $data['user_id'] = Auth::id();
+
+        // Only pass columns that exist on the patients table (e.g. if household-import migration not yet run)
+        $columns = Schema::getColumnListing('patients');
+        $data = array_intersect_key($data, array_flip($columns));
 
         return Patient::create($data);
     }

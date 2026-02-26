@@ -5,7 +5,7 @@ namespace App\Filament\Resources\PatientResource\Pages;
 use Filament\Actions;
 use App\Models\Barangay;
 use App\Exports\PatientTemplateExport;
-use App\Imports\PatientsImport;
+use App\Jobs\ImportPatientsJob;
 use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +16,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\PatientResource;
 use App\Enums\RoleEnum;
-use App\Services\ImportErrorSimplifier;
 use Filament\Tables\Table;
 
 class ListPatients extends ListRecords
@@ -58,115 +57,36 @@ class ListPatients extends ListRecords
                         ->helperText('Upload Excel (.xlsx) or CSV files. All data in the file will be imported. Download the template for the expected columns.'),
                 ])
                 ->action(function (array $data) {
-                    try {
-                        $files = is_array($data['files']) ? $data['files'] : [$data['files']];
-                        $totalSuccess = 0;
-                        $totalFailed = 0;
-                        $totalSkipped = 0;
-                        $allErrors = [];
-                        
-                        foreach ($files as $file) {
-                            // Get the full path to the uploaded file
-                            $filePath = null;
-                            
-                            // Try public disk first
-                            if (Storage::disk('public')->exists($file)) {
-                                $filePath = Storage::disk('public')->path($file);
-                            }
-                            // Try local disk
-                            elseif (Storage::disk('local')->exists($file)) {
-                                $filePath = Storage::disk('local')->path($file);
-                            }
-                            // Try default disk
-                            elseif (Storage::exists($file)) {
-                                $filePath = Storage::path($file);
-                            }
-                            // Try direct path
-                            else {
-                                $possiblePaths = [
-                                    storage_path('app/public/' . $file),
-                                    storage_path('app/private/' . $file),
-                                    storage_path('app/' . $file),
-                                ];
-                                
-                                foreach ($possiblePaths as $path) {
-                                    if (file_exists($path)) {
-                                        $filePath = $path;
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if (!$filePath || !file_exists($filePath)) {
-                                $allErrors[] = ['file' => $file, 'message' => 'File not found'];
-                                $totalFailed++;
-                                continue;
-                            }
-                            
-                            try {
-                                $import = new PatientsImport();
-                                $import->import($filePath);
-                                
-                                $results = $import->getResults();
-                                $totalSuccess += $results['success'];
-                                $totalFailed += $results['failed'];
-                                $totalSkipped += $results['skipped'] ?? 0;
-
-                                if (!empty($results['errors'])) {
-                                    $allErrors = array_merge($allErrors, $results['errors']);
-                                }
-                            } catch (\Exception $e) {
-                                $totalFailed++;
-                                $allErrors[] = ['file' => basename($filePath), 'message' => $e->getMessage()];
-                            }
-                            
-                            // Clean up the uploaded file after import
-                            if (Storage::disk('public')->exists($file)) {
-                                Storage::disk('public')->delete($file);
-                            } elseif (Storage::disk('local')->exists($file)) {
-                                Storage::disk('local')->delete($file);
-                            }
-                        }
-                        
-                        $message = "Successfully imported {$totalSuccess} resident(s) from " . count($files) . " file(s).";
-                        if ($totalSkipped > 0) {
-                            $message .= " {$totalSkipped} skipped (already exist).";
-                        }
-                        if ($totalFailed > 0) {
-                            $message .= " {$totalFailed} failed.";
-                        }
-                        
-                        Notification::make()
-                            ->title('Import Completed')
-                            ->body($message)
-                            ->success()
-                            ->send();
-                        
-                        // Show errors if any (simplified for elderly users)
-                        if (!empty($allErrors)) {
-                            $errorDetails = collect($allErrors)->take(10)->map(function ($error) {
-                                $simplified = ImportErrorSimplifier::simplifyForDisplay($error);
-                                $file = $simplified['file'] ?? 'Unknown file';
-                                $row = isset($simplified['row']) ? "Row {$simplified['row']}" : '';
-                                $message = $simplified['message'];
-                                return $row ? "{$file} - {$row}: {$message}" : "{$file}: {$message}";
-                            })->implode("\n");
-                            
+                    $files = is_array($data['files']) ? $data['files'] : [$data['files']];
+                    $storagePaths = [];
+                    foreach ($files as $file) {
+                        if (Storage::disk('public')->exists($file) || Storage::disk('local')->exists($file)) {
+                            $storagePaths[] = $file;
+                        } else {
                             Notification::make()
-                                ->title('Import Errors')
-                                ->body($errorDetails . (count($allErrors) > 10 ? "\n... and " . (count($allErrors) - 10) . " more" : ''))
-                                ->warning()
-                                ->persistent()
+                                ->title('Import not started')
+                                ->body('One or more files could not be found. Please upload again.')
+                                ->danger()
                                 ->send();
+                            return;
                         }
-                    } catch (\Exception $e) {
-                        Notification::make()
-                            ->title('Import Failed')
-                            ->body(ImportErrorSimplifier::simplify($e->getMessage()))
-                            ->danger()
-                            ->persistent()
-                            ->send();
                     }
+                    if (empty($storagePaths)) {
+                        Notification::make()
+                            ->title('Import not started')
+                            ->body('No valid files to import.')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    ImportPatientsJob::dispatch($storagePaths, Auth::id());
+
+                    Notification::make()
+                        ->title('Import started')
+                        ->body('Your file(s) are being imported in the background. You will be notified when the import is finished.')
+                        ->success()
+                        ->send();
                 })
                 ->modalHeading('Bulk Import Residents')
                 ->modalDescription('Upload an Excel or CSV file to import multiple residents at once.')

@@ -18,6 +18,14 @@ class PatientsImport
 
     protected int $skippedCount = 0;
 
+    /** Rows per chunk for XLSX; CSV is streamed in two passes. */
+    protected const CHUNK_SIZE = 100;
+
+    /** Max error entries to keep in memory (avoids blowing memory on large failed imports). */
+    protected const MAX_STORED_ERRORS = 500;
+
+    protected int $extraErrorsCount = 0;
+
     public function __construct()
     {
         $this->importService = new PatientImportService();
@@ -28,27 +36,17 @@ class PatientsImport
      */
     public function import(string $filePath): array
     {
-        $this->errors       = [];
-        $this->successCount = 0;
-        $this->failedCount  = 0;
-        $this->skippedCount = 0;
+        @ini_set('memory_limit', '512M');
+        $this->errors          = [];
+        $this->successCount    = 0;
+        $this->failedCount     = 0;
+        $this->skippedCount    = 0;
+        $this->extraErrorsCount = 0;
 
         $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
         if ($ext === 'csv') {
-            $rows = $this->readCsv($filePath);
-            if (empty($rows)) {
-                return $this->getResults();
-            }
-            $headerRow     = array_map('trim', array_map('strval', $rows[0]));
-            $dataRows      = array_slice($rows, 1);
-            $dataAssoc     = $this->rowsToAssoc($headerRow, $dataRows, 2);
-            $householdsMap = [];
-            foreach ($dataAssoc as $rowNumber => $assoc) {
-                if ($this->isEmptyRow($assoc)) continue;
-                $this->processRow($assoc, $rowNumber, $householdsMap);
-            }
-            return $this->getResults();
+            return $this->importCsvChunked($filePath);
         }
 
         if ($ext === 'xlsx') {
@@ -64,7 +62,84 @@ class PatientsImport
         return $this->getResults();
     }
 
-    // ── XLSX import ────────────────────────────────────────────────────────────
+    // ── CSV import (streamed in two passes to avoid loading full file into memory) ──
+
+    protected function importCsvChunked(string $filePath): array
+    {
+        $handle = fopen($filePath, 'r');
+        if (!$handle) {
+            $this->errors[] = ['row' => 0, 'message' => 'Could not open the CSV file.', 'data' => []];
+            return $this->getResults();
+        }
+
+        $headerRow = array_map('trim', array_map('strval', (array) fgetcsv($handle)));
+        if (empty($headerRow)) {
+            fclose($handle);
+            return $this->getResults();
+        }
+
+        $householdsMap = [];
+        $rowNumber = 2;
+
+        // Pass 1 — Household heads only (streaming)
+        while (($row = fgetcsv($handle)) !== false) {
+            $assoc = $this->rowToAssoc($headerRow, $row);
+            if ($this->isEmptyRow($assoc)) {
+                $rowNumber++;
+                continue;
+            }
+            $normalized = $this->normalizeRow($assoc);
+            $rel        = trim((string) ($normalized['relationship_to_hh'] ?? ''));
+            $systemRel  = $rel !== '' ? PatientImportService::mapRelationshipToHhToSystem($rel) : null;
+            if ($systemRel === 'Household-Head') {
+                $this->processRow($assoc, $rowNumber, $householdsMap);
+            }
+            $rowNumber++;
+        }
+
+        fclose($handle);
+        $handle = fopen($filePath, 'r');
+        fgetcsv($handle); // skip header again
+        $rowNumber = 2;
+
+        // Pass 2 — Non-heads only (streaming), resolve household_head_id
+        while (($row = fgetcsv($handle)) !== false) {
+            $assoc = $this->rowToAssoc($headerRow, $row);
+            if ($this->isEmptyRow($assoc)) {
+                $rowNumber++;
+                continue;
+            }
+            $normalized = $this->normalizeRow($assoc);
+            $rel        = trim((string) ($normalized['relationship_to_hh'] ?? ''));
+            $systemRel  = $rel !== '' ? PatientImportService::mapRelationshipToHhToSystem($rel) : null;
+            if ($systemRel !== 'Household-Head') {
+                $headName = trim((string) ($normalized['household_head_name'] ?? ''));
+                $shouldLinkToHead = in_array($systemRel, ['Child', 'Spouse', 'Sibling'], true);
+                if ($shouldLinkToHead && $headName !== '') {
+                    $resolvedId = $this->resolveHouseholdHeadId($headName, $householdsMap);
+                    if ($resolvedId) {
+                        $assoc['household_head_id'] = $resolvedId;
+                    }
+                }
+                $this->processRow($assoc, $rowNumber, $householdsMap);
+            }
+            $rowNumber++;
+        }
+
+        fclose($handle);
+        return $this->getResults();
+    }
+
+    protected function rowToAssoc(array $headerRow, array $row): array
+    {
+        $assoc = [];
+        foreach ($headerRow as $j => $key) {
+            $assoc[$key] = $row[$j] ?? null;
+        }
+        return $assoc;
+    }
+
+    // ── XLSX import (process in chunks after full load; full load is a PhpSpreadsheet limitation) ──
 
     protected function importXlsx(array $rows): array
     {
@@ -99,29 +174,40 @@ class PatientsImport
             }
         }
 
-        // Pass 1 — Household Heads first so their IDs exist for members
-        foreach ($hhRows as $rowNumber => $assoc) {
-            $this->processRow($assoc, $rowNumber, $householdsMap);
+        unset($dataAssoc);
+        gc_collect_cycles();
+
+        // Pass 1 — Household heads in chunks
+        foreach (array_chunk($hhRows, self::CHUNK_SIZE, true) as $chunk) {
+            foreach ($chunk as $rowNumber => $assoc) {
+                $this->processRow($assoc, $rowNumber, $householdsMap);
+            }
+            gc_collect_cycles();
         }
 
-        // Pass 2 — For Son, Daughter, Wife, Commonlaw partner, Brother: resolve Household Head
-        // (from same import or existing in DB) and set household_head_id
-        foreach ($nonHhRows as $rowNumber => $assoc) {
-            $normalized = $this->normalizeRow($assoc);
-            $headName   = trim((string) ($normalized['household_head_name'] ?? ''));
-            $rel        = trim((string) ($normalized['relationship_to_hh'] ?? ''));
-            $systemRel  = $rel !== '' ? PatientImportService::mapRelationshipToHhToSystem($rel) : null;
+        unset($hhRows);
+        gc_collect_cycles();
 
-            $shouldLinkToHead = in_array($systemRel, ['Child', 'Spouse', 'Sibling'], true);
+        // Pass 2 — Non-heads in chunks, resolve household_head_id
+        foreach (array_chunk($nonHhRows, self::CHUNK_SIZE, true) as $chunk) {
+            foreach ($chunk as $rowNumber => $assoc) {
+                $normalized = $this->normalizeRow($assoc);
+                $headName   = trim((string) ($normalized['household_head_name'] ?? ''));
+                $rel        = trim((string) ($normalized['relationship_to_hh'] ?? ''));
+                $systemRel  = $rel !== '' ? PatientImportService::mapRelationshipToHhToSystem($rel) : null;
 
-            if ($shouldLinkToHead && $headName !== '') {
-                $resolvedId = $this->resolveHouseholdHeadId($headName, $householdsMap);
-                if ($resolvedId) {
-                    $assoc['household_head_id'] = $resolvedId;
+                $shouldLinkToHead = in_array($systemRel, ['Child', 'Spouse', 'Sibling'], true);
+
+                if ($shouldLinkToHead && $headName !== '') {
+                    $resolvedId = $this->resolveHouseholdHeadId($headName, $householdsMap);
+                    if ($resolvedId) {
+                        $assoc['household_head_id'] = $resolvedId;
+                    }
                 }
-            }
 
-            $this->processRow($assoc, $rowNumber, $householdsMap);
+                $this->processRow($assoc, $rowNumber, $householdsMap);
+            }
+            gc_collect_cycles();
         }
 
         return $this->getResults();
@@ -248,11 +334,14 @@ class PatientsImport
             }
         } catch (\Exception $e) {
             $this->failedCount++;
-            $this->errors[] = [
-                'row'     => $rowNumber,
-                'message' => $e->getMessage(),
-                'data'    => $rowArray,
-            ];
+            if (count($this->errors) < self::MAX_STORED_ERRORS) {
+                $this->errors[] = [
+                    'row'     => $rowNumber,
+                    'message' => $e->getMessage(),
+                ];
+            } else {
+                $this->extraErrorsCount++;
+            }
         }
     }
 
@@ -624,10 +713,11 @@ class PatientsImport
     public function getResults(): array
     {
         return [
-            'success' => $this->successCount,
-            'failed'  => $this->failedCount,
-            'skipped' => $this->skippedCount,
-            'errors'  => $this->errors,
+            'success'            => $this->successCount,
+            'failed'             => $this->failedCount,
+            'skipped'            => $this->skippedCount,
+            'errors'             => $this->errors,
+            'extra_errors_count' => $this->extraErrorsCount,
         ];
     }
 }
