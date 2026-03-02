@@ -9,8 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Collection as BaseCollection;
 
 class Patient extends Model
 {
@@ -74,6 +76,20 @@ class Patient extends Model
     public function householdHead(): BelongsTo
     {
         return $this->belongsTo(Patient::class, 'household_head_id');
+    }
+
+    /**
+     * From a collection of residents, return the unique set of household heads to send SMS to
+     * (one SMS per household to conserve messages).
+     *
+     * @param  Collection<int, Patient>|BaseCollection<int, Patient>  $residents
+     * @return Collection<int, Patient>
+     */
+    public static function uniqueHouseholdHeadsForSms(Collection|BaseCollection $residents): Collection
+    {
+        $headIds = $residents->map(fn (Patient $p) => $p->household_head_id ?? $p->id)->unique()->values();
+
+        return static::query()->whereIn('id', $headIds)->get();
     }
 
     protected function fullName(): Attribute

@@ -46,8 +46,8 @@ class SMSBalance extends Page implements HasTable
     public static function canAccess(): bool
     {
         return in_array(self::currentUser()->role, [
-            RoleEnum::BHW,
             RoleEnum::ADMIN,
+            RoleEnum::MHO,
         ]);
     }
 

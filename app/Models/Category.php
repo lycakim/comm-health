@@ -11,6 +11,8 @@ class Category extends Model
 {
     use HasFactory;
 
+    public const PROFILED_REGISTERED_MEMBERS_NAME = 'Profiled/Registered Members';
+
     protected $guarded = [];
 
     protected $casts = [
@@ -115,5 +117,11 @@ class Category extends Model
     public static function findMaternal(): ?self
     {
         return static::where('is_maternal', true)->first();
+    }
+
+    /** Whether this category is "Profiled/Registered Members" (applies to all residents in program/SMS context). */
+    public function isProfiledRegisteredMembers(): bool
+    {
+        return $this->name === self::PROFILED_REGISTERED_MEMBERS_NAME;
     }
 }

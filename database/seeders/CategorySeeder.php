@@ -19,6 +19,7 @@ class CategorySeeder extends Seeder
             ['name' => 'Senior Citizen', 'age_min' => 60, 'age_max' => null, 'is_maternal' => false],
             ['name' => 'Maternal', 'age_min' => null, 'age_max' => null, 'is_maternal' => true],
             ['name' => 'Chronic Conditions', 'age_min' => null, 'age_max' => null, 'is_maternal' => false],
+            ['name' => 'Profiled/Registered Members', 'age_min' => null, 'age_max' => null, 'is_maternal' => false],
         ];
 
         foreach ($categories as $category) {

@@ -6,9 +6,12 @@ use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\User;
+use App\Models\Patient;
+use App\Models\Category;
 
 class Program extends Model
 {
@@ -40,6 +43,22 @@ class Program extends Model
     public function createdByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
+    /**
+     * Get the query for residents who are recipients of this program (for SMS/list).
+     * When category is "Profiled/Registered Members", returns all residents in the barangay.
+     */
+    public function getSmsRecipientsQuery(): Builder
+    {
+        $query = Patient::query()->where('barangay_id', $this->barangay_id);
+
+        $category = $this->relationLoaded('category') ? $this->category : Category::find($this->category_id);
+        if ($category?->isProfiledRegisteredMembers()) {
+            return $query;
+        }
+
+        return $query->where('category_id', $this->category_id);
     }
 
     public function getActivitylogOptions(): LogOptions

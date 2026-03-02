@@ -476,7 +476,7 @@ class ProgramResource extends Resource
                     ->visible(fn () => Auth::user()->isMHO() || Auth::user()->isAdmin())
 
                     ->form(function ($record) {
-                        $users = \App\Models\Patient::where('barangay_id', $record->barangay_id)->get();
+                        $users = $record->getSmsRecipientsQuery()->get();
 
                         return [
                             \Filament\Forms\Components\Section::make('Program Details')
@@ -492,13 +492,15 @@ class ProgramResource extends Resource
                                         ->disabled(),
 
                                     \Filament\Forms\Components\TextInput::make('program_start_date')
-                                        ->label('Datessss')
+                                        ->label('Date')
                                         ->default($record->program_start_date)
                                         ->disabled(),
                                 ]),
 
                             \Filament\Forms\Components\Section::make('Recipients (' . $users->count() . ')')
-                                ->description('List of patients under the selected barangay.')
+                                ->description(\App\Models\Category::find($record->category_id)?->isProfiledRegisteredMembers()
+                                    ? 'All residents (Profiled/Registered Members). SMS will be sent to household heads only.'
+                                    : 'List of patients under the selected barangay and category. SMS will be sent to household heads only.')
                                 ->schema([
                                     \Filament\Forms\Components\View::make('filament.custom.user-list')
                                         ->viewData(['users' => $users]),
@@ -508,30 +510,28 @@ class ProgramResource extends Resource
 
                     ->action(function ($record) {
                         $program = $record;
-                        $users = \App\Models\Patient::where('barangay_id', $program->barangay_id)->get();
+                        $residents = $program->getSmsRecipientsQuery()->get();
+                        $recipients = \App\Models\Patient::uniqueHouseholdHeadsForSms($residents);
 
                         $smsService = app(\App\Services\SemaphoreService::class);
 
                         $successCount = 0;
                         $failCount = 0;
-                        $invalidNumbers = []; // Will store patients with invalid/missing numbers
-                        $failedNumbers = []; // Will store patients with failed SMS sends
+                        $invalidNumbers = [];
+                        $failedNumbers = [];
 
-                        // Format program date and time
                         $programDate = $program->program_start_date ? Carbon::parse($program->program_start_date)->format('F d, Y') : 'TBA';
                         $startTime = $program->program_start_time ? Carbon::parse($program->program_start_time)->format('g:i A') : 'TBA';
                         $endTime = $program->program_end_time ? Carbon::parse($program->program_end_time)->format('g:i A') : 'TBA';
 
-                        foreach ($users as $user) {
-                            // Skip if contact number is empty
-                            if (empty($user->contact_number)) {
-                                $invalidNumbers[] = $user->first_name . ' ' . $user->last_name;
+                        foreach ($recipients as $head) {
+                            if (empty($head->contact_number)) {
+                                $invalidNumbers[] = $head->first_name . ' ' . $head->last_name;
                                 $failCount++;
                                 continue;
                             }
 
-                            // Create personalized message with program details
-                            $message = "Maayong adlaw {$user->first_name}!\n\n";
+                            $message = "Maayong adlaw {$head->first_name}!\n\n";
                             $message .= "Nagpahibalo ang Barangay nga aduna kita'y {$program->name}\n";
                             $message .= "Petsa: {$programDate}\n";
                             $message .= "Oras: {$startTime} - {$endTime}\n";
@@ -546,17 +546,17 @@ class ProgramResource extends Resource
                             $message .= "\nPalihug mangadto sa takdang oras aron matagaan og hustong serbisyo.";
                             $message .= "\nDaghang salamat ug kita-kits!";
 
-                            $result = $smsService->sendSMSWithRateLimit($user->contact_number, $message);
+                            $result = $smsService->sendSMSWithRateLimit($head->contact_number, $message);
 
                             if ($result['success']) {
                                 $successCount++;
                             } else {
                                 $failCount++;
-                                $failedNumbers[] = $user->first_name . ' ' . $user->last_name . ' (' . ($result['message'] ?? 'Unknown error') . ')';
+                                $failedNumbers[] = $head->first_name . ' ' . $head->last_name . ' (' . ($result['message'] ?? 'Unknown error') . ')';
                                 \Illuminate\Support\Facades\Log::warning('SMS send failed for patient', [
-                                    'patient_id' => $user->id,
-                                    'patient_name' => $user->first_name . ' ' . $user->last_name,
-                                    'contact_number' => $user->contact_number,
+                                    'patient_id' => $head->id,
+                                    'patient_name' => $head->first_name . ' ' . $head->last_name,
+                                    'contact_number' => $head->contact_number,
                                     'formatted_number' => $result['formatted_number'] ?? null,
                                     'error' => $result['message'] ?? 'Unknown error',
                                     'api_response' => $result['data'] ?? null
