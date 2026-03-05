@@ -126,6 +126,7 @@ class Register extends BaseRegister
             'birth_date' => $data['birth_date'],
             'sex' => $data['gender'],
             'barangay_id' => $data['barangay_id'],
+            'blood_pressure' => '120/80', // Default value, can be updated later by the patient or admin    
         ]);
         
         $admins = User::where('role', 'mho')->get();
