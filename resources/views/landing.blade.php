@@ -151,7 +151,6 @@
                 </div>
                 <div class="flex space-x-2">
                     <a href="{{ route('login') }}" class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-md hover:text-gray-900">Login</a>
-                    <a href="{{ route('register') }}" class="px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-md hover:bg-gray-700">Register</a>
                 </div>
             </div>
         </header>

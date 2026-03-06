@@ -40,9 +40,6 @@ Route::get('/login', function () {
     return redirect('/commhealth/login');
 })->name('login');
 
-Route::get('/register', function () {
-    return redirect('/commhealth/register');
-})->name('register');
 
 Route::redirect('profile', '/commhealth/settings')->name('profile');
 
