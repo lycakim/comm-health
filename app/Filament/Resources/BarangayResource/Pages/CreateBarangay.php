@@ -6,9 +6,12 @@ use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\BarangayResource;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class CreateBarangay extends CreateRecord
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = BarangayResource::class;
 
     protected function getRedirectUrl(): string

@@ -7,9 +7,12 @@ use Illuminate\Support\Facades\Auth;
 use Filament\Resources\Pages\ListRecords;
 use App\Filament\Resources\ConsultationResource;
 use Filament\Actions;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class IndexConsultations extends ListRecords
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = ConsultationResource::class;
 
     public function mount(): void

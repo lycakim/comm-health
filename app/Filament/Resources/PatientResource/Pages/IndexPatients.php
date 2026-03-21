@@ -4,18 +4,19 @@ namespace App\Filament\Resources\PatientResource\Pages;
 
 use App\Filament\Resources\PatientResource;
 use App\Jobs\ImportPatientsJob;
-use App\Models\Patient;
 use App\Exports\PatientTemplateExport;
 use Filament\Actions;
 use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class IndexPatients extends ListRecords
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = PatientResource::class;
 
     public function mount(): void

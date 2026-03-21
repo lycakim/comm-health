@@ -6,9 +6,12 @@ use App\Models\Patient;
 use App\Filament\Resources\PatientResource;
 use App\Models\Barangay;
 use Filament\Resources\Pages\Page;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class AllPatients extends Page
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = PatientResource::class;
 
     protected static string $view = 'filament.resources.patient-resource.pages.all-patients';

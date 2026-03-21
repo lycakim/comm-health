@@ -10,9 +10,11 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class ActivityLogs extends Page implements HasTable
 {
+    use HasDashboardBreadcrumb;
     use InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';

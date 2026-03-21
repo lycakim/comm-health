@@ -12,9 +12,11 @@ use Filament\Infolists\Contracts\HasInfolists;
 use Parallax\FilamentComments\Actions\CommentsAction;
 use Filament\Infolists\Concerns\InteractsWithInfolists;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class Feedback extends Page implements HasInfolists
 {
+    use HasDashboardBreadcrumb;
     use InteractsWithInfolists;
 
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';

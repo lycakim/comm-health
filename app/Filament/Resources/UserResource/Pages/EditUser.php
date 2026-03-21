@@ -5,12 +5,16 @@ namespace App\Filament\Resources\UserResource\Pages;
 use Filament\Actions;
 use Illuminate\Database\Eloquent\Model;
 use App\Filament\Resources\UserResource;
-use App\Models\User;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
+use App\Filament\Concerns\HasBackAction;
 
 class EditUser extends EditRecord
 {
+    use HasDashboardBreadcrumb;
+    use HasBackAction;
+
     protected static string $resource = UserResource::class;
 
     protected function getRedirectUrl(): string
@@ -21,6 +25,7 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            $this->getBackAction(),
             // "Create Another" button
             Actions\Action::make('create_another')
             ->label('Create Another')

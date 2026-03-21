@@ -40,9 +40,11 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Actions\Action as TablesAction;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class Reports extends Page implements HasTable
 {
+    use HasDashboardBreadcrumb;
     use InteractsWithTable;
     
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document';

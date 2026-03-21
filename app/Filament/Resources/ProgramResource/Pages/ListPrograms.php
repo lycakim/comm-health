@@ -8,9 +8,12 @@ use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\ProgramResource;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class ListPrograms extends ListRecords
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = ProgramResource::class;
 
     protected function getHeaderActions(): array

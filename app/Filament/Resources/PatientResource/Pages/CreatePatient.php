@@ -14,9 +14,12 @@ use Filament\Notifications\Notification;
 use App\Jobs\NotificationEmailPatientJob;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\PatientResource;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class CreatePatient extends CreateRecord
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = PatientResource::class;
 
     protected static ?string $title = 'Create Resident';

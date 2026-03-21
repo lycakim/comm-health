@@ -18,9 +18,14 @@ use Filament\Resources\Pages\EditRecord;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\ToggleButtons;
 use App\Filament\Resources\ConsultationResource;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
+use App\Filament\Concerns\HasBackAction;
 
 class EditConsultation extends EditRecord
 {
+    use HasDashboardBreadcrumb;
+    use HasBackAction;
+
     protected static string $resource = ConsultationResource::class;
 
     protected function getRedirectUrl(): string
@@ -31,6 +36,7 @@ class EditConsultation extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            $this->getBackAction(),
             // Actions\DeleteAction::make()
             //     ->icon('heroicon-o-trash'),
 

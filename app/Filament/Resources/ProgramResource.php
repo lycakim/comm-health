@@ -473,7 +473,20 @@ class ProgramResource extends Resource
                     ->modalSubmitActionLabel('Confirm & Send SMS')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('success')
-                    ->visible(fn () => Auth::user()->isMHO() || Auth::user()->isAdmin())
+                    ->visible(function ($record) {
+                        $user = Auth::user();
+                        $creator = $record->createdByUser ?? $record->coordinatorUser;
+
+                        if ($user->isMHO() || $user->isAdmin()) {
+                            return !$creator || in_array($creator->role, [RoleEnum::ADMIN, RoleEnum::MHO]);
+                        }
+
+                        if ($user->isBHW() || $user->isMidwife()) {
+                            return $creator && in_array($creator->role, [RoleEnum::BHW, RoleEnum::MIDWIFE]);
+                        }
+
+                        return false;
+                    })
 
                     ->form(function ($record) {
                         $users = $record->getSmsRecipientsQuery()->get();

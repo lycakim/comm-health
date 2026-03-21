@@ -22,9 +22,11 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class HealthPrograms extends Page implements HasTable
 {
+    use HasDashboardBreadcrumb;
     use InteractsWithTable;
     
     protected static ?string $navigationIcon = 'heroicon-o-user-group';

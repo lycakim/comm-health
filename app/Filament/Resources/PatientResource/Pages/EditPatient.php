@@ -6,9 +6,14 @@ use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\PatientResource;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
+use App\Filament\Concerns\HasBackAction;
 
 class EditPatient extends EditRecord
 {
+    use HasDashboardBreadcrumb;
+    use HasBackAction;
+
     protected static string $resource = PatientResource::class;
 
     protected function getRedirectUrl(): string
@@ -19,6 +24,7 @@ class EditPatient extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            $this->getBackAction(),
             Actions\ViewAction::make(),
             // Actions\Action::make('create_referral')
             //     ->label('Create Referral')

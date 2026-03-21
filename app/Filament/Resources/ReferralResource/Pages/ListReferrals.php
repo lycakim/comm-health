@@ -8,9 +8,12 @@ use Illuminate\Support\Facades\Auth;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use App\Filament\Resources\ReferralResource;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class ListReferrals extends ListRecords
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = ReferralResource::class;
 
     protected function getHeaderActions(): array

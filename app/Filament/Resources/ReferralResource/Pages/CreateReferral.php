@@ -9,9 +9,12 @@ use Filament\Support\Enums\MaxWidth;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\ReferralResource;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class CreateReferral extends CreateRecord
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = ReferralResource::class;
 
     protected function getRedirectUrl(): string

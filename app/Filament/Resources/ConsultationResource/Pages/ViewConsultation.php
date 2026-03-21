@@ -5,14 +5,20 @@ namespace App\Filament\Resources\ConsultationResource\Pages;
 use App\Filament\Resources\ConsultationResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
+use App\Filament\Concerns\HasBackAction;
 
 class ViewConsultation extends ViewRecord
 {
+    use HasDashboardBreadcrumb;
+    use HasBackAction;
+
     protected static string $resource = ConsultationResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
+            $this->getBackAction(),
             Actions\Action::make('print')
                 ->label('Print')
                 ->icon('heroicon-o-printer')

@@ -7,9 +7,12 @@ use App\Filament\Resources\UserResource;
 use Filament\Resources\Pages\CreateRecord;
 use App\Notifications\UserCreatedNotification;
 use Filament\Notifications\Notification;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class CreateUser extends CreateRecord
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = UserResource::class;
 
     protected function getRedirectUrl(): string

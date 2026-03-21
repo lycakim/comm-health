@@ -14,9 +14,11 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class LandingPagePhotos extends Page implements HasForms
 {
+    use HasDashboardBreadcrumb;
     use InteractsWithForms;
 
     protected static ?string $navigationIcon = 'heroicon-o-photo';

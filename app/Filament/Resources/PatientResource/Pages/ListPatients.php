@@ -17,9 +17,12 @@ use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\PatientResource;
 use App\Enums\RoleEnum;
 use Filament\Tables\Table;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class ListPatients extends ListRecords
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = PatientResource::class;
 
     protected function getHeaderActions(): array

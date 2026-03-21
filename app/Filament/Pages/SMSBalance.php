@@ -22,9 +22,11 @@ use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Filters\SelectFilter;
 use App\Models\SMSBalance as SMSBalanceModel;
 use Filament\Tables\Concerns\InteractsWithTable;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class SMSBalance extends Page implements HasTable
 {
+    use HasDashboardBreadcrumb;
     use InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-bottom-center-text';

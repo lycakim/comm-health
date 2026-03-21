@@ -16,9 +16,11 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class Settings extends Page implements HasForms
 {
+    use HasDashboardBreadcrumb;
     use InteractsWithForms;
 
     protected static ?string $navigationIcon = 'heroicon-o-cog';

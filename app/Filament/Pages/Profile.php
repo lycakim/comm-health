@@ -14,9 +14,12 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\Support\Htmlable;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class Profile extends Page
 {
+    use HasDashboardBreadcrumb;
+
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
     protected static string $view = 'filament.pages.profile';

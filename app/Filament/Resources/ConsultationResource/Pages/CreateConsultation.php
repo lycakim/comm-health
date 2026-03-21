@@ -14,9 +14,12 @@ use App\Services\PDFGenerationService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\ConsultationResource;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class CreateConsultation extends CreateRecord
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = ConsultationResource::class;
 
     protected function getRedirectUrl(): string

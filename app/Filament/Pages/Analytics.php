@@ -10,9 +10,12 @@ use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use App\Filament\Widgets\PatientChart;
 use Illuminate\Contracts\Support\Htmlable;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class Analytics extends Page
-{    
+{
+    use HasDashboardBreadcrumb;
+
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
     protected static string $view = 'filament.pages.analytics';

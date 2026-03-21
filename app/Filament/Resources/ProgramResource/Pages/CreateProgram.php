@@ -12,9 +12,12 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\ProgramResource;
 use App\Notifications\AnnouncementNotification;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class CreateProgram extends CreateRecord
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = ProgramResource::class;
 
     protected function getRedirectUrl(): string

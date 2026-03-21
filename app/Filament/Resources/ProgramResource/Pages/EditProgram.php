@@ -9,9 +9,14 @@ use Filament\Resources\Pages\EditRecord;
 use App\Filament\Resources\ProgramResource;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\AnnouncementNotification;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
+use App\Filament\Concerns\HasBackAction;
 
 class EditProgram extends EditRecord
 {
+    use HasDashboardBreadcrumb;
+    use HasBackAction;
+
     protected static string $resource = ProgramResource::class;
 
     protected function getRedirectUrl(): string
@@ -31,6 +36,7 @@ class EditProgram extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            $this->getBackAction(),
             Actions\DeleteAction::make(),
         ];
     }

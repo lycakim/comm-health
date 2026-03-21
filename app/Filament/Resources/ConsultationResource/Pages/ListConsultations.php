@@ -10,9 +10,12 @@ use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Filament\Resources\ConsultationResource;
+use App\Filament\Concerns\HasDashboardBreadcrumb;
 
 class ListConsultations extends ListRecords
 {
+    use HasDashboardBreadcrumb;
+
     protected static string $resource = ConsultationResource::class;
 
     protected function getHeaderActions(): array
