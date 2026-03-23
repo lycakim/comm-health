@@ -293,7 +293,21 @@ class PatientResource extends Resource
                                     ->options(fn () => collect(PatientFormOptionsServices::getPatientRelationships())->sort()->toArray())
                                     ->preload()
                                     ->searchable()
-                                    ->required(),
+                                    ->required()
+                                    ->createOptionForm([
+                                        \Filament\Forms\Components\TextInput::make('name')
+                                            ->label('Relationship Name')
+                                            ->required()
+                                            ->maxLength(100)
+                                            ->unique('family_relationships', 'name'),
+                                    ])
+                                    ->createOptionUsing(function (array $data) {
+                                        $relationship = \App\Models\FamilyRelationship::create([
+                                            'name'    => $data['name'],
+                                            'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                                        ]);
+                                        return $relationship->name;
+                                    }),
                                     // ->required(fn (Get $get) => $get('relationship_to_head_of_family') !== 'Other'),
                                 // TextInput::make('relationship_to_head_of_family_other')
                                 //     ->label('Please specify relationship')

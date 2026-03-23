@@ -96,24 +96,9 @@ class PatientFormOptionsServices
 
     public static function getPatientRelationships()
     {
-        return [
-            'Household-Head' => 'Household Head',
-            'Spouse' => 'Spouse',
-            'Child' => 'Child',
-            'Sibling' => 'Sibling',
-            'Parent' => 'Parent',
-            'Grandparent' => 'Grandparent',
-            'Grandchild' => 'Grandchild',
-            'Son-in-Law' => 'Son-in-law',
-            'Daughter-in-Law' => 'Daughter-in-law',
-            'Parent-in-Law' => 'Parent-in-law',
-            'Sibling-in-Law' => 'Sibling-in-law',
-            'Co-Wife' => 'Co-wife',
-            'Relative' => 'Relative',
-            'Boarder' => 'Boarder',
-            'Helper' => 'Helper',
-            // 'Other' => 'Other',
-        ];
+        return \App\Models\FamilyRelationship::orderBy('name')
+            ->pluck('name', 'name')
+            ->toArray();
     }
 
     public static function getPatientStatus()
