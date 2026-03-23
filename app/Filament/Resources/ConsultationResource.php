@@ -441,11 +441,6 @@ class ConsultationResource extends Resource
                                             ->label('Created By')
                                             ->default($record->referral->user->name ?? 'Unknown')
                                             ->disabled(),
-
-                                        Forms\Components\TextInput::make('status')
-                                            ->label('Status')
-                                            ->default(ucfirst($record->referral->status))
-                                            ->disabled(),
                                     ])
                                     ->columns(2),
                             ];

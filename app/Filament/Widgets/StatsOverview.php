@@ -59,7 +59,7 @@ class StatsOverview extends BaseWidget
         // Calculate percentage changes from last month
         $patientIncrease = $this->calculatePercentageChange(Patient::class, null, $barangayId);
         $consultationIncrease = $this->calculatePercentageChange(Consultation::class, null, $barangayId);
-        $referralChange = $this->calculatePercentageChange(Referral::class, 'pending', $barangayId);
+        $referralChange = $this->calculatePercentageChange(Referral::class, null, $barangayId);
         
         // Get upcoming program
         $nextProgram = $programQuery->where('created_at', '>', now())
@@ -78,7 +78,7 @@ class StatsOverview extends BaseWidget
         // Get total counts
         $totalPatients = $patientQuery->count();
         $totalConsultations = $consultationQuery->count();
-        $pendingReferrals = (clone $referralQuery)->where('status', 'pending')->count();
+        $pendingReferrals = (clone $referralQuery)->count();
         $upcomingProgramsCount = (clone $programQuery)->where('created_at', '>', now())->count();
 
         if ($user->isAdmin() || $user->isMHO()) {
@@ -97,7 +97,7 @@ class StatsOverview extends BaseWidget
                     ->color('success')
                     ->url(ConsultationResource::getUrl('index')),
                     
-                Stat::make('Pending Referrals', $pendingReferrals)
+                Stat::make('Referrals', $pendingReferrals)
                     ->description($referralChange > 0 ? '+' : '' . $referralChange . '% from last month')
                     ->descriptionIcon($referralChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                     ->chart([4, 3, 5, 6, 4, 3]) // Replace with actual data points
@@ -142,7 +142,7 @@ class StatsOverview extends BaseWidget
                 ->color('success')
                 ->url(ConsultationResource::getUrl('index')),
                 
-            Stat::make('Pending Referrals', $pendingReferrals)
+            Stat::make('Referrals', $pendingReferrals)
                 ->description($barangayId ? ($referralChange > 0 ? '+' : '') . $referralChange . '% from last month' : 'No barangay assigned')
                 ->descriptionIcon($referralChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->chart([4, 3, 5, 6, 4, 3]) // Replace with actual data points

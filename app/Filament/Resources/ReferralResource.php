@@ -617,16 +617,6 @@ class ReferralResource extends Resource
                                     ])
                                     ->default('Carmen MHO')
                                     ->required(),
-                                Forms\Components\Select::make('status')
-                                    ->searchable()
-                                    ->options([
-                                        'pending' => 'Pending',
-                                        'accepted' => 'Accepted',
-                                        'completed' => 'Completed',
-                                        'cancelled' => 'Cancelled',
-                                    ])
-                                    ->default('pending')
-                                    ->required(),
                                 Forms\Components\ToggleButtons::make('surgical_operation')
                                     ->boolean()
                                     ->live()
@@ -711,8 +701,7 @@ class ReferralResource extends Resource
                             ->maxLength(65535)
                             ->columnSpanFull(),
                     ])
-                    ->columns(2)
-                    ->visible(fn (Forms\Get $get) => in_array($get('status'), ['accepted', 'completed'])),
+                    ->columns(2),
 
                 Forms\Components\Hidden::make('user_id')
                     ->default(fn () => self::currentUser()->id)
@@ -857,7 +846,6 @@ class ReferralResource extends Resource
                                     'Purok',
                                     'Barangay',
                                     'Urgency',
-                                    'Status',
                                     'Referred To',
                                     'Referred By',
                                     'Date Referred',
@@ -874,7 +862,6 @@ class ReferralResource extends Resource
                                         $patient?->purok?->name ?? 'N/A',
                                         $patient?->barangay?->name ?? 'N/A',
                                         $referral->urgency,
-                                        $referral->status,
                                         $referral->referred_to,
                                         $referral->user?->name ?? 'N/A',
                                         $referral->date_referred ? $referral->date_referred->format('Y-m-d H:i:s') : ($referral->created_at->format('Y-m-d H:i:s')),
@@ -882,8 +869,8 @@ class ReferralResource extends Resource
                                 }
                                 
                                 // Footer row
-                                fputcsv($handle, ['', '', '', '', '', '', '', '', '', '', '']); // Empty row
-                                fputcsv($handle, ['Total Records: ' . count($referrals), '', '', '', '', '', '', '', '', '', '']);
+                                fputcsv($handle, ['', '', '', '', '', '', '', '', '', '']); // Empty row
+                                fputcsv($handle, ['Total Records: ' . count($referrals), '', '', '', '', '', '', '', '', '']);
                                 
                                 fclose($handle);
                             }, 'referrals_export_' . now()->format('Y-m-d_His') . '.csv', [
