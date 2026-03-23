@@ -194,6 +194,108 @@ class ConsultationResource extends Resource
                     }),
             ])
             ->actions([
+                Tables\Actions\Action::make('view_consultation')
+                    ->label('View Details')
+                    ->tooltip('View Consultation')
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->slideOver()
+                    ->modalHeading(fn($record) => "Consultation Details for {$record->patient->first_name} {$record->patient->last_name}")
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->form(fn($record) => [
+                        Forms\Components\Section::make('Patient Information')
+                            ->schema([
+                                Forms\Components\TextInput::make('patient_name')
+                                    ->label('Full Name')
+                                    ->default(trim("{$record->patient->first_name} {$record->patient->middle_name} {$record->patient->last_name}"))
+                                    ->disabled()
+                                    ->columnSpanFull(),
+
+                                Forms\Components\TextInput::make('patient_birthdate')
+                                    ->label('Date of Birth')
+                                    ->default($record->patient->birth_date?->format('M d, Y'))
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('patient_age')
+                                    ->label('Age')
+                                    ->default($record->patient->age ?? '-')
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('patient_sex')
+                                    ->label('Sex')
+                                    ->default(ucfirst($record->patient->sex ?? '-'))
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('patient_civil_status')
+                                    ->label('Civil Status')
+                                    ->default(ucfirst($record->patient->civil_status ?? '-'))
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('patient_contact')
+                                    ->label('Contact Number')
+                                    ->default($record->patient->contact_number ?? '-')
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('patient_occupation')
+                                    ->label('Occupation')
+                                    ->default($record->patient->occupation ?? '-')
+                                    ->disabled(),
+                            ])
+                            ->columns(2),
+
+                        Forms\Components\Section::make('Consultation Information')
+                            ->schema([
+                                Forms\Components\TextInput::make('consultation_date')
+                                    ->label('Consultation Date')
+                                    ->default($record->date?->format('M d, Y h:i A'))
+                                    ->disabled()
+                                    ->columnSpanFull(),
+
+                                Forms\Components\TextInput::make('program')
+                                    ->label('Program')
+                                    ->default($record->program?->name ?? '-')
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('created_by')
+                                    ->label('Created By')
+                                    ->default($record->user?->name ?? '-')
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('blood_pressure')
+                                    ->label('Blood Pressure')
+                                    ->default($record->blood_pressure ?? '-')
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('sugar_level')
+                                    ->label('Sugar Level')
+                                    ->default($record->sugar_level ?? '-')
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('height')
+                                    ->label('Height (cm)')
+                                    ->default($record->height ?? '-')
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('weight')
+                                    ->label('Weight (kg)')
+                                    ->default($record->weight ?? '-')
+                                    ->disabled(),
+
+                                Forms\Components\Textarea::make('notes')
+                                    ->label('Notes')
+                                    ->default($record->notes ?? '-')
+                                    ->disabled()
+                                    ->columnSpanFull(),
+
+                                Forms\Components\TextInput::make('referral_status')
+                                    ->label('Referral Status')
+                                    ->default($record->referral ? 'Referred' : 'Not Referred')
+                                    ->disabled()
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(2),
+                    ]),
                 // Tables\Actions\ViewAction::make('referralDetails')
                 //     ->extraModalFooterActions(fn($record) => [
                 //         $record->referral 
