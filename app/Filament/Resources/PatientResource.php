@@ -260,7 +260,6 @@ class PatientResource extends Resource
                                 TextInput::make('contact_number')
                                     ->label('Contact Number')
                                     ->columnSpan(2)
-                                    ->required()
                                     ->rule('regex:/^(09\d{9}|9\d{9}|639\d{9})$/')
                                     ->hint('Format: 09123456789')
                                     ->afterStateHydrated(function ($component, $state) {
@@ -572,7 +571,6 @@ class PatientResource extends Resource
                         TextInput::make('blood_pressure')
                             ->label('Blood Pressure')
                             ->hint('Format: 120/80')
-                            ->required()
                             ->rule('regex:/^\d{2,3}\/\d{2,3}$/')
                             ->placeholder('120/80')
                             ->columnSpan(1)
