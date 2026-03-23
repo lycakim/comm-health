@@ -220,6 +220,7 @@ class EditConsultation extends EditRecord
                             'receiving_provider_notes'  => $data['notes'] ?? null,
                             'user_id'                   => Auth::id(),
                             'created_at'                => now(),
+                            'date_referred'             => $record->date,
                             'status'                    => 'pending', // Default status
                         ]);
 
