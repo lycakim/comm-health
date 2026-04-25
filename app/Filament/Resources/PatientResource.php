@@ -289,7 +289,7 @@ class PatientResource extends Resource
                                     ->live()
                                     ->columnSpan(2)
                                     ->columnSpan(fn (Get $get) => $get('relationship_to_head_of_family') === 'Household-Head' ? 4 : 2)
-                                    ->default('Household Head')
+                                    ->default('Household-Head')
                                     ->options(fn () => collect(PatientFormOptionsServices::getPatientRelationships())->sort()->toArray())
                                     ->preload()
                                     ->searchable()
