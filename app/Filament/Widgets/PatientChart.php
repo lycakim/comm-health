@@ -118,8 +118,8 @@ class PatientChart extends ChartWidget
     public function getDescription(): ?string
     {
         $user = auth()->user();
-        $locationLabel = $user->isBHW() ? 'puroks' : 'barangays';
-        
+        $locationLabel = ($user->isBHW() || $user->isMidwife()) ? 'puroks' : 'barangays';
+
         if ($this->filter) {
             [$year, $month] = explode('-', $this->filter);
             $monthName = date('F', mktime(0, 0, 0, (int)$month, 1));
@@ -132,7 +132,7 @@ class PatientChart extends ChartWidget
     {
         $user = auth()->user();
 
-        if ($user->isBHW()) {
+        if ($user->isBHW() || $user->isMidwife()) {
             return 'Resident Statistics by Purok';
         }
 

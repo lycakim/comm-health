@@ -40,6 +40,7 @@ class Settings extends Page implements HasForms
             RoleEnum::ADMIN,
             RoleEnum::MHO,
             RoleEnum::BHW,
+            RoleEnum::MIDWIFE,
         ]);
     }
 
