@@ -70,7 +70,7 @@ class CreateConsultation extends CreateRecord
             'action_taken',
             'impression',
             'hpi_notes',
-            'notes',
+            'referral_notes',
             'laboratories', // Exclude laboratories from consultation data as it goes to referral
         ]);
     }
@@ -142,7 +142,7 @@ class CreateConsultation extends CreateRecord
             'impression'                => $data['impression'] ?? null,
             'hpi_notes'                 => $data['hpi_notes'] ?? null,
             'laboratories'              => $data['laboratories'] ?? null,
-            'receiving_provider_notes'  => $data['notes'] ?? null,
+            'receiving_provider_notes'  => $data['referral_notes'] ?? null,
             'user_id'                   => Auth::id(),
             'created_at'                => $currentDate,
             'date_referred'             => $consultation->date,

@@ -200,7 +200,7 @@ class ConsultationResource extends Resource
                     ->icon('heroicon-o-eye')
                     ->color('gray')
                     ->slideOver()
-                    ->modalHeading(fn($record) => "Consultation Details for {$record->patient->first_name} {$record->patient->last_name}")
+                    ->modalHeading(fn($record) => "Referral Details for {$record->patient->first_name} {$record->patient->last_name}")
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close')
                     ->form(fn($record) => [

@@ -810,6 +810,27 @@ class ConsultationFormService
                                             })
                                             ->columns(3)
                                             ->visible(fn (callable $get) => $get('program_id') !== null),
+                                        Fieldset::make('Vital Signs')
+                                            ->schema([
+                                                TextInput::make('blood_pressure')
+                                                    ->label('Blood Pressure')
+                                                    ->hint('mm Hg'),
+                                                TextInput::make('height')
+                                                    ->label('Height')
+                                                    ->numeric()
+                                                    ->minValue(0)
+                                                    ->hint('cm')
+                                                    ->reactive()
+                                                    ->afterStateUpdated($calculateBMI),
+                                                TextInput::make('weight')
+                                                    ->label('Weight')
+                                                    ->numeric()
+                                                    ->minValue(0)
+                                                    ->hint('kg')
+                                                    ->reactive()
+                                                    ->afterStateUpdated($calculateBMI),
+                                            ])
+                                            ->columns(3),
                                         Fieldset::make()
                                             ->schema([
                                                 ToggleButtons::make('make_referral')
@@ -1045,22 +1066,6 @@ class ConsultationFormService
                                             ->columns(2),
                                         Fieldset::make('Other Maternal Labs')
                                             ->schema([
-                                                TextInput::make('blood_pressure')
-                                                    ->numeric()
-                                                    ->minValue(0)
-                                                    ->label('Blood Pressure')
-                                                    ->hint('mm Hg'),
-                                                TextInput::make('weight')
-                                                    ->minValue(0)
-                                                    ->columnSpan(2)
-                                                    ->hint('kg')
-                                                    ->numeric()
-                                                    ->label('Weight'),
-                                                TextInput::make('height')
-                                                    ->minValue(0)
-                                                    ->numeric()
-                                                    ->hint('cm')
-                                                    ->label('Height'),
                                                 TextInput::make('fundal_height')
                                                     ->minValue(0)
                                                     ->numeric()
@@ -1178,7 +1183,7 @@ class ConsultationFormService
                                     ->columns(3),
 
                                     Hidden::make('user_id')
-                                        ->default(fn () => Auth::user())
+                                        ->default(fn () => Auth::id())
                                         ->required()
                             ]),
                         Wizard\Step::make('Consultation Step 3')
@@ -1289,7 +1294,7 @@ class ConsultationFormService
                                 Textarea::make('hpi_notes')
                                     ->maxLength(65535),
 
-                                Textarea::make('notes')
+                                Textarea::make('referral_notes')
                                     ->label('Additional Notes')
                                     ->rows(3)
                                     ->maxLength(1000),
