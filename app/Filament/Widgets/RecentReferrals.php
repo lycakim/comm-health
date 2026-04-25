@@ -74,14 +74,6 @@ class RecentReferrals extends BaseWidget
                 TextColumn::make('created_at')
                     ->label('Date')
                     ->date('M d, Y'),
-                TextColumn::make('status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'approved' => 'success',
-                        'rejected' => 'danger',
-                        default => 'gray',
-                    }),
             ])
             ->paginated(false);
     }
