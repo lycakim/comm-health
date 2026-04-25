@@ -208,7 +208,7 @@ class HealthPrograms extends Page implements HasTable
                     ->modalSubmitActionLabel('Confirm & Send SMS')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('success')
-                    ->visible(fn ($record) => (Auth::user()->isMHO() || Auth::user()->isAdmin()) && $record->program_end_date > now())
+                    ->visible(fn ($record) => (Auth::user()->isMHO() || Auth::user()->isAdmin() || Auth::user()->isBHW() || Auth::user()->isMidwife()) && $record->program_end_date > now())
 
                     ->form(function ($record) {
                         $users = $record->getSmsRecipientsQuery()->get();
@@ -257,7 +257,7 @@ class HealthPrograms extends Page implements HasTable
                         $failedNumbers = [];
 
                         $programStartDate = $program->program_start_date ? Carbon::parse($program->program_start_date)->format('F d, Y') : 'TBA';
-                        $programEndDate = $program->program_start_date ? Carbon::parse($program->program_start_date)->format('F d, Y') : 'TBA';
+                        $programEndDate = $program->program_end_date ? Carbon::parse($program->program_end_date)->format('F d, Y') : 'TBA';
                         $startTime = $program->program_start_time ? Carbon::parse($program->program_start_time)->format('g:i A') : 'TBA';
                         $endTime = $program->program_end_time ? Carbon::parse($program->program_end_time)->format('g:i A') : 'TBA';
 
