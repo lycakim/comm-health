@@ -29,12 +29,13 @@ class UpcomingHealthPrograms extends BaseWidget
                 //     ->whereDate('program_date', '>=', now())
                 //     ->whereDate('program_date', '<=', now()->addDays(30))
                 //     ->orderBy('program_date')
-                Program::latest()
+                Program::whereDate('program_start_date', '>=', now())
+                    ->orderBy('program_start_date')
                     ->when(
-                        Auth::user()->role !== RoleEnum::MHO->value,
+                        !Auth::user()->isAdmin() && !Auth::user()->isMHO(),
                         function ($query) {
                             $barangayId = Auth::user()->barangay_id;
-                            
+
                             if ($barangayId) {
                                 $query->where('barangay_id', $barangayId);
                             } else {

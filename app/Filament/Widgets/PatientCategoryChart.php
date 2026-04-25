@@ -20,9 +20,7 @@ class PatientCategoryChart extends ChartWidget
         $data = [];
         
         foreach ($serviceTypes as $key => $type) {
-            $data[] = Patient::where('category_id', $key)
-                ->where('created_at', '>', now()->subDays(30))
-                ->count();
+            $data[] = Patient::where('category_id', $key)->count();
         }
 
         return [

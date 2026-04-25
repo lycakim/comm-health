@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\RoleEnum;
 use App\Models\Patient;
 use App\Models\Barangay;
-use App\Models\Category;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -13,13 +12,6 @@ class SeniorCitizenChartService
 {
     /** Minimum age for senior citizens: 60 years */
     private const AGE_MIN = 60;
-
-    protected ?int $seniorCitizenCategoryId = null;
-
-    public function __construct()
-    {
-        $this->seniorCitizenCategoryId = Category::findByAge(60)?->id;
-    }
 
     /**
      * Get senior citizen patients by barangay or purok for a specific month and year.
@@ -49,6 +41,13 @@ class SeniorCitizenChartService
     {
         return Patient::whereNotNull('birth_date')
             ->whereRaw('TIMESTAMPDIFF(YEAR, birth_date, ?) >= ?', [$refDate, self::AGE_MIN]);
+    }
+
+    /** Base query for senior citizens (age >= 60 as of their registration date) */
+    private function seniorAtRegistrationQuery()
+    {
+        return Patient::whereNotNull('birth_date')
+            ->whereRaw('TIMESTAMPDIFF(YEAR, birth_date, created_at) >= ?', [self::AGE_MIN]);
     }
 
     /**
@@ -187,10 +186,6 @@ class SeniorCitizenChartService
     {
         $year = $year ?? now()->year;
 
-        if (!$this->seniorCitizenCategoryId) {
-            return $this->emptyDataset();
-        }
-
         $maleData = $this->getMonthlySeniorCitizenCounts($year, 'male');
         $femaleData = $this->getMonthlySeniorCitizenCounts($year, 'female');
         
@@ -242,11 +237,7 @@ class SeniorCitizenChartService
     {
         $year = $year ?? now()->year;
 
-        if (!$this->seniorCitizenCategoryId) {
-            return $this->emptyDataset();
-        }
-
-        $patients = Patient::where('category_id', $this->seniorCitizenCategoryId)
+        $patients = $this->seniorAtRegistrationQuery()
             ->whereYear('created_at', $year)
             ->selectRaw('MONTH(created_at) as month, COUNT(*) as count')
             ->groupBy('month')
@@ -278,10 +269,6 @@ class SeniorCitizenChartService
     {
         $year = $year ?? now()->year;
         $previousYear = $year - 1;
-
-        if (!$this->seniorCitizenCategoryId) {
-            return $this->emptyDataset();
-        }
 
         $currentYearData = $this->getMonthlySeniorCitizenCounts($year);
         $previousYearData = $this->getMonthlySeniorCitizenCounts($previousYear);
@@ -316,11 +303,7 @@ class SeniorCitizenChartService
     {
         $year = $year ?? now()->year;
 
-        if (!$this->seniorCitizenCategoryId) {
-            return $this->emptyDataset();
-        }
-
-        $patients = Patient::where('category_id', $this->seniorCitizenCategoryId)
+        $patients = $this->seniorAtRegistrationQuery()
             ->whereYear('created_at', $year)
             ->get();
 
@@ -334,7 +317,7 @@ class SeniorCitizenChartService
         ];
 
         foreach ($patients as $patient) {
-            $age = Carbon::parse($patient->date_of_birth)->age;
+            $age = Carbon::parse($patient->birth_date)->age;
             
             if ($age >= 60 && $age <= 64) {
                 $ageGroups['60-64']++;
@@ -386,25 +369,16 @@ class SeniorCitizenChartService
     {
         $year = $year ?? now()->year;
 
-        if (!$this->seniorCitizenCategoryId) {
-            return [
-                'total' => 0,
-                'current_month' => 0,
-                'previous_month' => 0,
-                'growth_percentage' => 0,
-            ];
-        }
-
-        $total = Patient::where('category_id', $this->seniorCitizenCategoryId)
+        $total = $this->seniorAtRegistrationQuery()
             ->whereYear('created_at', $year)
             ->count();
 
-        $currentMonth = Patient::where('category_id', $this->seniorCitizenCategoryId)
+        $currentMonth = $this->seniorAtRegistrationQuery()
             ->whereYear('created_at', $year)
             ->whereMonth('created_at', now()->month)
             ->count();
 
-        $previousMonth = Patient::where('category_id', $this->seniorCitizenCategoryId)
+        $previousMonth = $this->seniorAtRegistrationQuery()
             ->whereYear('created_at', $year)
             ->whereMonth('created_at', now()->subMonth()->month)
             ->count();
@@ -426,11 +400,7 @@ class SeniorCitizenChartService
      */
     public function getTotalSeniorCitizenPatients(int $year = null): int
     {
-        if (!$this->seniorCitizenCategoryId) {
-            return 0;
-        }
-
-        $query = Patient::where('category_id', $this->seniorCitizenCategoryId);
+        $query = $this->seniorAtRegistrationQuery();
 
         if ($year) {
             $query->whereYear('created_at', $year);
@@ -444,11 +414,7 @@ class SeniorCitizenChartService
      */
     private function getMonthlySeniorCitizenCounts(int $year, ?string $gender = null): array
     {
-        if (!$this->seniorCitizenCategoryId) {
-            return array_fill(1, 12, 0);
-        }
-
-        $query = Patient::where('category_id', $this->seniorCitizenCategoryId)
+        $query = $this->seniorAtRegistrationQuery()
             ->whereYear('created_at', $year);
 
         if ($gender) {
@@ -477,41 +443,4 @@ class SeniorCitizenChartService
         return $monthlyData;
     }
 
-    /**
-     * Return empty dataset when category not found
-     */
-    private function emptyDataset(): array
-    {
-        return [
-            'datasets' => [
-                [
-                    'label' => 'No Data',
-                    'data' => array_fill(0, 12, 0),
-                    'backgroundColor' => 'rgba(156, 163, 175, 0.5)',
-                    'borderColor' => 'rgb(156, 163, 175)',
-                ],
-            ],
-            'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        ];
-    }
-
-    /**
-     * Return empty barangay dataset when category not found
-     */
-    private function emptyBarangayDataset(): array
-    {
-        $barangays = Barangay::orderBy('name')->get();
-        
-        return [
-            'datasets' => [
-                [
-                    'label' => 'No Data',
-                    'data' => array_fill(0, $barangays->count(), 0),
-                    'backgroundColor' => 'rgba(156, 163, 175, 0.5)',
-                    'borderColor' => 'rgb(156, 163, 175)',
-                ],
-            ],
-            'labels' => $barangays->pluck('name')->toArray(),
-        ];
-    }
 }
