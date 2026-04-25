@@ -123,7 +123,7 @@ class SeniorCitizenChart extends ChartWidget
     {
         $user = auth()->user();
 
-        if ($user->isBHW()) {
+        if ($user->isBHW() || $user->isMidwife()) {
             return 'Senior Citizen Resident Statistics by Purok';
         }
 

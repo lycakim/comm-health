@@ -21,8 +21,7 @@ class ActivityLogsWidget extends BaseWidget
     public function getColumnSpan(): int | string | array
     {
         $user = Auth::user();
-        // Make columnSpanFull && !$user->isMidwife())  when user is NOT MHO
-        if ($user && !$user->isBHW()){;
+        if ($user && !$user->isBHW() && !$user->isMidwife()) {
             return 'full';
         }
         
