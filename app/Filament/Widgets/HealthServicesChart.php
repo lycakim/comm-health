@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Program;
+use App\Models\Consultation;
 use App\Models\Category;
 use Filament\Widgets\ChartWidget;
 
@@ -20,7 +20,9 @@ class HealthServicesChart extends ChartWidget
         $data = [];
         
         foreach ($serviceTypes as $key => $type) {
-            $data[] = Program::where('category_id', $key)
+            $data[] = Consultation::whereHas('patient', function ($q) use ($key) {
+                    $q->where('category_id', $key);
+                })
                 ->where('created_at', '>', now()->subDays(30))
                 ->count();
         }

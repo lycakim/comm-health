@@ -24,10 +24,10 @@ class RecentPatients extends BaseWidget
             ->query(
                 Patient::latest()
                     ->when(
-                        Auth::user()->role !== RoleEnum::MHO->value,
+                        !Auth::user()->isAdmin() && !Auth::user()->isMHO(),
                         function ($query) {
                             $barangayId = Auth::user()->barangay_id;
-                            
+
                             if ($barangayId) {
                                 $query->where('barangay_id', $barangayId);
                             } else {

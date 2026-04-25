@@ -42,7 +42,6 @@ class PatientCategoryByBarangayChart extends ChartWidget
             foreach ($brgys as $barangayId => $barangayName) {
                 $count = Patient::where('category_id', $categoryId)
                     ->where('barangay_id', $barangayId)
-                    ->where('created_at', '>', now()->subDays(30))
                     ->count();
                     
                 $categoryData[] = $count;
