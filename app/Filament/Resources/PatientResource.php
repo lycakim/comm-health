@@ -585,10 +585,11 @@ class PatientResource extends Resource
                         TextInput::make('blood_pressure')
                             ->label('Blood Pressure')
                             ->hint('Format: 120/80')
+                            ->nullable()
                             ->rule('regex:/^\d{2,3}\/\d{2,3}$/')
                             ->placeholder('120/80')
                             ->columnSpan(1)
-                            ->dehydrateStateUsing(fn($state) => trim($state)),
+                            ->dehydrateStateUsing(fn($state) => $state ? trim($state) : null),
                         TextInput::make('sugar_level')
                             ->label('Sugar Level')
                             ->columnSpan(1)
