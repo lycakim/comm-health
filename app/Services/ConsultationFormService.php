@@ -373,6 +373,7 @@ class ConsultationFormService
                                                         TextInput::make('blood_pressure')
                                                             ->numeric()
                                                             ->minValue(0)
+                                                            ->nullable()
                                                             ->label('Blood Pressure')
                                                             ->hint('mm Hg'),
                                                         TextInput::make('sugar_level')
@@ -676,6 +677,7 @@ class ConsultationFormService
                                                         TextInput::make('blood_pressure')
                                                             ->numeric()
                                                             ->minValue(0)
+                                                            ->nullable()
                                                             ->label('Blood Pressure')
                                                             ->hint('mm Hg'),
                                                         TextInput::make('sugar_level')
