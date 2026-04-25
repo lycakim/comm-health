@@ -195,12 +195,12 @@ class ConsultationResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('view_consultation')
-                    ->label('View Details')
-                    ->tooltip('View Consultation')
-                    ->icon('heroicon-o-eye')
+                    ->label('View Consultation Details')
+                    ->tooltip('View Consultation Details')
+                    ->icon('heroicon-o-clipboard-document-list')
                     ->color('gray')
                     ->slideOver()
-                    ->modalHeading(fn($record) => "Referral Details for {$record->patient->first_name} {$record->patient->last_name}")
+                    ->modalHeading(fn($record) => "Consultation Details for {$record->patient->first_name} {$record->patient->last_name}")
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close')
                     ->form(fn($record) => [
@@ -296,26 +296,110 @@ class ConsultationResource extends Resource
                             ])
                             ->columns(2),
                     ]),
-                // Tables\Actions\ViewAction::make('referralDetails')
-                //     ->extraModalFooterActions(fn($record) => [
-                //         $record->referral 
-                //             ? Tables\Actions\Action::make('print')
-                //                 ->label('Print')
-                //                 ->icon('heroicon-o-printer')
-                //                 ->color('primary')
-                //                 ->action(function ($record) {
-                //                     $referral = $record->referral;
-                //                     $pdfService = new PDFGenerationService();
-                                    
-                //                     $pdf = $pdfService->generateReferralPdf($referral, $record->patient, $record);
-                                    
-                //                     return response()->streamDownload(function () use ($pdf) {
-                //                         echo $pdf->output();
-                //                     }, "referral-{$referral->ref_id}.pdf");
-                //                 })
-                //             : null,
-                //     ]),
-                // Tables\Actions\Action::make('view'),
+                Tables\Actions\Action::make('view_referral')
+                    ->label('View Referral Details')
+                    ->tooltip('View Referral Details')
+                    ->icon('heroicon-o-document-text')
+                    ->color('info')
+                    ->slideOver()
+                    ->visible(fn($record) => (bool) $record->referral)
+                    ->modalHeading(fn($record) => "Referral Details for {$record->patient->first_name} {$record->patient->last_name}")
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->form(fn($record) => [
+                        Forms\Components\Section::make('Referral Information')
+                            ->schema([
+                                Forms\Components\TextInput::make('referral_id')
+                                    ->label('Referral ID')
+                                    ->default($record->referral->ref_id)
+                                    ->disabled()
+                                    ->columnSpanFull(),
+
+                                Forms\Components\TextInput::make('referral_date')
+                                    ->label('Referral Date')
+                                    ->default($record->referral->created_at->format('M d, Y h:i A'))
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('referred_to')
+                                    ->label('Referred To')
+                                    ->default($record->referral->referred_to)
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('referral_reason')
+                                    ->label('Referral Reason')
+                                    ->default($record->referral->referral_reason)
+                                    ->disabled(),
+
+                                Forms\Components\Textarea::make('reason_for_referral_other')
+                                    ->label('Other Reason')
+                                    ->default($record->referral->reason_for_referral_other)
+                                    ->disabled()
+                                    ->hidden(fn() => ! $record->referral->reason_for_referral_other),
+
+                                Forms\Components\TextInput::make('urgency')
+                                    ->label('Urgency')
+                                    ->default($record->referral->urgency)
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('surgical_operation')
+                                    ->label('Surgical Operation')
+                                    ->default($record->referral->surgical_operation ? 'Yes' : 'No')
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('procedure')
+                                    ->label('Procedure')
+                                    ->default($record->referral->procedure)
+                                    ->disabled()
+                                    ->hidden(fn() => ! $record->referral->procedure),
+
+                                Forms\Components\TextInput::make('drug_allergy')
+                                    ->label('Drug Allergy')
+                                    ->default($record->referral->drug_allergy ? 'Yes' : 'No')
+                                    ->disabled(),
+
+                                Forms\Components\TextInput::make('drug_allergy_notes')
+                                    ->label('Allergy Notes')
+                                    ->default($record->referral->drug_allergy_notes)
+                                    ->disabled()
+                                    ->hidden(fn() => ! $record->referral->drug_allergy_notes),
+
+                                Forms\Components\Textarea::make('chief_complaint')
+                                    ->label('Chief Complaint')
+                                    ->default($record->referral->chief_complaint)
+                                    ->disabled()
+                                    ->hidden(fn() => ! $record->referral->chief_complaint),
+
+                                Forms\Components\Textarea::make('action_taken')
+                                    ->label('Action Taken')
+                                    ->default($record->referral->action_taken)
+                                    ->disabled()
+                                    ->hidden(fn() => ! $record->referral->action_taken),
+
+                                Forms\Components\Textarea::make('impression')
+                                    ->label('Impression')
+                                    ->default($record->referral->impression)
+                                    ->disabled()
+                                    ->hidden(fn() => ! $record->referral->impression),
+
+                                Forms\Components\Textarea::make('hpi_notes')
+                                    ->label('HPI Notes')
+                                    ->default($record->referral->hpi_notes)
+                                    ->disabled()
+                                    ->hidden(fn() => ! $record->referral->hpi_notes),
+
+                                Forms\Components\Textarea::make('additional_notes')
+                                    ->label('Additional Notes')
+                                    ->default($record->referral->receiving_provider_notes)
+                                    ->disabled()
+                                    ->hidden(fn() => ! $record->referral->receiving_provider_notes),
+
+                                Forms\Components\TextInput::make('created_by')
+                                    ->label('Created By')
+                                    ->default($record->referral->user->name ?? 'Unknown')
+                                    ->disabled(),
+                            ])
+                            ->columns(2),
+                    ]),
                 Tables\Actions\Action::make('download_referral_pdf')
                     ->label('')
                     ->icon('heroicon-o-printer')
@@ -333,120 +417,18 @@ class ConsultationResource extends Resource
                     })
                     ->color('warning'),
                 Tables\Actions\Action::make('create_referral')
-                    ->label(fn($record) => $record->referral ? 'View Details' : 'Create Referral')
-                    ->icon(fn($record) => $record->referral ? 'heroicon-o-eye' : 'heroicon-o-plus')
-                    ->color(fn($record) => $record->referral ? 'info' : 'success')
-                    ->modalHeading(fn($record) => $record->referral
-                        ? "Referral Details for {$record->patient->first_name} {$record->patient->last_name}"
-                        : "Creating a referral for {$record->patient->first_name} {$record->patient->last_name}"
-                    )
+                    ->label('Create Referral')
+                    ->icon('heroicon-o-plus')
+                    ->color('success')
+                    ->modalHeading(fn($record) => "Creating a referral for {$record->patient->first_name} {$record->patient->last_name}")
                     ->requiresConfirmation(false)
                     ->modalWidth('md')
                     ->slideOver()
-                    ->visible(fn() => in_array(self::currentUser()->role, [
+                    ->visible(fn($record) => ! $record->referral && in_array(self::currentUser()->role, [
                         RoleEnum::ADMIN,
                         RoleEnum::BHW,
                     ]))
                     ->form(function ($record) {
-                        // If referral exists, show details (read-only)
-                        if ($record->referral) {
-                            return [
-                                Forms\Components\Section::make('Referral Information')
-                                    ->schema([
-                                        Forms\Components\TextInput::make('referral_id')
-                                            ->label('Referral ID')
-                                            ->default($record->referral->ref_id)
-                                            ->disabled()
-                                            ->columnSpanFull(),
-
-                                        Forms\Components\TextInput::make('referral_date')
-                                            ->label('Referral Date')
-                                            ->default($record->referral->created_at->format('M d, Y h:i A'))
-                                            ->disabled(),
-
-                                        Forms\Components\TextInput::make('referred_to')
-                                            ->label('Referred To')
-                                            ->default($record->referral->referred_to)
-                                            ->disabled(),
-
-                                        Forms\Components\TextInput::make('referral_reason')
-                                            ->label('Referral Reason')
-                                            ->default($record->referral->referral_reason)
-                                            ->disabled(),
-
-                                        Forms\Components\Textarea::make('reason_for_referral_other')
-                                            ->label('Other Reason')
-                                            ->default($record->referral->reason_for_referral_other)
-                                            ->disabled()
-                                            ->hidden(fn() => ! $record->referral->reason_for_referral_other),
-
-                                        Forms\Components\TextInput::make('urgency')
-                                            ->label('Urgency')
-                                            ->default($record->referral->urgency)
-                                            ->disabled(),
-
-                                        Forms\Components\TextInput::make('surgical_operation')
-                                            ->label('Surgical Operation')
-                                            ->default($record->referral->surgical_operation ? 'Yes' : 'No')
-                                            ->disabled(),
-
-                                        Forms\Components\TextInput::make('procedure')
-                                            ->label('Procedure')
-                                            ->default($record->referral->procedure)
-                                            ->disabled()
-                                            ->hidden(fn() => ! $record->referral->procedure),
-
-                                        Forms\Components\TextInput::make('drug_allergy')
-                                            ->label('Drug Allergy')
-                                            ->default($record->referral->drug_allergy ? 'Yes' : 'No')
-                                            ->disabled(),
-
-                                        Forms\Components\TextInput::make('drug_allergy_notes')
-                                            ->label('Allergy Notes')
-                                            ->default($record->referral->drug_allergy_notes)
-                                            ->disabled()
-                                            ->hidden(fn() => ! $record->referral->drug_allergy_notes),
-
-                                        Forms\Components\Textarea::make('chief_complaint')
-                                            ->label('Chief Complaint')
-                                            ->default($record->referral->chief_complaint)
-                                            ->disabled()
-                                            ->hidden(fn() => ! $record->referral->chief_complaint),
-
-                                        Forms\Components\Textarea::make('action_taken')
-                                            ->label('Action Taken')
-                                            ->default($record->referral->action_taken)
-                                            ->disabled()
-                                            ->hidden(fn() => ! $record->referral->action_taken),
-
-                                        Forms\Components\Textarea::make('impression')
-                                            ->label('Impression')
-                                            ->default($record->referral->impression)
-                                            ->disabled()
-                                            ->hidden(fn() => ! $record->referral->impression),
-
-                                        Forms\Components\Textarea::make('hpi_notes')
-                                            ->label('HPI Notes')
-                                            ->default($record->referral->hpi_notes)
-                                            ->disabled()
-                                            ->hidden(fn() => ! $record->referral->hpi_notes),
-
-                                        Forms\Components\Textarea::make('notes')
-                                            ->label('Additional Notes')
-                                            ->default($record->referral->notes)
-                                            ->disabled()
-                                            ->hidden(fn() => ! $record->referral->notes),
-
-                                        Forms\Components\TextInput::make('created_by')
-                                            ->label('Created By')
-                                            ->default($record->referral->user->name ?? 'Unknown')
-                                            ->disabled(),
-                                    ])
-                                    ->columns(2),
-                            ];
-                        }
-
-                        // If no referral exists, show creation form
                         return [
                             Select::make('referred_to')
                                 ->options([
@@ -543,11 +525,6 @@ class ConsultationResource extends Resource
                         ];
                     })
                     ->action(function ($record, array $data) {
-                        // If referral already exists, don't create another one
-                        if ($record->referral) {
-                            return;
-                        }
-
                         try {
                             // Generate custom referral ID
                             $currentDate = now();
