@@ -16,20 +16,20 @@ class UpcomingHealthPrograms extends BaseWidget
 {
     protected static ?string $heading = 'Upcoming Health Programs';
 
-    protected static ?string $description = 'Scheduled health programs for the next 30 days';
+    protected static ?string $description = 'Scheduled health programs that have not yet started';
 
     protected static ?int $sort = 4;
 
     public function table(Table $table): Table
     {
         return $table
-            ->description("Scheduled health programs for the next 30 days")
+            ->description("Scheduled health programs that have not yet started")
             ->query(
                 // Program::query()
                 //     ->whereDate('program_date', '>=', now())
                 //     ->whereDate('program_date', '<=', now()->addDays(30))
                 //     ->orderBy('program_date')
-                Program::whereDate('program_start_date', '>=', now())
+                Program::whereDate('program_start_date', '>', now())
                     ->orderBy('program_start_date')
                     ->when(
                         !Auth::user()->isAdmin() && !Auth::user()->isMHO(),
