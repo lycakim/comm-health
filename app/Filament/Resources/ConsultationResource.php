@@ -850,7 +850,7 @@ class ConsultationResource extends Resource
                                     $patient->weight ?? 'N/A',
                                     $patient->bmi ?? 'N/A',
                                     is_array($patient->medication_maintenance) ? implode(', ', $patient->medication_maintenance) : ($patient->medication_maintenance ?? 'N/A'),
-                                    $consult->created_at ? $consult->created_at->format('M d, Y') : 'N/A',
+                                    $consult->date ? $consult->date->format('M d, Y') : 'N/A',
                                 ]);
                             }
                             

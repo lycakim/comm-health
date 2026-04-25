@@ -910,7 +910,12 @@ class Reports extends Page implements HasTable
 
     protected function getPatientProfilingData()
     {
-        $patients = Patient::get();
+        $user = Auth::user();
+        $query = Patient::query();
+        if ($user->barangay_id) {
+            $query->where('barangay_id', $user->barangay_id);
+        }
+        $patients = $query->get();
         
         return [
             'headers' => [
@@ -944,9 +949,12 @@ class Reports extends Page implements HasTable
 
     protected function getMaternalChildData()
     {
-        $patients = Patient::where('sex', 'Female')
-            ->whereBetween('age', [15, 49])
-            ->get();
+        $user = Auth::user();
+        $query = Patient::where('sex', 'Female')->whereBetween('age', [15, 49]);
+        if ($user->barangay_id) {
+            $query->where('barangay_id', $user->barangay_id);
+        }
+        $patients = $query->get();
         
         return [
             'headers' => [
@@ -974,9 +982,12 @@ class Reports extends Page implements HasTable
 
     protected function getSeniorCitizensData()
     {
-        $patients = Patient::where('age', '>=', 60)
-            ->with(['consultations', 'medications'])
-            ->get();
+        $user = Auth::user();
+        $query = Patient::where('age', '>=', 60)->with(['consultations', 'medications']);
+        if ($user->barangay_id) {
+            $query->where('barangay_id', $user->barangay_id);
+        }
+        $patients = $query->get();
         
         return [
             'headers' => [
@@ -1010,7 +1021,12 @@ class Reports extends Page implements HasTable
 
     protected function getFamilyPlanningData()
     {
-        $patients = Patient::get();
+        $user = Auth::user();
+        $query = Patient::query();
+        if ($user->barangay_id) {
+            $query->where('barangay_id', $user->barangay_id);
+        }
+        $patients = $query->get();
         
         return [
             'headers' => [
@@ -1168,13 +1184,21 @@ class Reports extends Page implements HasTable
 
     protected function getMorbidityMortalityData()
     {
+        $user = Auth::user();
+
         // Morbidity data
-        $morbidityPatients = Patient::get();
-        
+        $morbidityQuery = Patient::query();
+        if ($user->barangay_id) {
+            $morbidityQuery->where('barangay_id', $user->barangay_id);
+        }
+        $morbidityPatients = $morbidityQuery->get();
+
         // Mortality data
-        $mortalityPatients = Patient::where('status', 'deceased')
-            ->with(['deathRecord'])
-            ->get();
+        $mortalityQuery = Patient::where('status', 'deceased')->with(['deathRecord']);
+        if ($user->barangay_id) {
+            $mortalityQuery->where('barangay_id', $user->barangay_id);
+        }
+        $mortalityPatients = $mortalityQuery->get();
         
         $rows = [];
         
