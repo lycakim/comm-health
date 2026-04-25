@@ -144,7 +144,7 @@ class ConsultationsExport implements WithEvents, WithColumnWidths
                     $sheet->setCellValue("K{$row}", $patient->weight ?? 'N/A');
                     $sheet->setCellValue("L{$row}", $patient->bmi ?? 'N/A');
                     $sheet->setCellValue("M{$row}", is_array($patient->medication_maintenance) ? implode(', ', $patient->medication_maintenance) : ($patient->medication_maintenance ?? 'N/A'));
-                    $sheet->setCellValue("N{$row}", $consult->created_at ? $consult->created_at->format('M d, Y') : 'N/A');
+                    $sheet->setCellValue("N{$row}", $consult->date ? $consult->date->format('M d, Y') : 'N/A');
                     $sheet->getStyle("A{$row}:N{$row}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                 }
 
